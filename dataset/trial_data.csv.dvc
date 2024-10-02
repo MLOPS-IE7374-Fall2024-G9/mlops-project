@@ -1,0 +1,5 @@
+outs:
+- md5: 0414f9267574bb3f4ff0e8a4f3397e5e
+  size: 4874980
+  hash: md5
+  path: trial_data.csv
