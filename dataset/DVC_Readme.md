@@ -6,7 +6,7 @@ This is used to track our changes made in the data files for this project. The a
 If developing on this project, just install the `requirements_dev.txt` by running `pip install -r requirements_dev.txt` AFTER activating your development environment. It should install the DVC package (along with all other dependencies).
 
 ## Configure Google Cloud Credentials Locally
-You need this for DVC to get and upload data from our data bucket on GCP. Follow these instructions.
+You need this for DVC to get and upload data from our data bucket on GCP. Follow these instructions. [TODO : Waiting for credentials]
 
 ## Get Latest Data
 If your dataset folder is empty, that's a good sign for you to pull the latest data that this project depends on. You'll have to install DVC first, after that simply run:<br>
