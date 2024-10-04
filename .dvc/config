@@ -2,4 +2,4 @@
     autostage = true
     remote = storage
 ['remote "storage"']
-    url = gs://gvc_data_bucket/
+    url = gs://g9-mlops-data-ie7374/
