@@ -9,7 +9,6 @@ env:
   PROJECT_ID: ${{secrets.AIRFLOW_GCP_PROJECT_ID}}
   GCE_INSTANCE: airflow-instance
   GCE_INSTANCE_ZONE: us-central1-a
-# adding a comment to test the push
 jobs:
   test-ssh:
     runs-on: ubuntu-latest
