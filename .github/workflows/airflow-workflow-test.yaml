@@ -1,4 +1,4 @@
-name: GCE Airflow Testing
+name: Test GCE SSH Connection
 
 on:
   push:
@@ -6,23 +6,24 @@ on:
       - aakash_dev
 
 jobs:
-  test-airflow:
+  test-ssh:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Set up SSH access to the GCE VM
+      # Set up SSH access to the GCE VM using the SSH key from GitHub Secrets
       - name: Add SSH key
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
 
-      # Test connectivity and basic operations on GCE VM
-      - name: Run basic tests on GCE VM
+      # Test SSH connection to the GCE VM
+      - name: Test SSH Connection
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
-            
-            echo "All tests passed successfully"
+            echo "Connected to GCE VM successfully!"
+            hostname
+            uptime
           EOF
