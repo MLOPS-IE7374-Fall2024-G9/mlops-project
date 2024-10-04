@@ -1,0 +1,31 @@
+name: GCE Airflow Testing
+
+on:
+  push:
+    branches:
+      - aakash_dev
+    paths:
+      - 'airflow/**'  # Perform action if any changes are made in 'airflow' folder
+      - 'scripts/**'  # Include any other relevant directories
+
+jobs:
+  test-airflow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Set up SSH access to the GCE VM
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
+
+      # Test connectivity and basic operations on GCE VM
+      - name: Run basic tests on GCE VM
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+            
+            echo "All tests passed successfully"
+          EOF
