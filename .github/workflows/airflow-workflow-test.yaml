@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - aakash_dev
-    paths:
-      - 'airflow/**'  # Perform action if any changes are made in 'airflow' folder
-      - 'scripts/**'  # Include any other relevant directories
 
 jobs:
   test-airflow:
