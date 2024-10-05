@@ -1,0 +1,92 @@
+# Name of the git hub action
+name: Airflow Server and Script Changes
+
+# Trigger conditions
+# on push or pull on branches, folders, files etc
+on:
+  push:
+    branches:
+      - aakash_dev
+      - rajat_dev
+      - amogha_dev
+      - jahnavi_dev
+      - nikhil_dev
+      - samanvya_dev
+      - dev
+    paths:
+      - 'dags/**'
+      - 'airflow-config/docker-compose.yaml'
+
+# Setting the environement for the GCP cloud engine that it is gonna talk to 
+env:
+  PROJECT_ID: ${{secrets.AIRFLOW_GCP_PROJECT_ID}}
+  GCE_INSTANCE: airflow-instance
+  GCE_INSTANCE_ZONE: us-central1-a
+
+# Jobs that need to be performed 
+jobs:
+
+  add_ssh_key_job:
+    runs-on: ubuntu-latest  
+    steps:
+
+      # Set up SSH access to the GCE VM using the SSH key from GitHub Secrets
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
+      
+      - name: Test SSH Connection
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+            echo "
+            ############################################################
+            "
+            echo "Connected to GCE VM successfully!"
+            hostname
+            uptime
+            echo "######################################################"
+          EOF
+        
+
+  # job definition
+  airlfow_config_update_job:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message,'airflow-config/') && contains(github.event.head_commit.message,'docker-compsoe.yaml')
+
+    # Sub-processes or steps to run
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Cleanup all docker processes
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+            sudo docker compose down --volumes --rmi all
+            
+          EOF
+      - name: Overwrite New docker-compose File
+        run: |
+          scp -o StrictHostKeyChecking=no /airflow-config/docker-compose.yaml ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/
+
+          EOF
+      - name: Docker Compose Up Commands
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+            sudo docker compose up airflow-init  # Initialize Airflow
+            sudo docker compose up -d  # Start the containers in detached mode
+          EOF
+
+  airflow_dag_scirpts_updat:
+    runs-on : ubuntu-latest
+    if: contains(github.event.head_commit.messge,'dags/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Overwrite The Dag folder
+        run: |
+          scp -o StrictHostKeyChecking=no /dags/src/* ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/dags
+
+          EOF
