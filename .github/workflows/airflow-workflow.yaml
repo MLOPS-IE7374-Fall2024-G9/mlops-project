@@ -66,30 +66,38 @@ jobs:
         id: list_changed_files  # Step ID to reference output
         run: |
           echo "Finding changed files..."
+          # Get the list of changed files
           CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
           
-          # Set the changed files as an output for the job
-          echo "::set-output name=changed_files::$CHANGED_FILES"  
+          # Replace newlines with spaces to create a single-line output
+          CHANGED_FILES_SINGLE_LINE=$(echo "$CHANGED_FILES" | tr '\n' ' ')
+          
+          echo "Changed files in single line:"
+          echo "$CHANGED_FILES_SINGLE_LINE"
+          
+          # Set the changed files as an output for the job (single-line output)
+          echo "::set-output name=changed_files::$CHANGED_FILES_SINGLE_LINE"
 
       - name: check changed folders
         id: list_changed_folders
         run: |
           echo "Finding changed directories..."
+          # Get the list of changed files
           CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
           
-          # Extract directories from changed files
-          CHANGED_DIRECTORIES=$(echo "$CHANGED_FILES" | xargs -n1 dirname | sort | uniq)
-          echo "The following directories contain changes:"
+          # Extract directories from changed files, replace newlines with spaces to create a single-line output
+          CHANGED_DIRECTORIES=$(echo "$CHANGED_FILES" | xargs -n1 dirname | sort | uniq | tr '\n' ' ')
+          
+          echo "The following directories contain changes (single-line):"
           echo "$CHANGED_DIRECTORIES"
           
-          # Set the changed directories as an output for the job
+          # Set the changed directories as an output for the job (single-line output)
           echo "::set-output name=changed_directories::$CHANGED_DIRECTORIES"
 
 
+
   # job definition
-  airlfow_config_update_job:
+  airlfow_config_update:
     runs-on: ubuntu-latest
     needs:
       - add_ssh_key_job
