@@ -126,7 +126,7 @@ jobs:
       - add_ssh_key_job
       - check_changed_files_and_directories
 
-    if: contains(needs.check_changed_files_and_directories.output.changed_directories,'dags')
+    if: contains(needs.check_changed_files_and_directories.output.changed_directories,'dags/src')
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
