@@ -32,3 +32,5 @@ jobs:
             hostname
             uptime
           EOF
+
+# added static external ip for airflow
