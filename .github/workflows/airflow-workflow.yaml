@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changed_files: ${{ steps.check_changed_directories.outputs.changed_files }}
-      changed_folders: ${{ steps.check_changed_directories.outputs.changed_directories }}
+      changed_directories: ${{ steps.check_changed_directories.outputs.changed_directories }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -134,7 +134,7 @@ jobs:
       - add_ssh_key_job
       - check_changed_files_and_directories
 
-    if: contains(needs.check_changed_files_and_directories.output.changed_directories,'dags/src')
+    if: contains(needs.check_changed_files_and_directories.outputs.changed_directories,'dag/src')
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
