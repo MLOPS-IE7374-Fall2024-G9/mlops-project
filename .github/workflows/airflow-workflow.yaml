@@ -147,6 +147,7 @@ jobs:
     runs-on : ubuntu-latest
     needs:
       - add_ssh_key_job
+      - changed_files_and_folder_debug
       - check_changed_files_and_directories
 
     if: contains(needs.check_changed_files_and_directories.outputs.changed_directories,'dag/src ')
