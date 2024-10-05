@@ -47,12 +47,53 @@ jobs:
             uptime
             echo "######################################################"
           EOF
-        
+
+
+  check_changed_files_and_directories:
+    name: Check updated files and directories
+    needs: add_ssh_key_job
+    runs-on: ubuntu-latest
+    outputs:
+      changed_files: ${{ steps.check_changed_directories.outputs.changed_files }}
+      changed_folders: ${{ steps.check_changed_directories.outputs.changed_folders }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+  
+      - name: check changed files
+        id: list_changed_files  # Step ID to reference output
+        run: |
+          echo "Finding changed files..."
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          
+          # Set the changed files as an output for the job
+          echo "::set-output name=changed_files::$CHANGED_FILES"  
+
+      - name: check changed folders
+        id: list_changed_folders
+        run: |
+          echo "Finding changed directories..."
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          
+          # Extract directories from changed files
+          CHANGED_DIRECTORIES=$(echo "$CHANGED_FILES" | xargs -n1 dirname | sort | uniq)
+          echo "The following directories contain changes:"
+          echo "$CHANGED_DIRECTORIES"
+          
+          # Set the changed directories as an output for the job
+          echo "::set-output name=changed_directories::$CHANGED_DIRECTORIES"
+
 
   # job definition
   airlfow_config_update_job:
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.message,'airflow-config/') && contains(github.event.head_commit.message,'docker-compsoe.yaml')
+    needs:
+      - add_ssh_key_job
+      - check_changed_files_and_directories
+
+    if: contains(${{needs.check_changed_files_and_directories.output.changed_files}},'docker-compose.yaml')
 
     # Sub-processes or steps to run
     steps:
@@ -77,10 +118,13 @@ jobs:
             sudo docker compose up -d  # Start the containers in detached mode
           EOF
 
-  airflow_dag_scirpts_updat:
+  airflow_dag_scirpts_update:
     runs-on : ubuntu-latest
-    if: contains(github.event.head_commit.message,'dags/src/')
+    needs:
+      - add_ssh_key_job
+      - check_changed_files_and_directories
 
+    if: contains(${{needs.check_changed_files_and_directories.output.changed_directories}},'dags')
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
