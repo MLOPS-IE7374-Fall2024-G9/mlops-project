@@ -7,12 +7,12 @@ on:
   push:
     branches:
       - aakash_dev
-      - rajat_dev
-      - amogha_dev
-      - jahnavi_dev
-      - nikhil_dev
-      - samanvya_dev
-      - dev
+      # - rajat_dev
+      # - amogha_dev
+      # - jahnavi_dev
+      # - nikhil_dev
+      # - samanvya_dev
+      # - dev
     paths:
       - 'dags/**'
       - 'airflow-config/docker-compose.yaml'
