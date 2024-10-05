@@ -95,7 +95,7 @@ jobs:
       - add_ssh_key_job
       - check_changed_files_and_directories
 
-    if: contains(${{needs.check_changed_files_and_directories.output.changed_files}},'docker-compose.yaml')
+    if: contains(needs.check_changed_files_and_directories.output.changed_files,'docker-compose.yaml')
 
     # Sub-processes or steps to run
     steps:
@@ -126,13 +126,13 @@ jobs:
       - add_ssh_key_job
       - check_changed_files_and_directories
 
-    if: contains(${{needs.check_changed_files_and_directories.output.changed_directories}},'dags')
+    if: contains(needs.check_changed_files_and_directories.output.changed_directories,'dags')
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Overwrite The Dag folder
         run: |
-          scp -o StrictHostKeyChecking=no /dags/src/* ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/dags
+          scp -o StrictHostKeyChecking=no /dags/src/ ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/dags
 
           EOF
