@@ -54,8 +54,8 @@ jobs:
     needs: add_ssh_key_job
     runs-on: ubuntu-latest
     outputs:
-      changed_files: ${{ steps.check_changed_directories.outputs.changed_files }}
-      changed_directories: ${{ steps.check_changed_directories.outputs.changed_directories }}
+      changed_files: ${{ steps.list_changed_files.outputs.changed_files }}
+      changed_directories: ${{ steps.list_changed_directories.outputs.changed_directories }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -79,7 +79,7 @@ jobs:
           echo "::set-output name=changed_files::$CHANGED_FILES_SINGLE_LINE"
 
       - name: check changed folders
-        id: list_changed_folders
+        id: list_changed_directories
         run: |
           echo "Finding changed directories..."
           # Get the list of changed files
@@ -96,8 +96,8 @@ jobs:
       
       - name: debug changed files and directories output
         run: |
-          echo " Changed directories : ${{steps.check_changed_directories.outputs.changed_directories}}"
-          echo " Changed files : ${{steps.check_changed_directories.outputs.changed_files}}"
+          echo "Changed directories: ${{ steps.list_changed_folders.outputs.changed_directories }}"
+          echo "Changed files: ${{ steps.list_changed_files.outputs.changed_files }}"
 
   changed_files_and_folder_debug:
     runs-on: ubuntu-latest
