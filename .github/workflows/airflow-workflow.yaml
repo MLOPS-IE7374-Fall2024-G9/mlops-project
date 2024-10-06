@@ -22,6 +22,7 @@ env:
   PROJECT_ID: ${{secrets.AIRFLOW_GCP_PROJECT_ID}}
   GCE_INSTANCE: airflow-instance
   GCE_INSTANCE_ZONE: us-central1-a
+  PRIVATE_KEY: ${{secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY}}
 
 # Jobs that need to be performed 
 jobs:
@@ -35,7 +36,7 @@ jobs:
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
-      
+
       - name: Test SSH Connection
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
@@ -149,5 +150,5 @@ jobs:
 
       - name: Overwrite The Dag folder
         run: |
-          scp -o StrictHostKeyChecking=no ./dags/src/ ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/dags
-          
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          scp -o StrictHostKeyChecking=no -i private_key ./dags/src/ ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/dags
