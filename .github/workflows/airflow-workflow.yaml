@@ -128,12 +128,12 @@ jobs:
       - name: Overwrite New docker-compose File
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -o StrictHostKeyChecking=no -i private_keys /airflow-config/docker-compose.yaml ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/aakashmahesha
+          scp -o StrictHostKeyChecking=no -i private_key ./airflow-config/docker-compose.yaml ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/aakashmahesha
 
       - name: Docker Compose Up Commands
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
             sudo docker compose up airflow-init  # Initialize Airflow
             sudo docker compose up -d  # Start the containers in detached mode
           EOF
