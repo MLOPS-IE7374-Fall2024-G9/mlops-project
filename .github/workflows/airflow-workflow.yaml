@@ -111,7 +111,7 @@ jobs:
       - check_changed_directories
       - changed_files_and_folder_debug
 
-    if: contains(needs.check_changed_files_and_directories.output.changed_files,'docker-compose.yaml')
+    if:  ${{needs.check_changed_directories.outputs.airflow_config_changed == 'true'}}
 
     # Sub-processes or steps to run
     steps:
