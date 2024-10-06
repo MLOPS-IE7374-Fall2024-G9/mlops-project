@@ -1,3 +1,4 @@
+.gitignore
 /trial_data.csv
 /merged_zones_weather_demand_data_2019.csv
 /merged_zones_weather_demand_data_2020to2022.csv
