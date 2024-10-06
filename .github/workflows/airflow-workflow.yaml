@@ -151,4 +151,4 @@ jobs:
       - name: Overwrite The Dag folder
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -r -o StrictHostKeyChecking=no -i private_key ./dags/src/ ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/aakashmahesha/dags
+          scp -r -o StrictHostKeyChecking=no -i private_key ./dags/src/* ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/aakashmahesha/dags
