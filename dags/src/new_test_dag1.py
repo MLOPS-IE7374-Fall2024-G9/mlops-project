@@ -17,7 +17,7 @@ default_args = {
 
 # Initialize the DAG
 with DAG(
-    dag_id='test_airflow_dag',        # DAG ID
+    dag_id='test_airflow_dag1',        # DAG ID
     default_args=default_args,        # Default arguments
     schedule_interval=None,           # Do not schedule automatically, can be triggered manually
     catchup=False,                    # Prevent backfilling
