@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - add_ssh_key_job
-      - check_changed_files_and_directories
+      - check_changed_directories
       - changed_files_and_folder_debug
 
     if: contains(needs.check_changed_files_and_directories.output.changed_files,'docker-compose.yaml')
