@@ -149,6 +149,5 @@ jobs:
 
       - name: Overwrite The Dag folder
         run: |
-          scp -o StrictHostKeyChecking=no /dags/src/ ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/dags
-
-          EOF
+          scp -o StrictHostKeyChecking=no ./dags/src/ ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/dags
+          
