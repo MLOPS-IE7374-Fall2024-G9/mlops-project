@@ -20,7 +20,7 @@ class Data:
         if not self._WEATHER_API_KEY:
             raise ValueError("WEATHER_API_KEY not found in environment variables.")
         
-        self._zones_texas = {
+        self.zones_texas = {
             "COAS": [29.749907, -95.358421],  # Houston
             "EAST": [32.351485, -95.301140],  # Tyler
             "FWES": [31.997345, -102.077915],  # Midland
@@ -31,7 +31,7 @@ class Data:
             "WEST": [32.448736, -99.733144]   # Abilene
         }
 
-        self._zones_new_england = {
+        self.zones_new_england = {
             "4001": [43.661471, -70.255326],  # Portland, Maine
             "4002": [42.995640, -71.454789],  # Manchester, New Hampshire
             "4003": [44.475882, -73.212072],  # Burlington, Vermont
