@@ -13,17 +13,17 @@ You need this for DVC to get and upload data from our data bucket on GCP. Follow
 3. This should be enough, if not, setup [gcloud auth](https://cloud.google.com/sdk/docs/initializing) or ask Samanvya.
 
 ## Get Latest Data
-If your dataset folder is empty, that's a good sign for you to pull the latest data that this project depends on. You'll have to install DVC first, after that simply run:<br>
+If your dataset/data folder is empty, that's a good sign for you to pull the latest data that this project depends on. You'll have to install DVC first, after that simply run:<br>
 `dvc pull` <br> and it'll fetch the latest data from our secure google cloud bucket to the `dataset/` folder. Any issues pulling data could be from not configuring your Google Cloud credentials as described earlier.
 
 ## Push Latest Data
-As a rule of thumb, put all datafiles in `dataset/` folder with descriptive names. 
+As a rule of thumb, put all datafiles in `dataset/data` folder with descriptive names. 
 ### If you have data files that you want to add to version control:
 1. Run `dvc add /path/to/data_file`
 <br>This step is similar to adding a code file to git. It creates a new 'dvc' file with your new data file as it's name. It just tracks metadata about the file, also adds the data file to `.gitignore` so it doesn't push to git. 
 
 2. Add the previously mentioned two files to git. DVC should also return the git command to add the two new changes to git. Command will change as per your data file.
-`git add dataset\trial_data.csv.dvc dataset\.gitignore` <br> followed by a git commit <br>
+`git add dataset\data\all_merged_zones_weather_demand_data.csv.dvc dataset\.gitignore` <br> followed by a git commit <br>
 `git commit -m "Added {your data file desc}"`
 
 3. Run `dvc config core.autostage true`
