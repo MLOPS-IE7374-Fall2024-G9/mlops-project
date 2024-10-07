@@ -36,6 +36,6 @@ As a rule of thumb, put all datafiles in `dataset/data` folder with descriptive 
 Let's say you modified a dataset file (added more rows or features), simply follow these steps so your teammates can get all the latest data as well.
 
 1. `dvc commit` <br> This commits all changes made to existing datasets already tracked by DVC. To track new datasets, check the previous subheading.
-2. `git add dataset/*.dvc && git commit -m "Edited {data change details}` <br> This commits any DVC files that have been changed by you.
+2. `git add dataset/data/*.dvc && git commit -m "Edited {data change details}` <br> This commits any DVC files that have been changed by you.
 3. `dvc push` pushes data to cloud bucket.
 4. `git push...` commit your changes to git pertaining to the DVC files
