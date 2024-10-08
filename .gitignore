@@ -1,0 +1,7 @@
+# .gitignore
+trial_data.csv
+dataset/merged_zones_weather_demand_data_2019.csv
+dataset/merged_zones_weather_demand_data_2020to2022.csv
+dataset/merged_zones_weather_demand_data_2023.csv
+mlops_env
+.DS_Store

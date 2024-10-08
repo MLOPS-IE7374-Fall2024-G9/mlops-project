@@ -1,5 +1,0 @@
-outs:
-- md5: 274e0f0bee77f32e3b47cf9b2c4d0f2b
-  size: 4864597
-  hash: md5
-  path: merged_zones_weather_demand_data_2019.csv
