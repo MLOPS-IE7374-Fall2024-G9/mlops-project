@@ -7,11 +7,11 @@ from flask import escape
 
 # Function that will be triggered by HTTP requests
 def upload_energy_demand(request):
-    api_key = "dLxQrZFjnwyM6LfOb9TrNTt5n8n1ulnvjbxsWqNU"  # Replace with your actual API key
+    api_key = "dLxQrZFjnwyM6LfOb9TrNTt5n8n1ulnvjbxsWqNU"  
     url = f"https://api.eia.gov/v2/electricity/rto/region-sub-ba-data/data/?api_key={api_key}&frequency=hourly&data[0]=value&start=2024-08-28T00&end=2024-09-29T00&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000"
     
     # Define your GCS bucket name and file path
-    bucket_name = 'mlops-project-grp-9'  # Replace with your actual bucket name
+    bucket_name = 'mlops-project-grp-9' 
     destination_blob_name = 'Electricity_demand/energy_demand.csv'
 
     # Make the GET request to the API
@@ -19,7 +19,7 @@ def upload_energy_demand(request):
     
     # Check if the request was successful
     if response.status_code == 200:
-        data = response.json()  # Parse the JSON response
+        data = response.json()  
 
         # Use a temporary file to store the CSV before uploading to GCS
         with tempfile.NamedTemporaryFile(mode='w', newline='', encoding='utf-8', delete=False) as temp_file:
