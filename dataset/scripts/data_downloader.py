@@ -93,11 +93,13 @@ def generate_and_save_data(start_date: datetime, end_date: datetime, today_flag:
     # get latest data, append new data to it
     latest_data_df = data_collector_obj.download_data_from_dvc()
 
-    df_combined = pd.concat(df_map.values(), ignore_index=True)
-    df_combined.sort_values(by='datetime', inplace=True)
+    if latest_data_df:
+        df_combined = pd.concat(df_map.values(), ignore_index=True)
+        df_combined.sort_values(by='datetime', inplace=True)
 
-    updated_data_df = pd.concat([latest_data_df, df_combined], ignore_index=True)
-
+        updated_data_df = pd.concat([latest_data_df, df_combined], ignore_index=True)
+    else:
+        updated_data_df = pd.concat(df_map.values(), ignore_index=True)
     data_collector_obj.upload_data_to_dvc(updated_data_df)
     """
 
@@ -108,6 +110,8 @@ def generate_and_save_data(start_date: datetime, end_date: datetime, today_flag:
 
         # Save it as CSV
         data_collector_obj.save_dataset(df_map, csv_file_path)
+
+    # return updated_data_df
 
 if __name__ == "__main__":
     # Set up argument parsing
