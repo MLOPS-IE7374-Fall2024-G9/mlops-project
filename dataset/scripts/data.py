@@ -259,14 +259,5 @@ class DataCollector:
         df_combined.to_csv(path, index=False)
         logger.info(f"Dataset saved to {path}.")
 
-    def upload_data_to_dvc(self, df):
-        logger.info(f"Uploading dataset DVC.")
-
-        # TODO - upload the df_combined to DVC
-        pass
-
-    def download_data_from_dvc(self):
-        """Download latest data from DVC and return the data in dataframe format"""
-        pass
 
 

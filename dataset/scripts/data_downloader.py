@@ -1,7 +1,7 @@
 import argparse
 from datetime import datetime, timedelta
 from typing import Tuple, Dict, Any
-from data import *
+from dataset.scripts.data import *
 import os
 
 def get_yesterday_date_range() -> Tuple[str, str]:
