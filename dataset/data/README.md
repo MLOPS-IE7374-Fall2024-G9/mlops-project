@@ -23,7 +23,7 @@ As a rule of thumb, put all datafiles in `dataset/data` folder with descriptive 
 <br>This step is similar to adding a code file to git. It creates a new 'dvc' file with your new data file as it's name. It just tracks metadata about the file, also adds the data file to `.gitignore` so it doesn't push to git. 
 
 2. Add the previously mentioned two files to git. DVC should also return the git command to add the two new changes to git. Command will change as per your data file.
-`git add dataset\data\all_merged_zones_weather_demand_data.csv.dvc dataset\.gitignore` <br> followed by a git commit <br>
+`git add dataset\data\file_name.csv.dvc dataset\.gitignore` <br> followed by a git commit <br>
 `git commit -m "Added {your data file desc}"`
 
 3. Run `dvc config core.autostage true`

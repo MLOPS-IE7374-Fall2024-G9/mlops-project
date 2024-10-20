@@ -1,7 +1,8 @@
 import argparse
 from datetime import datetime, timedelta
 from typing import Tuple, Dict, Any
-from data import *
+from dataset.scripts.data import *
+from dataset.scripts.dvc_manager import *
 import os
 
 def get_yesterday_date_range() -> Tuple[str, str]:
@@ -57,7 +58,7 @@ def get_start_end_str(start_date: datetime, end_date: datetime, today_flag: bool
 
     return start_date_str, end_date_str
 
-def generate_and_save_data(start_date: datetime, end_date: datetime, today_flag: bool, region: str, local_save: bool) -> None:
+def update_and_save_data(start_date: datetime, end_date: datetime, today_flag: bool, region: str, local_save: bool) -> None:
     """
     Main function to generate and save the dataset based on the given date range or the --today flag.
     
@@ -76,6 +77,7 @@ def generate_and_save_data(start_date: datetime, end_date: datetime, today_flag:
     
     data_zones = data_regions.regions[region]
     data_collector_obj = DataCollector()
+    dvc_manager_obj = DVCManager("mlops-437516-b9a69694c897.json")
 
     # Get the start and end date strings
     start_date_str, end_date_str = get_start_end_str(start_date, end_date, today_flag)
@@ -88,10 +90,9 @@ def generate_and_save_data(start_date: datetime, end_date: datetime, today_flag:
     if first_df.empty:
         raise Exception("This region has monthly data updates and not daily")
 
-    """
-    # TODO
+    
     # get latest data, append new data to it
-    latest_data_df = data_collector_obj.download_data_from_dvc()
+    latest_data_df = dvc_manager_obj.download_data_from_dvc()
 
     if latest_data_df:
         df_combined = pd.concat(df_map.values(), ignore_index=True)
@@ -100,8 +101,7 @@ def generate_and_save_data(start_date: datetime, end_date: datetime, today_flag:
         updated_data_df = pd.concat([latest_data_df, df_combined], ignore_index=True)
     else:
         updated_data_df = pd.concat(df_map.values(), ignore_index=True)
-    data_collector_obj.upload_data_to_dvc(updated_data_df)
-    """
+    dvc_manager_obj.upload_data_to_dvc(updated_data_df)
 
     if local_save:
         # Get the script's directory
@@ -111,7 +111,8 @@ def generate_and_save_data(start_date: datetime, end_date: datetime, today_flag:
         # Save it as CSV
         data_collector_obj.save_dataset(df_map, csv_file_path)
 
-    # return updated_data_df
+    return updated_data_df
+
 
 if __name__ == "__main__":
     # Set up argument parsing
@@ -161,7 +162,7 @@ if __name__ == "__main__":
             parser.error("You must provide both --start_date and --end_date unless the --today flag is set.")
 
     # Run the main function with parsed arguments
-    generate_and_save_data(args.start_date, args.end_date, args.today, args.region, args.local_save)
+    update_and_save_data(args.start_date, args.end_date, args.today, args.region, args.local_save)
 
 
 

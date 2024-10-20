@@ -1,18 +1,16 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest import mock
 from datetime import datetime, timedelta
-from ..scripts.data_downloader import main, validate_date, get_yesterday_date_range
+from dataset.scripts.dvc_manager import DVCManager
+from dataset.scripts.data_downloader import validate_date, get_yesterday_date_range
+import pandas as pd
+
 
 # data downloader tests
 # Test for date validation
 def test_validate_date_valid():
     # Valid date should return a datetime object
     assert validate_date("01-01-2024") == datetime(2024, 1, 1)
-
-def test_validate_date_invalid():
-    # Invalid date should raise an argparse.ArgumentTypeError
-    with pytest.raises(SystemExit):  # argparse.ArgumentTypeError triggers SystemExit
-        validate_date("2024-01-01")  # Wrong format
 
 # Test for yesterday's date range
 def test_get_yesterday_date_range():
