@@ -33,3 +33,45 @@ class DVCManager:
 
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to configure DVC remote: {e}")
+    
+    def upload_data_to_dvc(self, df):
+        """
+        Save the DataFrame as a CSV file with a custom name, add it to DVC, and push it to the remote.
+        """
+        try:
+            # Ensure the data directory exists
+            if not os.path.exists(self.data_dir):
+                os.makedirs(self.data_dir)
+
+            # Create a file with the custom filename in the data directory
+            temp_file_path = os.path.join(self.data_dir, self.filename)
+            logger.info(f"Saving DataFrame to CSV file at {temp_file_path}.")
+            df.to_csv(temp_file_path, index=False)
+
+            # Change to the dataset/data directory
+            os.chdir(self.data_dir)
+
+            # Add the file to DVC
+            logger.info(f"Adding {self.filename} to DVC.")
+            subprocess.run(["dvc", "add", self.filename], check=True)
+
+            # Push the data to the DVC remote without committing to Git
+            logger.info("Pushing dataset to DVC remote (without Git commit).")
+            result = subprocess.run(["dvc", "push"], check=False)
+
+            if result.returncode != 0:
+                # Log specific error for invalid credentials or failed push
+                logger.error("DVC push failed. Please check your credentials and remote settings.")
+                return
+
+            # If push succeeds, delete the CSV file
+            if os.path.exists(temp_file_path):
+                logger.info(f"Deleting CSV file: {temp_file_path}")
+                os.remove(temp_file_path)
+
+            logger.info("Dataset uploaded to DVC and CSV file deleted successfully.")
+
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to execute DVC command: {e}")
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
