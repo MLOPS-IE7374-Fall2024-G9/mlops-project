@@ -75,3 +75,35 @@ class DVCManager:
             logger.error(f"Failed to execute DVC command: {e}")
         except Exception as e:
             logger.error(f"An error occurred: {e}")
+
+    def download_data_from_dvc(self, save_local=0):
+        """
+        Pull the latest version of the dataset from DVC and return it as a DataFrame.
+        """
+        try:
+            # Pull the latest dataset from DVC
+            logger.info("Pulling latest dataset from DVC.")
+            subprocess.run(["dvc", "pull"], check=True)
+            
+            # Load the dataset into a DataFrame
+            logger.info(f"Loading dataset from {self.data_dir}.")
+            csv_files = [f for f in os.listdir(self.data_dir) if f.endswith(".csv")]
+            if not csv_files:
+                logger.error("No CSV files found in the data directory.")
+                return None
+            
+            latest_file = os.path.join(self.data_dir, csv_files[0])
+            df = pd.read_csv(latest_file)
+            
+            if save_local == 0:
+                logger.info(f"Deleting CSV file in local: {latest_file}")
+                os.remove(latest_file)
+
+            logger.info("Dataset downloaded and loaded into DataFrame successfully.")
+            return df
+        
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to execute DVC command: {e}")
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            return None
