@@ -7,10 +7,13 @@ from dateutil.relativedelta import relativedelta
 from dotenv import load_dotenv
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[logging.StreamHandler()])
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
 logger = logging.getLogger(__name__)
+
 
 # -----------------------------------------------------------------------
 class DataRegions:
@@ -20,11 +23,11 @@ class DataRegions:
                 "COAS": [29.749907, -95.358421],  # Houston
                 "EAST": [32.351485, -95.301140],  # Tyler
                 "FWES": [31.997345, -102.077915],  # Midland
-                "NCEN": [32.78306, -96.80667],      # Dallas
+                "NCEN": [32.78306, -96.80667],  # Dallas
                 "NRTH": [33.913708, -98.493387],  # Wichita Falls
                 "SCEN": [30.267153, -97.743057],  # Austin
                 "SOUT": [26.203407, -98.230012],  # McAllen
-                "WEST": [32.448736, -99.733144]   # Abilene
+                "WEST": [32.448736, -99.733144],  # Abilene
             },
             "new_york": {
                 "ZONA": [42.8864, -78.8784],  # Buffalo, NY (West)
@@ -45,18 +48,25 @@ class DataRegions:
                 "4003": [44.475882, -73.212072],  # Burlington, Vermont
                 "4004": [41.763710, -72.685097],  # Hartford, Connecticut
                 "4005": [41.823989, -71.412834],  # Providence, Rhode Island
-                "4006": [41.635693, -70.933777],  # New Bedford, Massachusetts (Southeast)
-                "4007": [42.101483, -72.589811],  # Springfield, Massachusetts (Western/Central)
-                "4008": [42.358894, -71.056742]   # Boston, Massachusetts (Northeast)
-            }
+                "4006": [
+                    41.635693,
+                    -70.933777,
+                ],  # New Bedford, Massachusetts (Southeast)
+                "4007": [
+                    42.101483,
+                    -72.589811,
+                ],  # Springfield, Massachusetts (Western/Central)
+                "4008": [42.358894, -71.056742],  # Boston, Massachusetts (Northeast)
+            },
         }
+
 
 # -----------------------------------------------------------------------
 class DataCollector:
     def __init__(self):
         """Initializes the DataCollector object, loading API keys and defining geographic zones."""
         load_dotenv()
-        
+
         self._DEMAND_API_KEY = os.getenv("DEMAND_API_KEY")
         self._WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
 
@@ -67,25 +77,27 @@ class DataCollector:
         if not self._WEATHER_API_KEY:
             logger.error("WEATHER_API_KEY not found in environment variables.")
             raise ValueError("WEATHER_API_KEY not found in environment variables.")
-        
+
     def __split_dates_monthly(self, start_date: str, end_date: str) -> list[list[str]]:
         """Splits the date range into monthly ranges."""
         logger.info(f"Splitting date range into months: {start_date} - {end_date}")
         start = datetime.strptime(start_date, "%d-%m-%Y")
         end = datetime.strptime(end_date, "%d-%m-%Y")
-        
+
         date_ranges = []
         current_date = start
-        
+
         while current_date <= end:
             next_month = current_date + relativedelta(months=1)
             last_day_of_month = next_month - relativedelta(days=1)
-            
+
             end_of_range = min(last_day_of_month, end)
-            date_ranges.append([current_date.strftime("%Y-%m-%d"), end_of_range.strftime("%Y-%m-%d")])
-            
+            date_ranges.append(
+                [current_date.strftime("%Y-%m-%d"), end_of_range.strftime("%Y-%m-%d")]
+            )
+
             current_date = next_month
-        
+
         return date_ranges
 
     def __split_dates_yearwise(self, start_date: str, end_date: str) -> list[list[str]]:
@@ -93,24 +105,32 @@ class DataCollector:
         logger.info(f"Splitting date range into years: {start_date} - {end_date}")
         start_year = datetime.strptime(start_date, "%d-%m-%Y").year
         end_year = datetime.strptime(end_date, "%d-%m-%Y").year
-        
+
         date_ranges = []
-        
+
         for year in range(start_year, end_year + 1):
             if year == start_year:
-                year_start = start_date  # Use the specified start date for the first year
+                year_start = (
+                    start_date  # Use the specified start date for the first year
+                )
             else:
-                year_start = f"01-01-{year}"  # First day of the year for subsequent years
-                
-            year_end = f"31-12-{year}" if year < end_year else end_date  # End of the year or specified end_date
+                year_start = (
+                    f"01-01-{year}"  # First day of the year for subsequent years
+                )
+
+            year_end = (
+                f"31-12-{year}" if year < end_year else end_date
+            )  # End of the year or specified end_date
             date_ranges.append([year_start, year_end])
-        
+
         return date_ranges
 
-    def get_demand_data(self, subba: str, start_date: str, end_date: str) -> pd.DataFrame:
+    def get_demand_data(
+        self, subba: str, start_date: str, end_date: str
+    ) -> pd.DataFrame:
         """Fetches demand data from the EIA API for the specified sub-balance area (subba)."""
         logger.info(f"Fetching demand data for {subba} from {start_date} to {end_date}")
-        
+
         start_date = datetime.strptime(start_date, "%d-%m-%Y").strftime("%Y-%m-%d")
         end_date = datetime.strptime(end_date, "%d-%m-%Y").strftime("%Y-%m-%d")
 
@@ -124,26 +144,32 @@ class DataCollector:
         if response.status_code == 200:
             json_data = response.json()
 
-            if (json_data["response"]["total"] != '0'):
+            if json_data["response"]["total"] != "0":
                 df_demand = pd.DataFrame(json_data["response"]["data"])
-                df_demand = df_demand.drop(columns=['subba', 'parent', 'parent-name'])
+                df_demand = df_demand.drop(columns=["subba", "parent", "parent-name"])
                 logger.info(f"Successfully fetched demand data for {subba}")
                 return df_demand
             else:
-                logger.warning(f"No demand data found for {subba} in the specified range.")
+                logger.warning(
+                    f"No demand data found for {subba} in the specified range."
+                )
                 return pd.DataFrame()  # Return an empty DataFrame
         else:
             logger.error(f"Failed to retrieve demand data: {response.status_code}")
             return pd.DataFrame()  # Return an empty DataFrame
 
-    def get_weather_data(self, location: str, start_date: str, end_date: str) -> pd.DataFrame:
+    def get_weather_data(
+        self, location: str, start_date: str, end_date: str
+    ) -> pd.DataFrame:
         """Fetches historical weather data for the specified location."""
-        logger.info(f"Fetching weather data for {location} from {start_date} to {end_date}")
+        logger.info(
+            f"Fetching weather data for {location} from {start_date} to {end_date}"
+        )
         monthly_date_ranges = self.__split_dates_monthly(start_date, end_date)
-        
+
         all_dataframes = []
 
-        for start, end in monthly_date_ranges:    
+        for start, end in monthly_date_ranges:
             logger.info(f"Fetching weather data for dates {start} to {end}")
 
             weather_url = (
@@ -157,8 +183,10 @@ class DataCollector:
                 all_dataframes.append(df_weather)
                 logger.info(f"Successfully fetched weather data for {start} to {end}")
             else:
-                logger.error(f"Failed to retrieve weather data for {start} to {end}: {response.status_code}")
-        
+                logger.error(
+                    f"Failed to retrieve weather data for {start} to {end}: {response.status_code}"
+                )
+
         # Combine all DataFrames into a single DataFrame
         if all_dataframes:
             combined_df = pd.concat(all_dataframes, ignore_index=True)
@@ -182,18 +210,28 @@ class DataCollector:
                 hour_of_day = time[:2]
 
                 datetime_str = f"{date}T{hour_of_day}"
-                
+
                 hour["datetime"] = datetime_str
-                processed_data.append(hour) 
+                processed_data.append(hour)
 
         df_processed = pd.DataFrame(processed_data)
-        cols = ['datetime'] + [col for col in df_processed.columns if col != 'datetime']
+        cols = ["datetime"] + [col for col in df_processed.columns if col != "datetime"]
         df_processed = df_processed[cols]
-        df_processed = df_processed.drop(columns=['time', 'tempC', 'windspeedKmph', 'weatherIconUrl', 'weatherDesc', 'winddirDegree', 'winddir16Point'])
+        df_processed = df_processed.drop(
+            columns=[
+                "time",
+                "tempC",
+                "windspeedKmph",
+                "weatherIconUrl",
+                "weatherDesc",
+                "winddirDegree",
+                "winddir16Point",
+            ]
+        )
 
         logger.info("Weather data processing complete.")
         return df_processed
-    
+
     def generate_dataset(self, zones: dict, start_date: str, end_date: str) -> dict:
         """Generates a dataset by fetching and merging demand and weather data for specified zones."""
         logger.info(f"Generating dataset for zones from {start_date} to {end_date}.")
@@ -205,7 +243,7 @@ class DataCollector:
             if api_calls >= 500:
                 logger.warning("Reached API call limit.")
                 break
-            
+
             logger.info(f"Fetching data for zone: {zone}")
             zone_name = zone
             date_df_list = []
@@ -218,28 +256,34 @@ class DataCollector:
                 df_demand = self.get_demand_data(zone, start, end)
 
                 if df_demand.empty:
-                    logger.warning(f"Demand data not available for {zone} between {start} and {end}.")
+                    logger.warning(
+                        f"Demand data not available for {zone} between {start} and {end}."
+                    )
                     continue
-                
-                city_location = ','.join(map(str, zones[zone]))
-                df_weather = self.get_weather_data(city_location, start, end)
-                
-                if df_weather.empty:
-                    logger.warning(f"Weather data not available for {zone} between {start} and {end}.")
-                    continue
-                
-                df_weather = self.process_weather_data(df_weather)
-                
-                df_weather.rename(columns={'datetime': 'datetime'}, inplace=True)
-                df_demand.rename(columns={'period': 'datetime'}, inplace=True)
 
-                df_merged_dataset = pd.merge(df_weather, df_demand, on='datetime', how='inner')
-                df_merged_dataset['zone'] = zone_name
+                city_location = ",".join(map(str, zones[zone]))
+                df_weather = self.get_weather_data(city_location, start, end)
+
+                if df_weather.empty:
+                    logger.warning(
+                        f"Weather data not available for {zone} between {start} and {end}."
+                    )
+                    continue
+
+                df_weather = self.process_weather_data(df_weather)
+
+                df_weather.rename(columns={"datetime": "datetime"}, inplace=True)
+                df_demand.rename(columns={"period": "datetime"}, inplace=True)
+
+                df_merged_dataset = pd.merge(
+                    df_weather, df_demand, on="datetime", how="inner"
+                )
+                df_merged_dataset["zone"] = zone_name
 
                 date_df_list.append(df_merged_dataset)
-                
+
                 api_calls += 12
-            
+
             if date_df_list:
                 combined_df = pd.concat(date_df_list, ignore_index=True)
             else:
@@ -247,17 +291,14 @@ class DataCollector:
 
             df_map[zone] = combined_df
             logger.info(f"Data generation complete for {zone}.")
-        
+
         logger.info("Dataset generation complete for all zones.")
         return df_map
-    
+
     def save_dataset(self, df_map: dict, path: str) -> None:
         """Saves the combined dataset to a CSV file."""
         logger.info(f"Saving dataset to {path}.")
         df_combined = pd.concat(df_map.values(), ignore_index=True)
-        df_combined.sort_values(by='datetime', inplace=True)
+        df_combined.sort_values(by="datetime", inplace=True)
         df_combined.to_csv(path, index=False)
         logger.info(f"Dataset saved to {path}.")
-
-
-

@@ -5,16 +5,23 @@ import os
 import tempfile
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[logging.StreamHandler()])
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
 logger = logging.getLogger(__name__)
+
 
 class DVCManager:
     def __init__(self, json_credential_path):
         # Set the data directory relative to the current script's location
-        script_dir = os.path.dirname(__file__)  # Get the directory of the current script
-        self.data_dir = os.path.join(script_dir, "../data")  # Relative path to the 'data' folder
+        script_dir = os.path.dirname(
+            __file__
+        )  # Get the directory of the current script
+        self.data_dir = os.path.join(
+            script_dir, "../data"
+        )  # Relative path to the 'data' folder
         self.configure_dvc_credentials(json_credential_path)
         self.filename = "demand_weather_data.csv"
 
@@ -24,16 +31,26 @@ class DVCManager:
         """
         try:
             # Run the dvc remote modify command
-            logger.info(f"Configuring DVC to use credentials from {json_credential_path}.")
+            logger.info(
+                f"Configuring DVC to use credentials from {json_credential_path}."
+            )
             subprocess.run(
-                ["dvc", "remote", "modify", "--local", "storage", "credentialpath", json_credential_path],
-                check=True
+                [
+                    "dvc",
+                    "remote",
+                    "modify",
+                    "--local",
+                    "storage",
+                    "credentialpath",
+                    json_credential_path,
+                ],
+                check=True,
             )
             logger.info("DVC remote configuration successful.")
 
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to configure DVC remote: {e}")
-    
+
     def upload_data_to_dvc(self, df):
         """
         Save the DataFrame as a CSV file with a custom name, add it to DVC, and push it to the remote.
@@ -61,7 +78,9 @@ class DVCManager:
 
             if result.returncode != 0:
                 # Log specific error for invalid credentials or failed push
-                logger.error("DVC push failed. Please check your credentials and remote settings.")
+                logger.error(
+                    "DVC push failed. Please check your credentials and remote settings."
+                )
                 return
 
             # If push succeeds, delete the CSV file
@@ -84,24 +103,24 @@ class DVCManager:
             # Pull the latest dataset from DVC
             logger.info("Pulling latest dataset from DVC.")
             subprocess.run(["dvc", "pull"], check=True)
-            
+
             # Load the dataset into a DataFrame
             logger.info(f"Loading dataset from {self.data_dir}.")
             csv_files = [f for f in os.listdir(self.data_dir) if f.endswith(".csv")]
             if not csv_files:
                 logger.error("No CSV files found in the data directory.")
                 return None
-            
+
             latest_file = os.path.join(self.data_dir, csv_files[0])
             df = pd.read_csv(latest_file)
-            
+
             if save_local == 0:
                 logger.info(f"Deleting CSV file in local: {latest_file}")
                 os.remove(latest_file)
 
             logger.info("Dataset downloaded and loaded into DataFrame successfully.")
             return df
-        
+
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to execute DVC command: {e}")
         except Exception as e:
