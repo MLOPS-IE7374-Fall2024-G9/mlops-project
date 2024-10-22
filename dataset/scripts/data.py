@@ -295,10 +295,8 @@ class DataCollector:
         logger.info("Dataset generation complete for all zones.")
         return df_map
 
-    def save_dataset(self, df_map: dict, path: str) -> None:
+    def save_dataset(self, df: pd.DataFrame, path: str) -> None:
         """Saves the combined dataset to a CSV file."""
         logger.info(f"Saving dataset to {path}.")
-        df_combined = pd.concat(df_map.values(), ignore_index=True)
-        df_combined.sort_values(by="datetime", inplace=True)
-        df_combined.to_csv(path, index=False)
+        df.to_csv(path, index=False)
         logger.info(f"Dataset saved to {path}.")

@@ -1,8 +1,8 @@
 import argparse
 from datetime import datetime, timedelta
 from typing import Tuple, Dict, Any
-from dataset.scripts.data import *
-from dataset.scripts.dvc_manager import *
+from data import *
+from dvc_manager import *
 import os
 
 
@@ -64,40 +64,14 @@ def get_start_end_str(
 
     return start_date_str, end_date_str
 
-
-def update_and_save_data(
-    start_date: datetime,
-    end_date: datetime,
-    today_flag: bool,
-    region: str,
-    local_save: bool,
-) -> None:
-    """
-    Main function to generate and save the dataset based on the given date range or the --today flag.
-
-    Args:
-        start_date (datetime): Start date for data collection.
-        end_date (datetime): End date for data collection.
-        today_flag (bool): Flag to indicate whether to use yesterday and today as the date range.
-        region (str): The region for which the data is to be collected.
-        local_save (bool): Flag to indicate save in local as csv
-    """
-    data_regions = DataRegions()
-
-    # Ensure that the region exists in the data regions
-    if region not in data_regions.regions:
-        raise ValueError(
-            f"Region '{region}' is not valid. Available regions: {list(data_regions.regions.keys())}"
-        )
-
+def get_new_data(data_collector_obj, data_regions, start_date, end_date, region, today_flag):
+    # zones, object init
     data_zones = data_regions.regions[region]
-    data_collector_obj = DataCollector()
-    dvc_manager_obj = DVCManager("mlops-437516-b9a69694c897.json")
 
-    # Get the start and end date strings
+    # Get the start and end date in strings
     start_date_str, end_date_str = get_start_end_str(start_date, end_date, today_flag)
 
-    # Generate data
+    # Generate new data
     df_map = data_collector_obj.generate_dataset(
         data_zones, start_date_str, end_date_str
     )
@@ -107,29 +81,85 @@ def update_and_save_data(
     if first_df.empty:
         raise Exception("This region has monthly data updates and not daily")
 
-    # get latest data, append new data to it
-    latest_data_df = dvc_manager_obj.download_data_from_dvc()
+    return df_map
 
-    if latest_data_df:
+def merge_new_with_existing_data(latest_data_df, df_map):
+    # if latest data in dvc exists, combine the dvc + new data
+    if latest_data_df is not None:
         df_combined = pd.concat(df_map.values(), ignore_index=True)
         df_combined.sort_values(by="datetime", inplace=True)
 
         updated_data_df = pd.concat([latest_data_df, df_combined], ignore_index=True)
     else:
         updated_data_df = pd.concat(df_map.values(), ignore_index=True)
+
+    return updated_data_df
+
+def update_and_save_data(
+    start_date: datetime,
+    end_date: datetime,
+    today_flag: bool,
+    region: str,
+    local_save: bool=False):
+    """
+    Main function to generate and save the dataset based on the given date range or the --today flag.
+
+    Args:
+        start_date (str): Start date for data collection.
+        end_date (str): End date for data collection.
+        today_flag (bool): Flag to indicate whether to use yesterday and today as the date range.
+        region (str): The region for which the data is to be collected. if region == "all"
+        local_save (bool): Flag to indicate save in local as csv
+    """
+    data_regions = DataRegions()
+    data_collector_obj = DataCollector()
+    dvc_manager_obj = DVCManager("mlops-437516-b9a69694c897.json")
+
+    # Ensure that the region exists in the data regions
+    if region not in data_regions.regions:
+        raise ValueError(
+            f"Region '{region}' is not valid. Available regions: {list(data_regions.regions.keys())}"
+        )
+
+    # get latest data from dvc
+    latest_data_df = dvc_manager_obj.download_data_from_dvc(save_local=1)
+    
+    # get new data from api 
+    df_map_from_api = get_new_data(data_collector_obj, data_regions, start_date, end_date, region, today_flag)
+
+    # merge api and dvc data
+    updated_data_df = merge_new_with_existing_data(latest_data_df, df_map_from_api)
+    
+    # push updated data back to dvc
     dvc_manager_obj.upload_data_to_dvc(updated_data_df)
 
+    # saving local
     if local_save:
         # Get the script's directory
         script_dir = os.path.dirname(os.path.abspath(__file__))
         csv_file_path = os.path.join(script_dir, "data.csv")
 
         # Save it as CSV
-        data_collector_obj.save_dataset(df_map, csv_file_path)
+        data_collector_obj.save_dataset(updated_data_df, csv_file_path)
 
     return updated_data_df
 
 
+def update_and_save_data_all_region(start_date: datetime,
+                                        end_date: datetime,
+                                        today_flag: bool,
+                                        local_save: bool):
+
+    data_regions = DataRegions()
+
+    for region in data_regions.regions:
+        updated_data_df = update_and_save_data(start_date, end_date, today_flag, region, local_save)
+    
+    return updated_data_df
+
+
+
+# -------------------------------------------------------
 if __name__ == "__main__":
     # Set up argument parsing
     parser = argparse.ArgumentParser(
@@ -178,6 +208,7 @@ if __name__ == "__main__":
     update_and_save_data(
         args.start_date, args.end_date, args.today, args.region, args.local_save
     )
+    
 
 
 # python data_downloader.py --start_date 05-10-2024 --end_date 06-10-2024 --region new_york
