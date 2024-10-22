@@ -1,10 +1,11 @@
 import argparse
 from datetime import datetime, timedelta
 from typing import Tuple, Dict, Any
-from data import *
-from dvc_manager import *
+from dataset.scripts.data import *
+from dataset.scripts.dvc_manager import *
 import os
 
+# helper functions 
 
 def get_yesterday_date_range() -> Tuple[str, str]:
     """
@@ -100,9 +101,10 @@ def update_and_save_data(
     end_date: datetime,
     today_flag: bool,
     region: str,
-    local_save: bool=False):
+    local_save: bool=False, 
+    dvc_save: bool=False):
     """
-    Main function to generate and save the dataset based on the given date range or the --today flag.
+    function to generate and save the dataset based on the given date range or the --today flag.
 
     Args:
         start_date (str): Start date for data collection.
@@ -131,7 +133,8 @@ def update_and_save_data(
     updated_data_df = merge_new_with_existing_data(latest_data_df, df_map_from_api)
     
     # push updated data back to dvc
-    dvc_manager_obj.upload_data_to_dvc(updated_data_df)
+    if dvc_save:
+        dvc_manager_obj.upload_data_to_dvc(updated_data_df)
 
     # saving local
     if local_save:
@@ -145,70 +148,78 @@ def update_and_save_data(
     return updated_data_df
 
 
-def update_and_save_data_all_region(start_date: datetime,
+def update_and_save_data_all_regions(start_date: datetime,
                                         end_date: datetime,
                                         today_flag: bool,
-                                        local_save: bool):
+                                        local_save: bool,
+                                        dvc_save: bool):
 
     data_regions = DataRegions()
 
     for region in data_regions.regions:
-        updated_data_df = update_and_save_data(start_date, end_date, today_flag, region, local_save)
+        updated_data_df = update_and_save_data(start_date, end_date, today_flag, region, local_save, dvc_save)
     
     return updated_data_df
+
+def download_from_dvc():
+    dvc_manager_obj = DVCManager("mlops-437516-b9a69694c897.json")
+    df = dvc_manager_obj.download_data_from_dvc()
+    return df
+
+def upload_to_dvc(df):
+    dvc_manager_obj = DVCManager("mlops-437516-b9a69694c897.json")
+    dvc_manager_obj.upload_data_to_dvc(df)
 
 
 
 # -------------------------------------------------------
-if __name__ == "__main__":
-    # Set up argument parsing
-    parser = argparse.ArgumentParser(
-        description="Collect and save dataset for a given date range or for yesterday using the --today flag.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+# if __name__ == "__main__":
+#     # Set up argument parsing
+#     parser = argparse.ArgumentParser(
+#         description="Collect and save dataset for a given date range or for yesterday using the --today flag.",
+#         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+#     )
 
-    parser.add_argument(
-        "--start_date",
-        type=validate_date,
-        help="Start date in the format dd-mm-yyyy. This is required unless the --today flag is set.",
-    )
+#     parser.add_argument(
+#         "--start_date",
+#         type=validate_date,
+#         help="Start date in the format dd-mm-yyyy. This is required unless the --today flag is set.",
+#     )
 
-    parser.add_argument(
-        "--end_date",
-        type=validate_date,
-        help="End date in the format dd-mm-yyyy. This is required unless the --today flag is set.",
-    )
+#     parser.add_argument(
+#         "--end_date",
+#         type=validate_date,
+#         help="End date in the format dd-mm-yyyy. This is required unless the --today flag is set.",
+#     )
 
-    parser.add_argument(
-        "--today",
-        action="store_true",
-        help="If provided, fetches the data for yesterday and today, overriding any provided start and end dates.",
-    )
+#     parser.add_argument(
+#         "--today",
+#         action="store_true",
+#         help="If provided, fetches the data for yesterday and today, overriding any provided start and end dates.",
+#     )
 
-    parser.add_argument(
-        "--region", type=str, required=True, help="The region for which we need data."
-    )
+#     parser.add_argument(
+#         "--region", type=str, required=True, help="The region for which we need data."
+#     )
 
-    parser.add_argument(
-        "--local_save", action="store_true", help="If provided, saves in csv."
-    )
+#     parser.add_argument(
+#         "--local_save", action="store_true", help="If provided, saves in csv."
+#     )
 
-    args = parser.parse_args()
+#     args = parser.parse_args()
 
-    # Handle the case when 'today' flag is not given but start_date and end_date are missing
-    if args.today:
-        start_date, end_date = None, None  # These will be set in the main function
-    else:
-        if not args.start_date or not args.end_date:
-            parser.error(
-                "You must provide both --start_date and --end_date unless the --today flag is set."
-            )
+#     # Handle the case when 'today' flag is not given but start_date and end_date are missing
+#     if args.today:
+#         start_date, end_date = None, None  # These will be set in the main function
+#     else:
+#         if not args.start_date or not args.end_date:
+#             parser.error(
+#                 "You must provide both --start_date and --end_date unless the --today flag is set."
+#             )
 
-    # Run the main function with parsed arguments
-    update_and_save_data(
-        args.start_date, args.end_date, args.today, args.region, args.local_save
-    )
+#     # Run the main function with parsed arguments
+#     update_and_save_data(
+#         args.start_date, args.end_date, args.today, args.region, args.local_save
+#     )
     
-
-
 # python data_downloader.py --start_date 05-10-2024 --end_date 06-10-2024 --region new_york

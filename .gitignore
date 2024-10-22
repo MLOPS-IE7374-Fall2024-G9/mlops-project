@@ -5,4 +5,4 @@ mlops_env
 /__pycache__
 mlops-437516-b9a69694c897.json
 .env
-
+/.pytest_cache
