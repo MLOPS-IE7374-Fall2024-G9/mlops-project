@@ -46,15 +46,15 @@ def email_notify_failure(context):
     )
     success_email.execute(context=context)
 
-send_email = EmailOperator(
-    task_id='send_email',
-    to='keshri.r@northeastern.edu',    # Email address of the recipient
-    subject='Notification from Airflow',
-    html_content='<p>This is a notification email sent from Airflow.</p>',
-    dag=data_dag,
-    on_failure_callback=email_notify_failure,
-    on_success_callback=email_notify_success
-)
+# send_email = EmailOperator(
+#     task_id='send_email',
+#     to='keshri.r@northeastern.edu',    # Email address of the recipient
+#     subject='Notification from Airflow',
+#     html_content='<p>This is a notification email sent from Airflow.</p>',
+#     dag=data_dag,
+#     on_failure_callback=email_notify_failure,
+#     on_success_callback=email_notify_success
+# )
 
 # ------------------------------------------------------------------------------------------------
 # Python operators
