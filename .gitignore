@@ -1,8 +1,0 @@
-.gitignore
-*.csv
-mlops_env
-.DS_Store
-/__pycache__
-mlops-437516-b9a69694c897.json
-.env
-/.pytest_cache

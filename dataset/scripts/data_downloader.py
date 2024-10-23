@@ -19,6 +19,18 @@ def get_yesterday_date_range() -> Tuple[str, str]:
     yesterday = today - timedelta(days=1)
     return yesterday.strftime("%d-%m-%Y"), today.strftime("%d-%m-%Y")
 
+def merge_new_with_existing_data(latest_data_df, df_map):
+    # if latest data in dvc exists, combine the dvc + new data
+    print("Merging data")
+    if latest_data_df is not None:
+        df_combined = pd.concat(df_map.values(), ignore_index=True)
+        df_combined.sort_values(by="datetime", inplace=True)
+
+        updated_data_df = pd.concat([latest_data_df, df_combined], ignore_index=True)
+    else:
+        updated_data_df = pd.concat(df_map.values(), ignore_index=True)
+
+    return updated_data_df
 
 def validate_date(date_text: str) -> datetime:
     """
@@ -73,29 +85,16 @@ def get_new_data(data_collector_obj, data_regions, start_date, end_date, region,
     start_date_str, end_date_str = get_start_end_str(start_date, end_date, today_flag)
 
     # Generate new data
-    df_map = data_collector_obj.generate_dataset(
-        data_zones, start_date_str, end_date_str
-    )
+    df_map = data_collector_obj.generate_dataset(data_zones, start_date_str, end_date_str)
 
     # Check if data is fetched
     first_df = next(iter(df_map.values()))  # Get the first DataFrame from the map
     if first_df.empty:
-        raise Exception("This region has monthly data updates and not daily")
-
-    return df_map
-
-def merge_new_with_existing_data(latest_data_df, df_map):
-    # if latest data in dvc exists, combine the dvc + new data
-    print("Merging data")
-    if latest_data_df is not None:
-        df_combined = pd.concat(df_map.values(), ignore_index=True)
-        df_combined.sort_values(by="datetime", inplace=True)
-
-        updated_data_df = pd.concat([latest_data_df, df_combined], ignore_index=True)
+        print("This region has monthly data updates and not daily, skipping")
+        return None
     else:
-        updated_data_df = pd.concat(df_map.values(), ignore_index=True)
+        return df_map
 
-    return updated_data_df
 
 def update_and_save_data(
     start_date: datetime,
@@ -129,6 +128,8 @@ def update_and_save_data(
     
     # get new data from api 
     df_map_from_api = get_new_data(data_collector_obj, data_regions, start_date, end_date, region, today_flag)
+    if df_map_from_api is None:
+        return pd.DataFrame()
 
     # merge api and dvc data
     updated_data_df = merge_new_with_existing_data(latest_data_df, df_map_from_api)
@@ -156,11 +157,12 @@ def update_and_save_data_all_regions(start_date: datetime,
                                         dvc_save: bool):
 
     data_regions = DataRegions()
-
+    final_df = pd.DataFrame()
     for region in data_regions.regions:
-        updated_data_df = update_and_save_data(start_date, end_date, today_flag, region, local_save, dvc_save)
-    
-    return updated_data_df
+        temp_df = update_and_save_data(start_date, end_date, today_flag, region, local_save, dvc_save)
+        final_df = pd.concat([final_df, temp_df])
+
+    return final_df
 
 def download_from_dvc():
     dvc_manager_obj = DVCManager("mlops-437516-b9a69694c897.json")

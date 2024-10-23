@@ -2,7 +2,7 @@ import os
 import requests
 import pandas as pd
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from dotenv import load_dotenv
 
@@ -300,3 +300,34 @@ class DataCollector:
         logger.info(f"Saving dataset to {path}.")
         df.to_csv(path, index=False)
         logger.info(f"Dataset saved to {path}.")
+
+    def get_yesterday_dates(self) -> tuple[str, str]:
+        """
+        Returns the date range for yesterday.
+        Start as yesterday, end as today.
+
+        Returns:
+            Tuple[str, str]: Start date (yesterday) and end date (today) in 'dd-mm-yyyy' format.
+        """
+        today = datetime.now()
+        yesterday = today - timedelta(days=1)
+        return yesterday.strftime("%d-%m-%Y"), today.strftime("%d-%m-%Y")
+
+    def get_data_from_api(self, regions, start_date, end_date, today_flag):
+        combined_df = pd.DataFrame()
+        for region in regions:
+            data_zones = regions[region]
+            df_map = self.generate_dataset(data_zones, start_date, end_date)
+    
+            first_df = next(iter(df_map.values()))  # Get the first DataFrame from the map
+            if first_df.empty:
+                print("This region has monthly data updates and not daily, skipping")
+                continue
+            else:
+                api_df = pd.concat(df_map.values(), ignore_index=True)
+                api_df.sort_values(by="datetime", inplace=True)
+        
+            combined_df = pd.concat([combined_df, api_df], ignore_index=True)
+        
+        return combined_df
+    

@@ -14,7 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 class DVCManager:
-    def __init__(self, json_credential_path):
+    def __init__(self, json_credential_path="mlops-437516-b9a69694c897.json"):
+        ### TEMP - do it using docker
+        subprocess.run(["apt-get", "update"], check=True)
+        subprocess.run(["apt-get","install", "-y", "git"], check=True)
+        subprocess.run(["git", "init"], check=True)
+        ###
+
         # Get the directory of the current script
         self.script_dir = os.path.dirname(__file__)  
 
@@ -24,12 +30,6 @@ class DVCManager:
         # Configure dvc
         self.configure_dvc_credentials(json_credential_path)
         self.filename = "demand_weather_data.csv"
-
-        ### TEMP - do it using docker
-        subprocess.run(["apt-get", "update"], check=True)
-        subprocess.run(["apt-get","install", "-y", "git"], check=True)
-        subprocess.run(["git", "init"], check=True)
-        ###
 
     def configure_dvc_credentials(self, json_credential_path):
         """
@@ -71,12 +71,12 @@ class DVCManager:
             logger.info(f"Saving DataFrame to CSV file at {temp_file_path}.")
             df.to_csv(temp_file_path, index=False)
 
-            # Change to the dataset/data directory
-            os.chdir(self.data_dir)
+            # # Change to the dataset/data directory
+            # os.chdir(self.data_dir)
 
             # Add the file to DVC
             logger.info(f"Adding {self.filename} to DVC.")
-            subprocess.run(["dvc", "add", self.filename], check=True)
+            subprocess.run(["dvc", "add", temp_file_path], check=True)
 
             # Push the data to the DVC remote without committing to Git
             logger.info("Pushing dataset to DVC remote (without Git commit).")
@@ -108,7 +108,7 @@ class DVCManager:
         try:
             # Pull the latest dataset from DVC
             logger.info("Pulling latest dataset from DVC.")
-            subprocess.run(["dvc", "pull"], check=True)
+            subprocess.run(["dvc", "pull", "--force"], check=True)
 
             # Load the dataset into a DataFrame
             logger.info(f"Loading dataset from {self.data_dir}.")
@@ -129,6 +129,7 @@ class DVCManager:
 
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to execute DVC command: {e}")
+            return None
         except Exception as e:
             logger.error(f"An error occurred: {e}")
             return None

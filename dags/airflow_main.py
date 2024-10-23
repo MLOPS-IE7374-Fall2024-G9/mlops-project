@@ -60,6 +60,14 @@ def email_notify_failure(context):
 # Python operators
 # --------------------------
 # Data API Operators
+# function to pull data from dvc, returns json
+get_data_from_dvc_task = PythonOperator(
+    task_id = 'get_data_from_dvc_task',
+    python_callable=get_data_from_dvc,
+    provide_context=True,
+    dag = data_dag
+)
+
 # function returns start and end date (yesterday's date)
 get_start_end_date_task = PythonOperator(
     task_id = 'get_start_end_date_task',
@@ -68,7 +76,7 @@ get_start_end_date_task = PythonOperator(
     dag = data_dag
 )
 
-# function to get new data, returns the df
+# function to get new data, returns the json
 get_updated_data_from_api_task = PythonOperator(
     task_id = 'get_updated_data_from_api_task',
     python_callable=get_updated_data_from_api,
@@ -77,13 +85,21 @@ get_updated_data_from_api_task = PythonOperator(
     dag = data_dag
 )
 
+# function to merge dvc data with newly pulled data from api
+merge_data_task = PythonOperator(
+    task_id = 'merge_data_task',
+    python_callable=merge_data,
+    provide_context=True,
+    op_args=[get_updated_data_from_api_task.output, get_data_from_dvc_task.output],
+    dag = data_dag
+)
 
 # function to update data to dvc
 update_data_to_dvc_task = PythonOperator(
     task_id = 'update_data_to_dvc_task',
     python_callable=update_data_to_dvc,
     provide_context=True,
-    op_args=[get_updated_data_from_api_task.output],
+    op_args=[merge_data_task.output],
     dag = data_dag
 )
 # --------------------------
@@ -95,7 +111,7 @@ update_data_to_dvc_task = PythonOperator(
 # Data DAG Pipelines
 
 # 1) data api pipeline
-get_start_end_date_task >> get_updated_data_from_api_task >> update_data_to_dvc_task
+get_data_from_dvc_task >> get_start_end_date_task >> get_updated_data_from_api_task >> merge_data_task >> update_data_to_dvc_task
 
 # 2) data preprocessing pipeline
 
