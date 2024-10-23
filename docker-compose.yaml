@@ -233,6 +233,6 @@ services:
       - bash
       - -c
       - airflow
-
+    
 volumes:
   postgres-db-volume:
