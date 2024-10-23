@@ -72,14 +72,17 @@ get_start_end_date_task = PythonOperator(
 get_updated_data_from_api_task = PythonOperator(
     task_id = 'get_updated_data_from_api_task',
     python_callable=get_updated_data_from_api,
+    provide_context=True,
     op_args=[get_start_end_date_task.output],
     dag = data_dag
 )
+
 
 # function to update data to dvc
 update_data_to_dvc_task = PythonOperator(
     task_id = 'update_data_to_dvc_task',
     python_callable=update_data_to_dvc,
+    provide_context=True,
     op_args=[get_updated_data_from_api_task.output],
     dag = data_dag
 )
@@ -92,7 +95,7 @@ update_data_to_dvc_task = PythonOperator(
 # Data DAG Pipelines
 
 # 1) data api pipeline
-get_start_end_date_task >> get_updated_data_from_api_task >> update_data_to_dvc_task >> send_email
+get_start_end_date_task >> get_updated_data_from_api_task >> update_data_to_dvc_task
 
 # 2) data preprocessing pipeline
 

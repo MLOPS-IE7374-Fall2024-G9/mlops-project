@@ -15,15 +15,21 @@ logger = logging.getLogger(__name__)
 
 class DVCManager:
     def __init__(self, json_credential_path):
-        # Set the data directory relative to the current script's location
-        script_dir = os.path.dirname(
-            __file__
-        )  # Get the directory of the current script
-        self.data_dir = os.path.join(
-            script_dir, "../data"
-        )  # Relative path to the 'data' folder
+        # Get the directory of the current script
+        self.script_dir = os.path.dirname(__file__)  
+
+        # Relative path to the 'data' folder        
+        self.data_dir = os.path.join(self.script_dir, "../data")
+
+        # Configure dvc
         self.configure_dvc_credentials(json_credential_path)
         self.filename = "demand_weather_data.csv"
+
+        ### TEMP - do it using docker
+        subprocess.run(["apt-get", "update"], check=True)
+        subprocess.run(["apt-get","install", "-y", "git"], check=True)
+        subprocess.run(["git", "init"], check=True)
+        ###
 
     def configure_dvc_credentials(self, json_credential_path):
         """
@@ -31,9 +37,8 @@ class DVCManager:
         """
         try:
             # Run the dvc remote modify command
-            logger.info(
-                f"Configuring DVC to use credentials from {json_credential_path}."
-            )
+            logger.info(f"Configuring DVC to use credentials from {json_credential_path}.")
+            
             subprocess.run(
                 [
                     "dvc",
@@ -44,8 +49,9 @@ class DVCManager:
                     "credentialpath",
                     json_credential_path,
                 ],
-                check=True,
+                check=True
             )
+
             logger.info("DVC remote configuration successful.")
 
         except subprocess.CalledProcessError as e:

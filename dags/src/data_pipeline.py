@@ -52,11 +52,12 @@ def get_updated_data_from_api(dates: tuple[str, str]) -> pd.DataFrame:
         local_save=0, 
         dvc_save=0
     )
-    
-    return updated_data
+
+    json_data = updated_data.to_json(orient='records', lines=False)
+    return json_data
 
 
-def update_data_to_dvc(df: pd.DataFrame) -> None:
+def update_data_to_dvc(df_json: dict) -> None:
     """
     Update the given DataFrame to DVC (Data Version Control).
 
@@ -69,4 +70,5 @@ def update_data_to_dvc(df: pd.DataFrame) -> None:
     Returns:
     None
     """
+    df = pd.read_json(df_json)
     upload_to_dvc(df)

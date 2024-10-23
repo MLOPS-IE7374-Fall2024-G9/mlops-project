@@ -86,6 +86,7 @@ def get_new_data(data_collector_obj, data_regions, start_date, end_date, region,
 
 def merge_new_with_existing_data(latest_data_df, df_map):
     # if latest data in dvc exists, combine the dvc + new data
+    print("Merging data")
     if latest_data_df is not None:
         df_combined = pd.concat(df_map.values(), ignore_index=True)
         df_combined.sort_values(by="datetime", inplace=True)
@@ -124,7 +125,7 @@ def update_and_save_data(
         )
 
     # get latest data from dvc
-    latest_data_df = dvc_manager_obj.download_data_from_dvc(save_local=1)
+    latest_data_df = dvc_manager_obj.download_data_from_dvc(save_local=0)
     
     # get new data from api 
     df_map_from_api = get_new_data(data_collector_obj, data_regions, start_date, end_date, region, today_flag)
