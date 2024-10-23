@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/amoghagadde/Desktop/Amogha/Northeastern/SEM_3/ML_Ops/Project/mlops-project/experiments/mlruns/980561986711398950/08f03d471fd34d5b94b28b64429cc424/artifacts
+end_time: 1729467123666
+entry_point_name: ''
+experiment_id: '980561986711398950'
+lifecycle_stage: active
+run_id: 08f03d471fd34d5b94b28b64429cc424
+run_name: Linear Regression
+run_uuid: 08f03d471fd34d5b94b28b64429cc424
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1729467095997
+status: 3
+tags: []
+user_id: amoghagadde
