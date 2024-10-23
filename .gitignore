@@ -1,12 +1,28 @@
-# .gitignore
-trial_data.csv
-dataset/merged_zones_weather_demand_data_2019.csv
-dataset/merged_zones_weather_demand_data_2020to2022.csv
-dataset/merged_zones_weather_demand_data_2023.csv
-mlops_env
+# Ignore CSV files
+*.csv
+
+# Ignore virtual environment directories and environment files
+mlops_env/
+.venv/
+.env
+
+# Ignore system-specific files
 .DS_Store
-/dataset/data/all_merged_zones_weather_demand_data.csv
-/dataset/data/demand_weather_data.csv
-/dataset/data/demand_weather_data.csv.dvc
-/experiments/2011-2021_reduced.csv
-/experiments/all_merged_zones_weather_demand_data.csv
+Thumbs.db
+
+# Ignore Python cache and compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore specific credentials or configuration files
+mlops-437516-b9a69694c897.json
+
+# Ignore pytest cache directories
+.pytest_cache/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore log files
+*.log
