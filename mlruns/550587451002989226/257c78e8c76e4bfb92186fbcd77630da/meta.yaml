@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/550587451002989226/257c78e8c76e4bfb92186fbcd77630da/artifacts
+end_time: 1729695862395
+entry_point_name: ''
+experiment_id: '550587451002989226'
+lifecycle_stage: active
+run_id: 257c78e8c76e4bfb92186fbcd77630da
+run_name: Linear Regression
+run_uuid: 257c78e8c76e4bfb92186fbcd77630da
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1729695858637
+status: 3
+tags: []
+user_id: amoghagadde

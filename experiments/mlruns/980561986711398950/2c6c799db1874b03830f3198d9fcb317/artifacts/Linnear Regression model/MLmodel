@@ -1,0 +1,20 @@
+artifact_path: Linnear Regression model
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.11.5
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.5.2
+mlflow_version: 2.17.0
+model_size_bytes: 880
+model_uuid: 9ccb502dfb2e4512857d73e6fa925e9d
+run_id: 2c6c799db1874b03830f3198d9fcb317
+utc_time_created: '2024-10-23 14:20:11.667147'
