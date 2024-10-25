@@ -16,7 +16,10 @@ on:
       - dev
     paths:
       - 'dags/**'
-      - 'airflow-config/docker-compose.yaml'
+      - 'airflow-config/**'
+      - 'dataset/**'
+      - 'model/**'
+
 
 # Setting the environement for the GCP cloud engine that it is gonna talk to 
 env:
