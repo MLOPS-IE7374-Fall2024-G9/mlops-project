@@ -1,5 +1,1 @@
-requests==2.31.0
-pandas==2.1.1
-python-dateutil==2.8.2
-python-dotenv==1.0.0
-dvc[gs]==3.25.0
+
