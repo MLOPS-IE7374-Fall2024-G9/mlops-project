@@ -31,7 +31,7 @@ jobs:
       - name: Copy secrets hash file from remote server
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -o StrictHostKeyChecking=no -i private_key ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }}:/home/aakashmahesha/secrets_hash.txt ./remote_secrets_hash.txt || echo "No existing hash file found on remote server."
+          scp -o StrictHostKeyChecking=no -i private_key ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }}:/home/${{ secrets.AIRFLOW_VM_USERNAME }}/secrets_hash.txt ./remote_secrets_hash.txt || echo "No existing hash file found on remote server."
 
       - name: Compare secret hashes
         id: compare_hash
@@ -44,12 +44,20 @@ jobs:
             echo "::set-output name=secrets_changed::true"
           fi
 
-      - name: Create and Update .env File (if secrets changed)
+      - name: Create .env File Locally (if secrets changed)
+        if: steps.compare_hash.outputs.secrets_changed == 'true'
+        run: |
+          echo "DEMAND_API_KEY=${{ secrets.DEMAND_API_KEY }}" > .env
+          echo "WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}" >> .env
+
+      - name: Upload .env File to VM (if secrets changed)
         if: steps.compare_hash.outputs.secrets_changed == 'true'
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
-            echo "DEMAND_API_KEY=${{ secrets.DEMAND_API_KEY }}" > /home/aakashmahesha/.env
-            echo "WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}" >> /home/aakashmahesha/.env
-            mv ./current_secrets_hash.txt /home/aakashmahesha/secrets_hash.txt  # Update the remote hash
-          EOF
+          scp -o StrictHostKeyChecking=no -i private_key .env ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }}:/home/${{ secrets.AIRFLOW_VM_USERNAME }}/.env
+
+      - name: Update Remote Hash File (if secrets changed)
+        if: steps.compare_hash.outputs.secrets_changed == 'true'
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          scp -o StrictHostKeyChecking=no -i private_key current_secrets_hash.txt ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }}:/home/${{ secrets.AIRFLOW_VM_USERNAME }}/secrets_hash.txt
