@@ -7,13 +7,13 @@ name: Airflow Server and Script Changes
 on:
   push:
     branches:
-      # - aakash_dev
+      - aakash_dev
       # - rajat_dev
       # - amogha_dev
       # - jahnavi_dev
       # - nikhil_dev
       # - samanvya_dev
-      - dev
+      # - dev
     paths:
       - 'dags/**'
       - 'airflow-config/**'
@@ -62,6 +62,7 @@ jobs:
             hostname
             uptime
             echo "######################################################"
+            touch __init__.py
           EOF
 
   # Job to check specific directories have been updated or not.
