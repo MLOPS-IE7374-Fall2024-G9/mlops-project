@@ -198,11 +198,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
 
       - name: Overwrite The Dag folder
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -r -o StrictHostKeyChecking=no -i private_key ./dags/${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/
+          scp -r -o StrictHostKeyChecking=no ./dags/${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/
 
   airflow_model_update:
     runs-on : ubuntu-latest
