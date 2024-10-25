@@ -11,3 +11,5 @@ RUN pip install --no-cache-dir -r /requirements.txt
 
 # Switch back to the airflow user to run the server
 USER root
+
+# testing git workflow for dag folder update along with ariflow-compsoe file test 3
