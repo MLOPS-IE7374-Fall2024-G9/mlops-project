@@ -1,3 +1,9 @@
+import os
+import sys
+
+# Add the path to the 'dataset' directory
+sys.path.insert(0, os.path.abspath('/opt/airflow/dataset'))
+
 from dataset.scripts.dvc_manager import *
 from dataset.scripts.data import *
 

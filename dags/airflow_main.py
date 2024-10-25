@@ -1,9 +1,18 @@
+import os
+import sys
+
+# Add the path to the 'dataset' directory
+sys.path.insert(0, os.path.abspath('/opt/airflow/dataset'))
+
+# Add the path to the 'src' directory inside 'dags'
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
+
+
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.email_operator import EmailOperator
 from datetime import datetime, timedelta
-
-from dags.src.data_pipeline import *
+from src.data_pipeline import *
 
 # default args
 default_args = {
