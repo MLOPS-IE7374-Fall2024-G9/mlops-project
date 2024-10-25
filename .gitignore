@@ -2,7 +2,7 @@
 *.csv
 
 # Ignore virtual environment directories and environment files
-mlops_env/
+mlopsenv/
 .venv/
 .env
 
