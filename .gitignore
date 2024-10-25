@@ -3,6 +3,7 @@
 
 # Ignore virtual environment directories and environment files
 mlopsenv/
+mlops_env/
 .venv/
 .env
 
