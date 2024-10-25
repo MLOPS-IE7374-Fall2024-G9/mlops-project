@@ -30,5 +30,4 @@ jobs:
 
       - name: Upload .env File to VM
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -o StrictHostKeyChecking=no -i private_key .env ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }}:/home/${{ secrets.AIRFLOW_VM_USERNAME }}/.env
+          scp -o StrictHostKeyChecking=no .env ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }}:/home/${{ secrets.AIRFLOW_VM_USERNAME }}/.env
