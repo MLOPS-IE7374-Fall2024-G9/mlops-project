@@ -11,8 +11,8 @@ def upload_energy_demand(request):
     url = f"https://api.eia.gov/v2/electricity/rto/region-sub-ba-data/data/?api_key={api_key}&frequency=hourly&data[0]=value&start=2024-08-28T00&end=2024-09-29T00&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000"
     
     # Define your GCS bucket name and file path
-    bucket_name = 'mlops-project-grp-9' 
-    destination_blob_name = 'Electricity_demand/energy_demand.csv'
+    bucket_name = 'mlops-project-grp-9' #change to the bucket name you created
+    destination_blob_name = 'Electricity_demand/energy_demand.csv' 
 
     # Make the GET request to the API
     response = requests.get(url)
