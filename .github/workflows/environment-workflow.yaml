@@ -1,4 +1,4 @@
-name: Check and Update Secrets
+name: Update .env with Secrets
 
 # Define the triggers
 on:
@@ -7,14 +7,14 @@ on:
 
   # Cron trigger for automatic monthly execution (e.g., 1st of every month at midnight UTC)
   schedule:
-    - cron: '0 0 1 * *'  # This cron expression runs the job on the 1st of every month
+    - cron: '0 0 1 * *'  # Runs on the 1st of every month
 
 env:
   DEMAND_API_KEY: ${{ secrets.DEMAND_API_KEY }}
   WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
 
 jobs:
-  check_and_update_env:
+  update_env_file:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,41 +23,12 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
 
-      - name: Calculate current secrets hash
-        id: hash_secrets
-        run: |
-          echo "${{ secrets.DEMAND_API_KEY }}${{ secrets.WEATHER_API_KEY }}" | sha256sum > current_secrets_hash.txt
-
-      - name: Copy secrets hash file from remote server
-        run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -o StrictHostKeyChecking=no -i private_key ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }}:/home/${{ secrets.AIRFLOW_VM_USERNAME }}/secrets_hash.txt ./remote_secrets_hash.txt || echo "No existing hash file found on remote server."
-
-      - name: Compare secret hashes
-        id: compare_hash
-        run: |
-          if cmp -s current_secrets_hash.txt remote_secrets_hash.txt; then
-            echo "Secrets have not changed."
-            echo "::set-output name=secrets_changed::false"
-          else
-            echo "Secrets have changed."
-            echo "::set-output name=secrets_changed::true"
-          fi
-
-      - name: Create .env File Locally (if secrets changed)
-        if: steps.compare_hash.outputs.secrets_changed == 'true'
+      - name: Create .env File Locally
         run: |
           echo "DEMAND_API_KEY=${{ secrets.DEMAND_API_KEY }}" > .env
           echo "WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}" >> .env
 
-      - name: Upload .env File to VM (if secrets changed)
-        if: steps.compare_hash.outputs.secrets_changed == 'true'
+      - name: Upload .env File to VM
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
           scp -o StrictHostKeyChecking=no -i private_key .env ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }}:/home/${{ secrets.AIRFLOW_VM_USERNAME }}/.env
-
-      - name: Update Remote Hash File (if secrets changed)
-        if: steps.compare_hash.outputs.secrets_changed == 'true'
-        run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -o StrictHostKeyChecking=no -i private_key current_secrets_hash.txt ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }}:/home/${{ secrets.AIRFLOW_VM_USERNAME }}/secrets_hash.txt
