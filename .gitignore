@@ -9,6 +9,8 @@ mlops_env/
 # Ignore system-specific files
 .DS_Store
 Thumbs.db
+docker-compose-local.yaml
+
 
 # Ignore Python cache and compiled Python files
 __pycache__/
