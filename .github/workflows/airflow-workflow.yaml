@@ -162,7 +162,7 @@ jobs:
       - changed_files_and_folder_debug
       - airflow_dag_scirpts_update
       - airflow_dataset_update
-      - ariflow_model_update
+      - airflow_model_update
 
     if:  ${{needs.check_changed_directories.outputs.airflow_config_changed == 'true'}}
 
