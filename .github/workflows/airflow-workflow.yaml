@@ -160,6 +160,9 @@ jobs:
       - add_ssh_key_job
       - check_changed_directories
       - changed_files_and_folder_debug
+      - airflow_dag_scirpts_update
+      - airflow_dataset_update
+      - ariflow_model_update
 
     if:  ${{needs.check_changed_directories.outputs.airflow_config_changed == 'true'}}
 
@@ -168,22 +171,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
+
       - name: Cleanup all docker processes
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
             sudo docker compose down --volumes --rmi all
             
           EOF
       - name: Overwrite the airflow-config folder onto the vm
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -o StrictHostKeyChecking=no -i private_key -r ./airflow-config/* ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}
+          scp -o StrictHostKeyChecking=no -r ./airflow-config/* ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}
 
       - name: Docker Compose Up Commands
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
             sudo docker compose up --build -d  # Start the containers in detached mode
           EOF
 
@@ -228,8 +233,7 @@ jobs:
 
       - name: Overwrite The Model Folder
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -r -o StrictHostKeyChecking=no -i private_key ./model ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/
+          scp -r -o StrictHostKeyChecking=no ./model ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/
 
   airflow_dataset_update:
     runs-on : ubuntu-latest
@@ -251,5 +255,4 @@ jobs:
 
       - name: Overwrite The Dataset Folder
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -r -o StrictHostKeyChecking=no -i private_key ./dataset ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/
+          scp -r -o StrictHostKeyChecking=no ./dataset ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/
