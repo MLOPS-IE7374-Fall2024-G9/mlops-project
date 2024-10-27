@@ -1,0 +1,33 @@
+artifact_path: SVR Regression - max_iter - 10000 model
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.11.5
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.5.2
+mlflow_version: 2.17.0
+model_size_bytes: 854
+model_uuid: 1f9c3370f65a40d680d6594fa6cffa21
+run_id: 560bd335f8724c199a345547d140bc38
+signature:
+  inputs: '[{"type": "double", "name": "HeatIndexF", "required": true}, {"type": "double",
+    "name": "tempF", "required": true}, {"type": "double", "name": "WindChillF", "required":
+    true}, {"type": "double", "name": "windspeedMiles", "required": true}, {"type":
+    "double", "name": "FeelsLikeF", "required": true}, {"type": "double", "name":
+    "precipMM", "required": true}, {"type": "double", "name": "humidity", "required":
+    true}, {"type": "double", "name": "visibilityMiles", "required": true}, {"type":
+    "double", "name": "pressure", "required": true}, {"type": "double", "name": "cloudcover",
+    "required": true}, {"type": "double", "name": "uvIndex", "required": true}, {"type":
+    "long", "name": "subba-name", "required": true}, {"type": "long", "name": "zone",
+    "required": true}, {"type": "integer", "name": "month", "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float64", "shape": [-1]}}]'
+  params: null
+utc_time_created: '2024-10-25 02:15:48.951635'
