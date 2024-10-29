@@ -185,7 +185,7 @@ jobs:
       - name: Overwrite the airflow-config folder onto the vm
         run: |
           scp -o StrictHostKeyChecking=no -r ./airflow-config/* ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}
-
+          scp -o StrickHostKeyschecing=no -r ./reqiuirement_airflow.txt  ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/requirements.txt
       - name: Docker Compose Up Commands
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
