@@ -2,18 +2,28 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 import datetime
+import subprocess
 
 # Function to Save Data to CSV and Track with DVC, Including Date in Filename
 def save_data(df, step_name="processed_data"):
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
     filename = f"{step_name}_{date_str}.csv"
-    df.to_csv(filename, index=False)
-    !dvc add {filename}
-    !git add {filename}.dvc
-    !git commit -m "Add {step_name} with DVC tracking"
-    !git push origin main
-    !dvc push
-    print(f"Data saved as {filename} and pushed to DVC.")
+    
+    try:
+        # Save DataFrame to CSV
+        df.to_csv(filename, index=False)
+        print(f"Data saved locally as {filename}.")
+
+        # DVC tracking
+        subprocess.run(["dvc", "add", filename], check=True)
+        subprocess.run(["git", "add", f"{filename}.dvc"], check=True)
+        subprocess.run(["git", "commit", "-m", f"Add {step_name} with DVC tracking"], check=True)
+        subprocess.run(["git", "push", "origin", "main"], check=True)
+        subprocess.run(["dvc", "push"], check=True)
+
+        print(f"Data saved as {filename} and pushed to DVC.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
     return filename
 
 # Step 1: Data Cleaning
