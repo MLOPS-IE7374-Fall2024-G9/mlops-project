@@ -1,0 +1,33 @@
+artifact_path: Lasso Regression model
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.11.5
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.5.2
+mlflow_version: 2.17.0
+model_size_bytes: 883
+model_uuid: e057e04c64284fac86aa410769aa992c
+run_id: 8dab11a22fdf4574b41ffafea60a0f9e
+signature:
+  inputs: '[{"type": "double", "name": "HeatIndexF", "required": true}, {"type": "double",
+    "name": "tempF", "required": true}, {"type": "double", "name": "WindChillF", "required":
+    true}, {"type": "double", "name": "windspeedMiles", "required": true}, {"type":
+    "double", "name": "FeelsLikeF", "required": true}, {"type": "double", "name":
+    "precipMM", "required": true}, {"type": "double", "name": "humidity", "required":
+    true}, {"type": "double", "name": "visibilityMiles", "required": true}, {"type":
+    "double", "name": "pressure", "required": true}, {"type": "double", "name": "cloudcover",
+    "required": true}, {"type": "double", "name": "uvIndex", "required": true}, {"type":
+    "long", "name": "subba-name", "required": true}, {"type": "long", "name": "zone",
+    "required": true}, {"type": "integer", "name": "month", "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float64", "shape": [-1]}}]'
+  params: null
+utc_time_created: '2024-10-24 00:49:12.409219'
