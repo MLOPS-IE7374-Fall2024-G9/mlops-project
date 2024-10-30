@@ -84,7 +84,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/.dvc:/opt/airflow/.dvc
     - ${AIRFLOW_PROJ_DIR:-.}/model:/opt/airflow/dags/src/model
     - ${AIRFLOW_PROJ_DIR:-.}/__init__.py:/opt/airflow/__init__.py
-    - ${AIRFLOW_PROJ_DIR:-.}/.env:/opt/airflow/.env
+    - ${AIRFLOW_PROJ_DIR:-.}/dataset/.env:/opt/airflow/dataset/.env
     - ${AIRFLOW_PROJ_DIR:-.}/mlops-437516-b9a69694c897.json:/opt/airflow/mlops-437516-b9a69694c897.json
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
