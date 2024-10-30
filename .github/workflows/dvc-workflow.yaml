@@ -42,15 +42,13 @@ jobs:
       # Step 4: Transfer the JSON file to the remote server
       - name: Transfer JSON File to Remote Server
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          scp -o StrictHostKeyChecking=no -i private_key ./mlops-437516-b9a69694c897.json ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }}:/home/aakashmahesha
+          scp -o StrictHostKeyChecking=no ./mlops-437516-b9a69694c897.json ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }}:/home/${{ secrets.AIRFLOW_VM_USERNAME }}
 
       # Step 5: Verify the JSON file exists on the remote server
       - name: Verify JSON File on Remote
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
-            if [ -f /home/aakashmahesha/mlops-437516-b9a69694c897.json ]; then
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+            if [ -f /home/${{ secrets.AIRFLOW_VM_USERNAME }}/mlops-437516-b9a69694c897.json ]; then
               echo "JSON file created and transferred successfully."
             else
               echo "Failed to create or transfer the JSON file."
