@@ -1,12 +1,11 @@
 import os
 import sys
 # testing git workflow for dag folder update along with ariflow-compsoe file test 3
-# Add the path to the 'dataset' directory
-sys.path.insert(0, os.path.abspath('/opt/airflow/dataset'))
+# # Add the path to the 'dataset' directory
+# sys.path.insert(0, os.path.abspath('/opt/airflow/dataset'))
 
-# Add the path to the 'src' directory inside 'dags'
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
-
+# # Add the path to the 'src' directory inside 'dags'
+# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
@@ -27,11 +26,15 @@ data_dag = DAG(
     "Data_Pipeline_Dag",
     default_args=default_args,
     description="Data Pipeline DAG init",
-    schedule_interval=None,  # Do not schedule automatically, can be triggered manually
+    schedule_interval=None,
     catchup=False,
     tags=['data_pipeline']
 )
 
+
+# ------------------------------------------------------------------------------------------------
+# variables
+delta_days = 7
 
 # ------------------------------------------------------------------------------------------------
 # Email operators
@@ -77,6 +80,16 @@ get_data_from_dvc_task = PythonOperator(
     dag = data_dag
 )
 
+
+# function returns start and end date for last "number of days"
+get_last_k_start_end_date_task = PythonOperator(
+    task_id = 'get_last_k_start_end_date_task',
+    python_callable=get_last_k_start_end_dates,
+    provide_context=True,
+    op_args=[delta_days],
+    dag = data_dag
+)
+
 # function returns start and end date (yesterday's date)
 get_start_end_date_task = PythonOperator(
     task_id = 'get_start_end_date_task',
@@ -85,16 +98,16 @@ get_start_end_date_task = PythonOperator(
     dag = data_dag
 )
 
-# function to get new data, returns the json
+# function to get new data, returns data json
 get_updated_data_from_api_task = PythonOperator(
     task_id = 'get_updated_data_from_api_task',
     python_callable=get_updated_data_from_api,
     provide_context=True,
-    op_args=[get_start_end_date_task.output],
+    op_args=[get_last_k_start_end_date_task.output],
     dag = data_dag
 )
 
-# function to merge dvc data with newly pulled data from api
+# function to merge dvc data with newly pulled data from api, returns data json
 merge_data_task = PythonOperator(
     task_id = 'merge_data_task',
     python_callable=merge_data,
@@ -103,12 +116,21 @@ merge_data_task = PythonOperator(
     dag = data_dag
 )
 
+# function to remove redundant rows, returns data json
+redundant_removal_task = PythonOperator(
+    task_id = 'redundant_removal_task',
+    python_callable=redundant_removal,
+    provide_context=True,
+    op_args=[merge_data_task.output],
+    dag = data_dag
+)
+
 # function to update data to dvc
 update_data_to_dvc_task = PythonOperator(
     task_id = 'update_data_to_dvc_task',
     python_callable=update_data_to_dvc,
     provide_context=True,
-    op_args=[merge_data_task.output],
+    op_args=[redundant_removal_task.output],
     dag = data_dag
 )
 # --------------------------
@@ -120,7 +142,7 @@ update_data_to_dvc_task = PythonOperator(
 # Data DAG Pipelines
 
 # 1) data api pipeline
-get_data_from_dvc_task >> get_start_end_date_task >> get_updated_data_from_api_task >> merge_data_task >> update_data_to_dvc_task
+get_last_k_start_end_date_task >> get_updated_data_from_api_task >> get_data_from_dvc_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task
 
 # 2) data preprocessing pipeline
 

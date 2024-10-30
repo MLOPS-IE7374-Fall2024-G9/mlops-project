@@ -12,6 +12,15 @@ def get_start_end_dates() -> tuple[str, str]:
     yesterday, today = data_obj.get_yesterday_dates()
     return yesterday, today
 
+def get_last_k_start_end_dates(days: int) -> tuple[str, str]:
+    data_obj = DataCollector()
+    _, today = data_obj.get_yesterday_dates()
+    
+    # Calculate the start date based on the specified number of days
+    start_date = (pd.to_datetime(today) - timedelta(days=days-1)).strftime('%d-%m-%Y')
+    
+    return start_date, today
+
 def get_data_from_dvc():
     dvc_manager_obj = DVCManager()
     df = dvc_manager_obj.download_data_from_dvc()
@@ -39,6 +48,16 @@ def merge_data(api_json, dvc_json):
         updated_data_df = api_df
 
     json_data = updated_data_df.to_json(orient='records', lines=False)
+    return json_data
+
+
+def redundant_removal(data_json):
+    data_df = pd.read_json(data_json)
+
+    # Remove duplicate rows based on the 'datetime' column
+    data_df = data_df.drop_duplicates(subset='datetime')
+    
+    json_data = data_df.to_json(orient='records', lines=False)
     return json_data
     
 def update_data_to_dvc(df_json: dict) -> None:
