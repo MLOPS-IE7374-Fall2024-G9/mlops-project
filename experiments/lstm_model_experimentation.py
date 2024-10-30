@@ -105,4 +105,4 @@ with mlflow.start_run(run_name = "LSTM") as run:
     mlflow.keras.log_model(lstm_model, "LSTM model", signature = signature_lstm)
     
     # Debugging: Confirm run status
-    print(f"Run {run.info.run_id} finished successfully!")
+    print(f"Run {run.info.run_id} finished successfully!") 
