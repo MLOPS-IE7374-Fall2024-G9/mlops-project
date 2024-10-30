@@ -160,9 +160,6 @@ jobs:
       - add_ssh_key_job
       - check_changed_directories
       - changed_files_and_folder_debug
-      - airflow_dag_scirpts_update
-      - airflow_dataset_update
-      - airflow_model_update
 
     if:  ${{needs.check_changed_directories.outputs.airflow_config_changed == 'true'}}
 
