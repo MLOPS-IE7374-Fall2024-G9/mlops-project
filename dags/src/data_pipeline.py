@@ -66,7 +66,7 @@ def get_data_from_dvc():
 def update_data_to_dvc(df_json: dict) -> None:
     dvc_manager_obj = DVCManager()
     df = pd.read_json(df_json)
-    dvc_manager_obj.upload_data_to_dvc(df)
+    dvc_manager_obj.upload_data_to_dvc(df, dvc_manager_obj.all_data_filename)
 
 # ----------------------------------------------------------
 # Data Schema

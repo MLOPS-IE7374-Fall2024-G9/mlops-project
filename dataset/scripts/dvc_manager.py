@@ -29,7 +29,8 @@ class DVCManager:
 
         # Configure dvc
         self.configure_dvc_credentials(json_credential_path)
-        self.filename = "demand_weather_data.csv"
+        self.all_data_filename = "demand_weather_data.csv"
+        self.processed_data_filename = "dmeand_weather_data_processed.csv"
 
     def configure_dvc_credentials(self, json_credential_path):
         """
@@ -57,7 +58,7 @@ class DVCManager:
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to configure DVC remote: {e}")
 
-    def upload_data_to_dvc(self, df):
+    def upload_data_to_dvc(self, df, file_name):
         """
         Save the DataFrame as a CSV file with a custom name, add it to DVC, and push it to the remote.
         """
@@ -67,7 +68,7 @@ class DVCManager:
                 os.makedirs(self.data_dir)
 
             # Create a file with the custom filename in the data directory
-            temp_file_path = os.path.join(self.data_dir, self.filename)
+            temp_file_path = os.path.join(self.data_dir, file_name)
             logger.info(f"Saving DataFrame to CSV file at {temp_file_path}.")
             df.to_csv(temp_file_path, index=False)
 
@@ -75,7 +76,7 @@ class DVCManager:
             # os.chdir(self.data_dir)
 
             # Add the file to DVC
-            logger.info(f"Adding {self.filename} to DVC.")
+            logger.info(f"Adding {file_name} to DVC.")
             subprocess.run(["dvc", "add", temp_file_path], check=True)
 
             # Push the data to the DVC remote without committing to Git
