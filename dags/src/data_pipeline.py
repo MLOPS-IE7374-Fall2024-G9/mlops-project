@@ -1,12 +1,12 @@
 import os
 import sys
 
-# Add the path to the 'dataset' directory
-sys.path.insert(0, os.path.abspath('/opt/airflow/dataset'))
-
 from dataset.scripts.dvc_manager import *
 from dataset.scripts.data import *
+from dataset.scripts.data_schema import *
 
+# ----------------------------------------------------------
+# DataCollector
 def get_start_end_dates() -> tuple[str, str]:
     data_obj = DataCollector()
     yesterday, today = data_obj.get_yesterday_dates()
@@ -20,13 +20,6 @@ def get_last_k_start_end_dates(days: int) -> tuple[str, str]:
     start_date = (pd.to_datetime(today) - timedelta(days=days-1)).strftime('%d-%m-%Y')
     
     return start_date, today
-
-def get_data_from_dvc():
-    dvc_manager_obj = DVCManager()
-    df = dvc_manager_obj.download_data_from_dvc()
-    
-    json_data = df.to_json(orient='records', lines=False)
-    return json_data
 
 def get_updated_data_from_api(dates: tuple[str, str]) -> pd.DataFrame:
     data_obj = DataCollector()
@@ -59,8 +52,40 @@ def redundant_removal(data_json):
     
     json_data = data_df.to_json(orient='records', lines=False)
     return json_data
+
+
+# ----------------------------------------------------------
+# DVC Manager
+def get_data_from_dvc():
+    dvc_manager_obj = DVCManager()
+    df = dvc_manager_obj.download_data_from_dvc()
     
+    json_data = df.to_json(orient='records', lines=False)
+    return json_data
+
 def update_data_to_dvc(df_json: dict) -> None:
     dvc_manager_obj = DVCManager()
     df = pd.read_json(df_json)
     dvc_manager_obj.upload_data_to_dvc(df)
+
+# ----------------------------------------------------------
+# Data Schema
+def get_statistics_and_infer(df):
+    schema_stats_generator = DataSchemaAndStatistics(df)
+    stats = schema_stats_generator.generate_statistics()
+    schema = schema_stats_generator.infer_schema()
+    return stats
+
+def infer_schema(df):
+    schema_stats_generator = DataSchemaAndStatistics(df)
+    
+
+def validate_data(new_df):
+    schema_stats_generator = DataSchemaAndStatistics(df)
+    anomalies = schema_stats_generator.validate_data(new_df)
+
+# ----------------------------------------------------------
+# Data Bias
+
+
+# ----------------------------------------------------------
