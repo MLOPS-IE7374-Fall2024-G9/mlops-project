@@ -4,3 +4,4 @@ python-dateutil==2.8.2
 python-dotenv==1.0.0
 dvc[gs]==3.25.0
 google-cloud-logging
+tensorflow-data-validation

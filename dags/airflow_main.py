@@ -141,12 +141,14 @@ update_data_to_dvc_task = PythonOperator(
 # ------------------------------------------------------------------------------------------------
 # Data DAG Pipelines
 
-# 1) data api pipeline
-get_last_k_start_end_date_task >> get_updated_data_from_api_task >> get_data_from_dvc_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task
+# ideal final pipeline
+# get data from api (new data) -> apply data preprocessing functions -> check the data based on the scheme/data validation -> get data from dvc -> merge new data with dvc -> push back to dvc
+#                                                                                                                          -> flag error in new data -> send an email/slack for anomalies
 
-# 2) data preprocessing pipeline
+# TODO and complete
+get_last_k_start_end_date_task >> get_updated_data_from_api_task
 
-# 3) data drift pipeline
+
 
 # ------------------------------------------------------------------------------------------------
 # Model DAG Pipelines TODO
