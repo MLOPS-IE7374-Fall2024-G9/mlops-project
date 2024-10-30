@@ -10,6 +10,7 @@ import sys
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.email_operator import EmailOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from datetime import datetime, timedelta
 from src.data_pipeline import *
 
@@ -133,12 +134,20 @@ update_data_to_dvc_task = PythonOperator(
     op_args=[redundant_removal_task.output],
     dag = data_download_dag
 )
+
+# Trigger DAG operator to initiate `data_preprocess_dag`
+trigger_preprocess_dag_task = TriggerDagRunOperator(
+    task_id='trigger_data_preprocess_dag',
+    trigger_dag_id='data_preprocess_dag',  # The ID of the second DAG
+    wait_for_completion=False,             # Set to False if you don't want to wait
+    dag=data_download_dag
+)
 # --------------------------
 
 
 # data downlaod api pipeline
 # get data from api (new data) -> get data from dvc -> merge new data with dvc -> push back to dvc
-get_last_k_start_end_date_task >> get_updated_data_from_api_task >> get_data_from_dvc_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task #>> send_email
+get_last_k_start_end_date_task >> get_updated_data_from_api_task >> get_data_from_dvc_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task >> #>> send_email >> trigger_preprocess_dag_task
 
 
 # ------------------------------------------------------------------------------------------------
