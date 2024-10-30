@@ -22,13 +22,13 @@ default_args = {
 }
 
 # Data DAG pipeline init
-data_dag = DAG(
-    "Data_Pipeline_Dag",
+data_download_dag = DAG(
+    "Data_Download_Dag",
     default_args=default_args,
-    description="Data Pipeline DAG init",
+    description="Data Download DAG",
     schedule_interval=None,
     catchup=False,
-    tags=['data_pipeline']
+    tags=['data_download']
 )
 
 
@@ -58,15 +58,15 @@ def email_notify_failure(context):
     )
     success_email.execute(context=context)
 
-# send_email = EmailOperator(
-#     task_id='send_email',
-#     to='keshri.r@northeastern.edu',    # Email address of the recipient
-#     subject='Notification from Airflow',
-#     html_content='<p>This is a notification email sent from Airflow.</p>',
-#     dag=data_dag,
-#     on_failure_callback=email_notify_failure,
-#     on_success_callback=email_notify_success
-# )
+send_email = EmailOperator(
+    task_id='send_email',
+    to='keshri.r@northeastern.edu',    # Email address of the recipient
+    subject='Notification from Airflow',
+    html_content='<p>This is a notification email sent from Airflow.</p>',
+    dag=data_download_dag,
+    on_failure_callback=email_notify_failure,
+    on_success_callback=email_notify_success
+)
 
 # ------------------------------------------------------------------------------------------------
 # Python operators
@@ -77,7 +77,7 @@ get_data_from_dvc_task = PythonOperator(
     task_id = 'get_data_from_dvc_task',
     python_callable=get_data_from_dvc,
     provide_context=True,
-    dag = data_dag
+    dag = data_download_dag
 )
 
 
@@ -87,7 +87,7 @@ get_last_k_start_end_date_task = PythonOperator(
     python_callable=get_last_k_start_end_dates,
     provide_context=True,
     op_args=[delta_days],
-    dag = data_dag
+    dag = data_download_dag
 )
 
 # function returns start and end date (yesterday's date)
@@ -95,7 +95,7 @@ get_start_end_date_task = PythonOperator(
     task_id = 'get_start_end_date_task',
     python_callable=get_start_end_dates,
     provide_context=True,
-    dag = data_dag
+    dag = data_download_dag
 )
 
 # function to get new data, returns data json
@@ -104,7 +104,7 @@ get_updated_data_from_api_task = PythonOperator(
     python_callable=get_updated_data_from_api,
     provide_context=True,
     op_args=[get_last_k_start_end_date_task.output],
-    dag = data_dag
+    dag = data_download_dag
 )
 
 # function to merge dvc data with newly pulled data from api, returns data json
@@ -113,7 +113,7 @@ merge_data_task = PythonOperator(
     python_callable=merge_data,
     provide_context=True,
     op_args=[get_updated_data_from_api_task.output, get_data_from_dvc_task.output],
-    dag = data_dag
+    dag = data_download_dag
 )
 
 # function to remove redundant rows, returns data json
@@ -122,7 +122,7 @@ redundant_removal_task = PythonOperator(
     python_callable=redundant_removal,
     provide_context=True,
     op_args=[merge_data_task.output],
-    dag = data_dag
+    dag = data_download_dag
 )
 
 # function to update data to dvc
@@ -131,29 +131,16 @@ update_data_to_dvc_task = PythonOperator(
     python_callable=update_data_to_dvc,
     provide_context=True,
     op_args=[redundant_removal_task.output],
-    dag = data_dag
+    dag = data_download_dag
 )
 # --------------------------
 
 
-
-
-# ------------------------------------------------------------------------------------------------
-# Data DAG Pipelines
-
-# ideal final pipeline
-# get data from api (new data) -> apply data preprocessing functions -> check the data based on the scheme/data validation -> get data from dvc -> merge new data with dvc -> push back to dvc
-#                                                                                                                          -> flag error in new data -> send an email/slack for anomalies
-
-# TODO and complete
-get_last_k_start_end_date_task >> get_updated_data_from_api_task
-
-
-
-# ------------------------------------------------------------------------------------------------
-# Model DAG Pipelines TODO
+# data downlaod api pipeline
+# get data from api (new data) -> get data from dvc -> merge new data with dvc -> push back to dvc
+get_last_k_start_end_date_task >> get_updated_data_from_api_task >> get_data_from_dvc_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task #>> send_email
 
 
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    data_dag.cli
+    data_download_dag.cli

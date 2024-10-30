@@ -74,6 +74,7 @@ def get_statistics_and_infer(df):
     schema_stats_generator = DataSchemaAndStatistics(df)
     stats = schema_stats_generator.generate_statistics()
     schema = schema_stats_generator.infer_schema()
+    schema_stats_generator.save_schema("dataset/")
     return stats
 
 def infer_schema(df):
