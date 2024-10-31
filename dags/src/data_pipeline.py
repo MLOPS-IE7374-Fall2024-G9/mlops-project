@@ -1,9 +1,12 @@
-import os
 import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from dataset.scripts.dvc_manager import *
 from dataset.scripts.data import *
-from dataset.scripts.data_schema import *
+# from dataset.scripts.data_schema import *
 
 # ----------------------------------------------------------
 # DataCollector
@@ -53,12 +56,11 @@ def redundant_removal(data_json):
     json_data = data_df.to_json(orient='records', lines=False)
     return json_data
 
-
 # ----------------------------------------------------------
 # DVC Manager
-def get_data_from_dvc():
+def get_data_from_dvc(filename):
     dvc_manager_obj = DVCManager()
-    df = dvc_manager_obj.download_data_from_dvc()
+    df = dvc_manager_obj.download_data_from_dvc(filename)
     
     json_data = df.to_json(orient='records', lines=False)
     return json_data
@@ -70,20 +72,20 @@ def update_data_to_dvc(df_json: dict) -> None:
 
 # ----------------------------------------------------------
 # Data Schema
-def get_statistics_and_infer(df):
-    schema_stats_generator = DataSchemaAndStatistics(df)
-    stats = schema_stats_generator.generate_statistics()
-    schema = schema_stats_generator.infer_schema()
-    schema_stats_generator.save_schema("dataset/")
-    return stats
+# def get_statistics_and_infer(df):
+#     schema_stats_generator = DataSchemaAndStatistics(df)
+#     stats = schema_stats_generator.generate_statistics()
+#     schema = schema_stats_generator.infer_schema()
+#     schema_stats_generator.save_schema("dataset/")
+#     return stats
 
-def infer_schema(df):
-    schema_stats_generator = DataSchemaAndStatistics(df)
+# def infer_schema(df):
+#     schema_stats_generator = DataSchemaAndStatistics(df)
     
 
-def validate_data(new_df):
-    schema_stats_generator = DataSchemaAndStatistics(df)
-    anomalies = schema_stats_generator.validate_data(new_df)
+# def validate_data(new_df):
+#     schema_stats_generator = DataSchemaAndStatistics(df)
+#     anomalies = schema_stats_generator.validate_data(new_df)
 
 # ----------------------------------------------------------
 # Data Bias

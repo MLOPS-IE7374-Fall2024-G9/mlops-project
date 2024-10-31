@@ -15,11 +15,11 @@ logger = logging.getLogger(__name__)
 
 class DVCManager:
     def __init__(self, json_credential_path="mlops-437516-b9a69694c897.json"):
-        ### TEMP - do it using docker
-        subprocess.run(["apt-get", "update"], check=True)
-        subprocess.run(["apt-get","install", "-y", "git"], check=True)
-        subprocess.run(["git", "init"], check=True)
-        ###
+        # ### TEMP - do it using docker
+        # subprocess.run(["apt-get", "update"], check=True)
+        # subprocess.run(["apt-get","install", "-y", "git"], check=True)
+        # subprocess.run(["git", "init"], check=True)
+        # ###
 
         # Get the directory of the current script
         self.script_dir = os.path.dirname(__file__)  
@@ -28,9 +28,9 @@ class DVCManager:
         self.data_dir = os.path.join(self.script_dir, "../data")
 
         # Configure dvc
-        self.configure_dvc_credentials(json_credential_path)
-        self.all_data_filename = "demand_weather_data.csv"
-        self.processed_data_filename = "dmeand_weather_data_processed.csv"
+        #self.configure_dvc_credentials(json_credential_path)
+        self.all_data_filename = "data_raw.csv"
+        self.processed_data_filename = "data_preprocessed.csv"
 
     def configure_dvc_credentials(self, json_credential_path):
         """
@@ -102,7 +102,7 @@ class DVCManager:
         except Exception as e:
             logger.error(f"An error occurred: {e}")
 
-    def download_data_from_dvc(self, save_local=0):
+    def download_data_from_dvc(self, filename, save_local=0):
         """
         Pull the latest version of the dataset from DVC and return it as a DataFrame.
         """
@@ -114,16 +114,18 @@ class DVCManager:
             # Load the dataset into a DataFrame
             logger.info(f"Loading dataset from {self.data_dir}.")
             csv_files = [f for f in os.listdir(self.data_dir) if f.endswith(".csv")]
-            if not csv_files:
+            if filename not in csv_files:
                 logger.error("No CSV files found in the data directory.")
                 return None
 
-            latest_file = os.path.join(self.data_dir, csv_files[0])
+            latest_file = os.path.join(self.data_dir, filename)
             df = pd.read_csv(latest_file)
 
             if save_local == 0:
                 logger.info(f"Deleting CSV file in local: {latest_file}")
-                os.remove(latest_file)
+                for file in csv_files:
+                    path = os.path.join(self.data_dir, file)
+                    os.remove(path)
 
             logger.info("Dataset downloaded and loaded into DataFrame successfully.")
             return df

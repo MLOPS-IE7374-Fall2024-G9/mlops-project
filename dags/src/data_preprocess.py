@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-from data_pipeline import get_data_from_dvc
 import datetime
 import subprocess
 
@@ -94,7 +93,7 @@ def normalize_and_encode(df_json):
     return json_data
 
 # Step 5: Feature Selection
-def select_final_features(df):
+def select_final_features(df_json):
     df = pd.read_json(df_json)
 
     selected_features = [

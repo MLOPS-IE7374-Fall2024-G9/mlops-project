@@ -13,6 +13,7 @@ from airflow.operators.python_operator import PythonOperator
 # from airflow.operators.email_operator import EmailOperator
 from datetime import datetime, timedelta
 from src.data_preprocess import *
+from src.data_pipeline import *
 
 # default args
 default_args = {
@@ -39,7 +40,7 @@ get_data_from_dvc_task = PythonOperator(
     task_id = 'get_data_from_dvc_task',
     python_callable=get_data_from_dvc,
     provide_context=True,
-    dag = data_dag
+    dag = dag
 )
 
 # Define the clean data task, depends on 'get_data_from_dvc_task'
@@ -55,7 +56,7 @@ save_clean_data_task = PythonOperator(
     task_id='save_clean_data_task',
     python_callable=save_data,
     provide_context=True,
-    op_args=[clean_data_task.output,"cleaned_data"]
+    op_args=[clean_data_task.output,"cleaned_data"],
     dag=dag,
 )
 
@@ -99,7 +100,7 @@ save_selected_data_task = PythonOperator(
     task_id='save_selected_data_task',
     python_callable=save_data,
     provide_context=True,
-    op_args=[select_final_features_task.output,"final_selected_features"]
+    op_args=[select_final_features_task.output,"final_selected_features"],
     dag=dag,
 )
 
