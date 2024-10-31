@@ -1,0 +1,255 @@
+# Name of the git hub action
+name: Airflow Server and Script Changes
+
+# Trigger conditions
+# on push or pull on branches, folders, files etc
+# change the trigger branches according to your respective branch
+on:
+  push:
+    branches:
+      # - aakash_dev
+      # - rajat_dev
+      # - amogha_dev
+      # - jahnavi_dev
+      # - nikhil_dev
+      # - samanvya_dev
+      - dev
+    paths:
+      - 'dags/**'
+      - 'airflow-config/**'
+      - 'dataset/**'
+      - 'model/**'
+
+
+# Setting the environement for the GCP cloud engine that it is gonna talk to 
+env:
+  PROJECT_ID: ${{secrets.AIRFLOW_GCP_PROJECT_ID}} #GCP project id found from Google Cloud Platform Dashboard
+  GCE_INSTANCE: airflow-instance # instance name
+  GCE_INSTANCE_ZONE: us-central1-a  # instance region
+
+  # Private key. Make sure to generate a public and private key pair. 
+  # Not sure how to create key pairs, follow this steps on your local machine https://download.asperasoft.com/download/docs/sync2/3.5.1/admin_osx/webhelp/dita/creating_public_key_cmd.html
+  # After creating a pub-pri key pair, create a github actions secrets and copy paste the private key here. Make sure, copy the whole thing
+  # -----BEGIN OPENSSH PRIVATE KEY-----
+  # ...the key information.....
+  # -----END OPENSSH PRIVATE KEY-----
+  #
+  # at the end add a space and save it as secret, for github to recognize it.
+  # Also, copy the public_key.pub file content onto the VM when creating it or do scp command operation. This allows the authentication from local terminal to the vm.
+
+  PRIVATE_KEY: ${{secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY}}
+
+# Jobs that need to be performed 
+jobs:
+
+  add_ssh_key_job:
+    runs-on: ubuntu-latest  
+    steps:
+
+      # Set up SSH access to the GCE VM using the SSH key from GitHub Secrets
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
+
+      - name: Test SSH Connection
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+            echo "
+            ############################################################
+            "
+            echo "Connected to GCE VM successfully!"
+            hostname
+            uptime
+            echo "######################################################"
+            touch __init__.py
+          EOF
+
+  # Job to check specific directories have been updated or not.
+  check_changed_directories:
+    name: Check updated directories         # name of the job
+    needs: add_ssh_key_job                  # mention any pre-requiste jobs needed to run this. This allows sequential execution of jobs
+    runs-on: ubuntu-latest                  # every job creates a small VM of its own on Github. So mention the OS 
+    
+    outputs:                                # mention any outputs that this job that will be used by other jobs. 
+      dags_changed: ${{ steps.dags_changed.outputs.dags_changed }}          # this is used to use the outputs inbetween the job steps
+      airflow_config_changed: ${{ steps.airflow_config_changed.outputs.airflow_config_changed  }}
+      dataset_changed: ${{ steps.dataset_changed.outputs.dataset_changed }}
+      model_changed: ${{ steps.model_changed.outputs.model_changed }}
+    
+    
+    steps:
+      - name: Checkout code             # alwasy include this step for every job, to checkout latest code from the git repo into the VM created by github
+        uses: actions/checkout@v2
+        with: 
+          fetch-depth: 0
+  
+      - name: dags directory changed
+        id: dags_changed  # Step ID to reference output
+        run: | # the below script is to find if dags folder has been updated or not. Save the boolean value into the output
+          echo "Checking if any files in the 'dags/' folder have changed..."
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^dags/'; then
+            echo "'dags/' folder has changes."
+            echo "::set-output name=dags_changed::true"
+          else
+            echo "'dags/' folder has no changes."
+            echo "::set-output name=dags_changed::false"      
+          fi
+          
+      - name: airflow config directory changed
+        id: airflow_config_changed # Step ID to reference output
+        run: | # the below script is to find if airflow-config has been updated or not. Save the boolean value into the output
+          echo "Checking if any files in the 'airflow_config/' folder have changed..."
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^airflow-config/'; then
+            echo "'airflow-config/' folder has changes."
+            echo "::set-output name=airflow_config_changed::true"
+          else
+            echo "'airflow-config/' folder has no changes."
+            echo "::set-output name=airflow_config_changed::false"
+          fi
+
+      - name: dataset folder changed
+        id: dataset_changed 
+        run: |
+          echo "Checking if any files in the 'dataset/' folder gave changed..."
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^dataset/'; then
+            echo "'dataset/' folder has changes."
+            echo "::set-output name=dataset_changed::true"
+          else
+            echo "'dataset/' folder has no changes."
+            echo "::set-output name=dataset_changed::false"
+          fi 
+      
+      - name: model folder changed
+        id: model_changed
+        run: |
+          echo "Checking if any files in the 'model/' folder gave changed..."
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^model/'; then
+            echo "'model/' folder has changes."
+            echo "::set-output name=model_changed::true"
+          else
+            echo "'modle/' folder has no changes."
+            echo "::set-output name=model_changed::false"
+          fi 
+
+
+      - name: debug changed files and directories output
+        run: |
+          echo "dags changed: ${{ steps.dags_changed.outputs.dags_changed }}"
+          echo "airflow config changed: ${{ steps.airflow_config_changed.outputs.airflow_config_changed }}"
+          echo "model changed: ${{ steps.model_changed.outputs.model_changed }}"
+          echo "dataset changed: ${{ steps.dataset_changed.outputs.dataset_changed }}"
+
+  changed_files_and_folder_debug:
+    runs-on: ubuntu-latest
+    needs: 
+      - check_changed_directories # we'll be using the outputs of this job below
+    
+    steps:
+      - name: Debug changed directories output
+        run: | # this is how you access the output of the prvious jobs in the current jobs by mentioning it under needs section. 
+          echo "dags changed: ${{ needs.check_changed_directories.outputs.dags_changed }}" 
+          echo "airflow-config chaged: ${{ needs.check_changed_directories.outputs.airflow_config_changed }}"
+          echo "model changed: ${{ needs.check_changed_directories.outputs.model_changed }}"
+          echo "dataset changed: ${{ needs.check_changed_directories.outputs.dataset_changed }}"
+
+  # job definition
+  airlfow_config_update:
+    runs-on: ubuntu-latest
+    needs:
+      - add_ssh_key_job
+      - check_changed_directories
+      - changed_files_and_folder_debug
+
+    if:  ${{needs.check_changed_directories.outputs.airflow_config_changed == 'true'}}
+
+    # Sub-processes or steps to run
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
+
+      - name: Cleanup all docker processes
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+            sudo docker compose down --volumes --rmi all
+            
+          EOF
+      - name: Overwrite the airflow-config folder onto the vm
+        run: |
+          scp -o StrictHostKeyChecking=no -r ./airflow-config/* ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}
+
+      - name: Docker Compose Up Commands
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+            sudo docker compose up --build -d  # Start the containers in detached mode
+          EOF
+
+  airflow_dag_scirpts_update:
+    runs-on : ubuntu-latest
+    needs:
+      - add_ssh_key_job
+      - changed_files_and_folder_debug
+      - check_changed_directories
+
+    if: ${{needs.check_changed_directories.outputs.dags_changed == 'true'}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
+
+      - name: Overwrite The Dag folder
+        run: |
+          scp -r -o StrictHostKeyChecking=no ./dags ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/
+
+  airflow_model_update:
+    runs-on : ubuntu-latest
+    needs:
+      - add_ssh_key_job
+      - changed_files_and_folder_debug
+      - check_changed_directories
+
+    if: ${{needs.check_changed_directories.outputs.model_changed == 'true'}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Set up SSH access to the GCE VM using the SSH key from GitHub Secrets
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
+
+      - name: Overwrite The Model Folder
+        run: |
+          scp -r -o StrictHostKeyChecking=no ./model ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/
+
+  airflow_dataset_update:
+    runs-on : ubuntu-latest
+    needs:
+      - add_ssh_key_job
+      - changed_files_and_folder_debug
+      - check_changed_directories
+
+    if: ${{needs.check_changed_directories.outputs.dataset_changed == 'true'}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Set up SSH access to the GCE VM using the SSH key from GitHub Secrets
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
+
+      - name: Overwrite The Dataset Folder
+        run: |
+          scp -r -o StrictHostKeyChecking=no ./dataset ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/

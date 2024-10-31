@@ -1,1 +1,33 @@
+
+# Ignore CSV files
+*.csv
+
+# Ignore virtual environment directories and environment files
+mlopsenv/
+mlops_env/
+.venv/
+.env
+
+# Ignore system-specific files
 .DS_Store
+Thumbs.db
+docker-compose-local.yaml
+
+
+# Ignore Python cache and compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore specific credentials or configuration files
+mlops-437516-b9a69694c897.json
+
+# Ignore pytest cache directories
+.pytest_cache/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore log files
+*.log
+
