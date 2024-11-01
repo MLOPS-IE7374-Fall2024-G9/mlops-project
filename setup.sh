@@ -23,7 +23,9 @@ fi
 
 # Add environment variables to the .env file
 echo "Adding environment variables to .env file."
-echo "DEMAND_API_KEY=\"\"" >> "$ENV_FILE"
-echo "WEATHER_API_KEY=''" >> "$ENV_FILE"
+echo "DEMAND_API_KEY=\"f8tGzRmnyw6dJyy1PyS49REmg1qrT2isvVi8i9mt\"" >> "$ENV_FILE"
+echo "WEATHER_API_KEY=\"820479673a8444f69ac162421242809\"" >> "$ENV_FILE"
 
 echo ".env file setup complete with all configurations."
+
+

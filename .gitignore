@@ -19,7 +19,6 @@ Thumbs.db
 docker-compose-local.yaml
 mlflow.db
 
-
 # Ignore Python cache and compiled Python files
 __pycache__/
 *.pyc
