@@ -80,12 +80,13 @@ def test_add_cyclic_features():
         "2024-01-01": (0.5, 0.866025),  # Jan: (sin, cos)
         "2024-07-01": (-0.5, -0.866025) # Jul: (sin, cos)
     }
-    
+
     for date_str, (expected_sin, expected_cos) in expected_sin_cos.items():
         row = df_cyclic[df_cyclic['datetime'] == date_str]
         assert np.isclose(row['month_sin'].values[0], expected_sin, atol=1e-5), f"Incorrect 'month_sin' for {date_str}"
         assert np.isclose(row['month_cos'].values[0], expected_cos, atol=1e-5), f"Incorrect 'month_cos' for {date_str}"
 
+    
 def main():
 
     test_clean_data()
