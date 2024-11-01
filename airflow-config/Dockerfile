@@ -27,4 +27,4 @@ COPY mlops-437516-b9a69694c897.json /mlops-437516-b9a69694c897.json
 RUN dvc remote modify --local storage credentialpath /mlops-437516-b9a69694c897.json || echo "Failed to configure DVC remote"
 
 # Switch to root user
-USER root
+USER airflow

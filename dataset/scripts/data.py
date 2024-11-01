@@ -19,45 +19,45 @@ logger = logging.getLogger(__name__)
 class DataRegions:
     def __init__(self):
         self.regions = {
-            "texas": {
-                "COAS": [29.749907, -95.358421],  # Houston
-                "EAST": [32.351485, -95.301140],  # Tyler
-                "FWES": [31.997345, -102.077915],  # Midland
-                "NCEN": [32.78306, -96.80667],  # Dallas
-                "NRTH": [33.913708, -98.493387],  # Wichita Falls
-                "SCEN": [30.267153, -97.743057],  # Austin
-                "SOUT": [26.203407, -98.230012],  # McAllen
-                "WEST": [32.448736, -99.733144],  # Abilene
-            },
+            # "texas": {
+            #     "COAS": [29.749907, -95.358421],  # Houston
+            #     "EAST": [32.351485, -95.301140],  # Tyler
+            #     "FWES": [31.997345, -102.077915],  # Midland
+            #     "NCEN": [32.78306, -96.80667],  # Dallas
+            #     "NRTH": [33.913708, -98.493387],  # Wichita Falls
+            #     "SCEN": [30.267153, -97.743057],  # Austin
+            #     "SOUT": [26.203407, -98.230012],  # McAllen
+            #     "WEST": [32.448736, -99.733144],  # Abilene
+            # },
             "new_york": {
                 "ZONA": [42.8864, -78.8784],  # Buffalo, NY (West)
                 "ZONB": [43.1566, -77.6088],  # Rochester, NY (Genesee)
-                "ZONC": [43.0481, -76.1474],  # Syracuse, NY (Central)
-                "ZOND": [44.6995, -73.4529],  # Plattsburgh, NY (North)
-                "ZONE": [43.1009, -75.2327],  # Utica, NY (Mohawk Valley)
-                "ZONF": [42.6526, -73.7562],  # Albany, NY (Capital)
-                "ZONG": [41.7004, -73.9209],  # Poughkeepsie, NY (Hudson Valley)
-                "ZONH": [41.2045, -73.8176],  # Millwood, NY (Millwood)
-                "ZONI": [40.9439, -73.8674],  # Yonkers, NY (Dunwoodie)
-                "ZONJ": [40.7128, -74.0060],  # New York City, NY (NYC)
-                "ZONK": [40.7062, -73.6187],  # Hempstead, NY (Long Island)
+                # "ZONC": [43.0481, -76.1474],  # Syracuse, NY (Central)
+                # "ZOND": [44.6995, -73.4529],  # Plattsburgh, NY (North)
+                # "ZONE": [43.1009, -75.2327],  # Utica, NY (Mohawk Valley)
+                # "ZONF": [42.6526, -73.7562],  # Albany, NY (Capital)
+                # "ZONG": [41.7004, -73.9209],  # Poughkeepsie, NY (Hudson Valley)
+                # "ZONH": [41.2045, -73.8176],  # Millwood, NY (Millwood)
+                # "ZONI": [40.9439, -73.8674],  # Yonkers, NY (Dunwoodie)
+                # "ZONJ": [40.7128, -74.0060],  # New York City, NY (NYC)
+                # "ZONK": [40.7062, -73.6187],  # Hempstead, NY (Long Island)
             },
-            "new_england": {
-                "4001": [43.661471, -70.255326],  # Portland, Maine
-                "4002": [42.995640, -71.454789],  # Manchester, New Hampshire
-                "4003": [44.475882, -73.212072],  # Burlington, Vermont
-                "4004": [41.763710, -72.685097],  # Hartford, Connecticut
-                "4005": [41.823989, -71.412834],  # Providence, Rhode Island
-                "4006": [
-                    41.635693,
-                    -70.933777,
-                ],  # New Bedford, Massachusetts (Southeast)
-                "4007": [
-                    42.101483,
-                    -72.589811,
-                ],  # Springfield, Massachusetts (Western/Central)
-                "4008": [42.358894, -71.056742],  # Boston, Massachusetts (Northeast)
-            },
+            # "new_england": {
+            #     "4001": [43.661471, -70.255326],  # Portland, Maine
+            #     "4002": [42.995640, -71.454789],  # Manchester, New Hampshire
+            #     "4003": [44.475882, -73.212072],  # Burlington, Vermont
+            #     "4004": [41.763710, -72.685097],  # Hartford, Connecticut
+            #     "4005": [41.823989, -71.412834],  # Providence, Rhode Island
+            #     "4006": [
+            #         41.635693,
+            #         -70.933777,
+            #     ],  # New Bedford, Massachusetts (Southeast)
+            #     "4007": [
+            #         42.101483,
+            #         -72.589811,
+            #     ],  # Springfield, Massachusetts (Western/Central)
+            #     "4008": [42.358894, -71.056742],  # Boston, Massachusetts (Northeast)
+            # },
         }
 
 
