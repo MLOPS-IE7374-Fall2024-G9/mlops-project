@@ -81,6 +81,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/dataset:/opt/airflow/dags/src/dataset
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow.cfg:/opt/airflow/airflow.cfg
     - ${AIRFLOW_PROJ_DIR:-.}/.dvc:/opt/airflow/.dvc
     - ${AIRFLOW_PROJ_DIR:-.}/model:/opt/airflow/dags/src/model
     - ${AIRFLOW_PROJ_DIR:-.}/__init__.py:/opt/airflow/__init__.py
