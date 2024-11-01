@@ -214,9 +214,8 @@ delete_local_task = PythonOperator(
 # get data from api (new data) -> get data from dvc -> merge new data with dvc -> push back to dvc
 last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> engineer_features_task >> add_cyclic_features_task >> normalize_and_encode_task >> select_final_features_task >> processed_data_from_dvc_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task
 raw_data_from_dvc_task >> merge_raw_data_task >> update_raw_data_to_dvc_task
-processed_data_from_dvc_task >> [delete_local_task, send_email]
-update_data_to_dvc_task >> delete_local_task >> send_email
-update_raw_data_to_dvc_task >> delete_local_task >> send_email
+update_data_to_dvc_task >> update_raw_data_to_dvc_task >> delete_local_task >> send_email
+
 
 
 # ------------------------------------------------------------------------------------------------
