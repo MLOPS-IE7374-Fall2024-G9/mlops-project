@@ -14,6 +14,7 @@ class DataDriftDetector:
         self.new_data = new_data
         self.report = None
  
+ #Evidently Check
     def detect_drift_evidently(self):
         """
         Detect drift between baseline and new datasets using Evidently.
@@ -34,7 +35,7 @@ class DataDriftDetector:
         return report_dict
 
 
-
+ #Kolmogorov-Smirnov test 
     def detect_drift_ks_test(self, threshold=0.05):
         """
         Detect drift in numerical features using Kolmogorov-Smirnov test.
@@ -47,19 +48,7 @@ class DataDriftDetector:
             drift_results[col] = {'p_value': p_value, 'drift': p_value < threshold}
         return drift_results
  
-    # def detect_drift_chi_square(self, threshold=0.05):
-    #     """
-    #     Detect drift in categorical features using Chi-Square test.
-    #     :param threshold: Significance level for detecting drift.
-    #     :return: Dictionary of features with p-values and drift flag.
-    #     """
-    #     drift_results = {}
-    #     for col in self.baseline_data.select_dtypes(include=['object']).columns:
-    #         contingency_table = pd.crosstab(self.baseline_data[col], self.new_data[col])
-    #         _, p_value, _, _ = chi2_contingency(contingency_table)
-    #         drift_results[col] = {'p_value': p_value, 'drift': p_value < threshold}
-    #     return drift_results
- 
+ #PSI test
     def detect_drift_psi(self, bins=10, threshold=0.2, epsilon=1e-10):
         """
         Detect drift in numerical features using Population Stability Index (PSI).
@@ -86,6 +75,7 @@ class DataDriftDetector:
             raise ValueError("Drift report has not been generated. Call detect_drift_evidently first.")
         return self.report.as_dict()
  
+
 
 df = pd.read_csv('/Users/nikhilsirisala/Desktop/Course_Notes/MlOps/mlops-project/dataset/data/data_raw.csv')
 df = df.sample(frac=1, random_state=42).reset_index(drop=True)
@@ -117,10 +107,6 @@ ks_test_results = drift_detector.detect_drift_ks_test()
 
 ks_df = pd.DataFrame.from_dict(ks_test_results, orient="index")
 print("KS Test Drift Results:",ks_df)
- 
-# # Detect drift using Chi-Square Test
-# chi_square_results = drift_detector.detect_drift_chi_square()
-# print("Chi-Square Test Drift Results:", chi_square_results)
  
 # Detect drift using PSI
 psi_results = drift_detector.detect_drift_psi()
