@@ -128,7 +128,7 @@ class DVCManager:
                     os.remove(path)
 
             logger.info("Dataset downloaded and loaded into DataFrame successfully.")
-            return df
+            return df, latest_file
 
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to execute DVC command: {e}")
@@ -136,3 +136,12 @@ class DVCManager:
         except Exception as e:
             logger.error(f"An error occurred: {e}")
             return None
+        
+    def delete_local_data(self):
+        csv_files = [f for f in os.listdir(self.data_dir) if f.endswith(".csv")]
+        logger.info("Deleting CSV file in local")
+        for file in csv_files:
+            path = os.path.join(self.data_dir, file)
+            os.remove(path)
+
+        

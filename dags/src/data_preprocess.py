@@ -97,14 +97,14 @@ def select_final_features(df_json):
     df = pd.read_json(df_json)
 
     selected_features = [
-        'precipMM', 'weatherCode', 'visibility', 'HeatIndexF', 'WindChillF',
+        'datetime', 'precipMM', 'weatherCode', 'visibility', 'HeatIndexF', 'WindChillF',
         'windspeedMiles', 'FeelsLikeF', 'tempF_rolling_mean', 'windspeedMiles_rolling_mean',
         'humidity_rolling_mean', 'value', 'pressure', 'pressureInches', 'cloudcover', 'uvIndex',
         'tempF_rolling_std', 'windspeedMiles_rolling_std', 'humidity_rolling_std',
         'tempF_lag_2', 'windspeedMiles_lag_2', 'humidity_lag_2',
         'tempF_lag_4', 'windspeedMiles_lag_4', 'humidity_lag_4',
         'tempF_lag_6', 'windspeedMiles_lag_6', 'humidity_lag_6',
-        'month_sin', 'month_cos'
+        'month_sin', 'month_cos', 'subba-name', 'zone'
     ]
     df_selected = df[selected_features]
     print("Feature selection complete: selected features retained.")

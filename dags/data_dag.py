@@ -129,6 +129,14 @@ normalize_and_encode_task = PythonOperator(
     dag=data_dag,
 )
 
+select_final_features_task = PythonOperator(
+    task_id='select_final_features_task',
+    python_callable=select_final_features,
+    op_args=[normalize_and_encode_task.output],
+    provide_context=True,
+    dag=data_dag,
+)
+
 # function to pull preprocessed data from dvc, returns json
 data_from_dvc_task = PythonOperator(
     task_id = 'data_from_dvc_task',
@@ -143,7 +151,7 @@ merge_data_task = PythonOperator(
     task_id = 'merge_data_task',
     python_callable=merge_data,
     provide_context=True,
-    op_args=[normalize_and_encode_task.output, data_from_dvc_task.output],
+    op_args=[select_final_features_task.output, data_from_dvc_task.output],
     dag = data_dag
 )
 
@@ -155,7 +163,6 @@ redundant_removal_task = PythonOperator(
     op_args=[merge_data_task.output],
     dag = data_dag
 )
-
 
 # function to update data to dvc
 update_data_to_dvc_task = PythonOperator(
@@ -170,7 +177,7 @@ update_data_to_dvc_task = PythonOperator(
 
 # data downlaod api pipeline
 # get data from api (new data) -> get data from dvc -> merge new data with dvc -> push back to dvc
-data_from_dvc_task >> last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> engineer_features_task >> add_cyclic_features_task >> normalize_and_encode_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task
+data_from_dvc_task >> last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> engineer_features_task >> add_cyclic_features_task >> normalize_and_encode_task >> select_final_features_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task
 
 
 # ------------------------------------------------------------------------------------------------
