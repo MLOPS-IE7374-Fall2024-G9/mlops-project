@@ -1,18 +1,24 @@
+
 # Ignore CSV files
 *.csv
+data_preprocess.csv
+data_raw.csv
+
 
 # Ignore virtual environment directories and environment files
 mlopsenv/
 mlops_env/
 .venv/
 .env
+mlruns/
+mlartifacts
 
 
 # Ignore system-specific files
 .DS_Store
 Thumbs.db
 docker-compose-local.yaml
-
+mlflow.db
 
 # Ignore Python cache and compiled Python files
 __pycache__/
@@ -30,3 +36,4 @@ mlops-437516-b9a69694c897.json
 
 # Ignore log files
 *.log
+
