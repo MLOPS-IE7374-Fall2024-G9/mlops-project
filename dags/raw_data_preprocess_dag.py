@@ -51,7 +51,7 @@ def email_notify_success(context):
         task_id='success_email',
         to=['keshri.r@northeastern.edu'],
         subject='Task Success',
-        html_content='<p>New data download succeeded.</p>',
+        html_content='<p>Raw data preprocess succeeded.</p>',
         dag=context['dag']
     )
     success_email.execute(context=context)
@@ -61,14 +61,14 @@ def email_notify_failure(context):
         task_id='failure_email',
         to=['keshri.r@northeastern.edu'],
         subject='Task Failure',
-        html_content='<p>New data download task Failed.</p>',
+        html_content='<p>Raw data preprocess task Failed.</p>',
         dag=context['dag']
     )
     success_email.execute(context=context)
     
 send_email = EmailOperator(
     task_id='send_email',
-    to='keshri.r@northeastern.edu',    # Email address of the recipient
+    to=['keshri.r@northeastern.edu'],    # Email address of the recipient
     subject='Notification from Airflow',
     html_content='<p>This is a notification email sent from Airflow. </p>',
     dag=raw_data_dag,
@@ -116,7 +116,7 @@ delete_local_task = PythonOperator(
 # --------------------------
 
 # get data from dvc (raw data) -> preprocess raw data -> push back to dvc
-data_from_dvc_task  >> preprocess_pipeline_task >> update_data_to_dvc_task >> delete_local_task
+data_from_dvc_task  >> preprocess_pipeline_task >> update_data_to_dvc_task >> delete_local_task >> send_email
 
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
