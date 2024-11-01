@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.email_operator import EmailOperator
+from airflow.utils.trigger_rule import TriggerRule
 from datetime import datetime, timedelta
 from src.data_download import *
 from src.data_preprocess import *
@@ -73,7 +74,8 @@ send_email = EmailOperator(
     html_content='<p>This is a notification email sent from Airflow. </p>',
     dag=raw_data_dag,
     on_failure_callback=email_notify_failure,
-    on_success_callback=email_notify_success
+    on_success_callback=email_notify_success,
+    trigger_rule=TriggerRule.ALL_DONE
 )
 
 # ------------------------------------------------------------------------------------------------
@@ -96,6 +98,7 @@ preprocess_pipeline_task = PythonOperator(
     op_args=[data_from_dvc_task.output],
     provide_context=True,
     dag=raw_data_dag,
+    on_failure_callback=email_notify_failure
 )
 
 # function to update data to dvc
@@ -111,12 +114,15 @@ delete_local_task = PythonOperator(
     task_id = 'delete_local_task',
     python_callable=delete_local_dvc_data,
     provide_context=True,
-    dag = raw_data_dag
+    dag = raw_data_dag,
+    trigger_rule=TriggerRule.ALL_DONE
 )
 # --------------------------
 
 # get data from dvc (raw data) -> preprocess raw data -> push back to dvc
-data_from_dvc_task  >> preprocess_pipeline_task >> update_data_to_dvc_task >> delete_local_task >> send_email
+data_from_dvc_task >> preprocess_pipeline_task >> update_data_to_dvc_task
+preprocess_pipeline_task >> [delete_local_task]
+update_data_to_dvc_task >> delete_local_task >> send_email
 
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":

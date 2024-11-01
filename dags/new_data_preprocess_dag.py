@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.email_operator import EmailOperator
+from airflow.utils.trigger_rule import TriggerRule
 from datetime import datetime, timedelta
 from src.data_download import *
 from src.data_preprocess import *
@@ -52,7 +53,7 @@ def email_notify_failure(context):
         dag=context['dag']
     )
     success_email.execute(context=context)
-    
+
 send_email = EmailOperator(
     task_id='send_email',
     to='keshri.r@northeastern.edu',    # Email address of the recipient
@@ -60,7 +61,8 @@ send_email = EmailOperator(
     html_content='<p>This is a notification email sent from Airflow. </p>',
     dag=new_data_dag,
     on_failure_callback=email_notify_failure,
-    on_success_callback=email_notify_success
+    on_success_callback=email_notify_success, 
+    trigger_rule=TriggerRule.ALL_DONE
 )
 
 # ------------------------------------------------------------------------------------------------
@@ -177,12 +179,16 @@ delete_local_task = PythonOperator(
     task_id = 'delete_local_task',
     python_callable=delete_local_dvc_data,
     provide_context=True,
-    dag = new_data_dag
+    dag = new_data_dag,
+    trigger_rule=TriggerRule.ALL_DONE
 )
 # --------------------------
 
 # get data from api (new data) -> get data from dvc -> merge new data with dvc -> push back to dvc
-data_from_dvc_task >> last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> engineer_features_task >> add_cyclic_features_task >> normalize_and_encode_task >> select_final_features_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task >> delete_local_task >> send_email
+last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> engineer_features_task >> add_cyclic_features_task >> normalize_and_encode_task >> select_final_features_task >> data_from_dvc_task >>  merge_data_task >> redundant_removal_task >> update_data_to_dvc_task >> delete_local_task >> send_email
+data_from_dvc_task >> [delete_local_task, send_email]
+update_data_to_dvc_task >> delete_local_task >> send_email
+
 
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
