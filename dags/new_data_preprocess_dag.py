@@ -2,7 +2,7 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.operators.email_operator import EmailOperator
 from datetime import datetime, timedelta
-from src.data_pipeline import *
+from src.data_download import *
 from src.data_preprocess import *
 
 # default args
@@ -15,15 +15,14 @@ default_args = {
 }
 
 # Data DAG pipeline init
-data_dag = DAG(
-    "data_dag",
+new_data_dag = DAG(
+    "new_data_dag",
     default_args=default_args,
-    description="Data Download DAG",
+    description="New Data Download and Preprocess DAG",
     schedule_interval=None,
     catchup=False,
-    tags=['data_dag']
+    tags=['new_data_dag']
 )
-
 
 # ------------------------------------------------------------------------------------------------
 # variables
@@ -73,7 +72,7 @@ last_k_start_end_date_task = PythonOperator(
     python_callable=get_last_k_start_end_dates,
     provide_context=True,
     op_args=[delta_days],
-    dag = data_dag
+    dag = new_data_dag
 )
 
 # function returns start and end date (yesterday's date)
@@ -81,7 +80,7 @@ last_k_start_end_date_task = PythonOperator(
 #     task_id = 'start_end_date_task',
 #     python_callable=get_start_end_dates,
 #     provide_context=True,
-#     dag = data_dag
+#     dag = new_data_dag
 # )
 
 # function to get new data, returns data json
@@ -90,7 +89,7 @@ updated_data_from_api_task = PythonOperator(
     python_callable=get_updated_data_from_api,
     provide_context=True,
     op_args=[last_k_start_end_date_task.output],
-    dag = data_dag
+    dag = new_data_dag
 )
 
 # Define the clean data task, depends on 'updated_data_from_api_task'
@@ -99,7 +98,7 @@ clean_data_task = PythonOperator(
     python_callable=clean_data,
     op_args=[updated_data_from_api_task.output],
     provide_context=True,
-    dag=data_dag,
+    dag=new_data_dag,
 )
 
 # Define the engineer features task, depends on 'clean_data_task'
@@ -108,7 +107,7 @@ engineer_features_task = PythonOperator(
     python_callable=engineer_features,
     op_args=[clean_data_task.output],
     provide_context=True,
-    dag=data_dag,
+    dag=new_data_dag,
 )
 
 # Define the cyclic feature addition task, depends on 'engineer_features_task'
@@ -117,7 +116,7 @@ add_cyclic_features_task = PythonOperator(
     python_callable=add_cyclic_features,
     op_args=[engineer_features_task.output],
     provide_context=True,
-    dag=data_dag,
+    dag=new_data_dag,
 )
 
 # Define the normalization and encoding task, depends on 'add_cyclic_features_task'
@@ -126,7 +125,7 @@ normalize_and_encode_task = PythonOperator(
     python_callable=normalize_and_encode,
     op_args=[add_cyclic_features_task.output],
     provide_context=True,
-    dag=data_dag,
+    dag=new_data_dag,
 )
 
 select_final_features_task = PythonOperator(
@@ -134,7 +133,7 @@ select_final_features_task = PythonOperator(
     python_callable=select_final_features,
     op_args=[normalize_and_encode_task.output],
     provide_context=True,
-    dag=data_dag,
+    dag=new_data_dag,
 )
 
 # function to pull preprocessed data from dvc, returns json
@@ -143,7 +142,7 @@ data_from_dvc_task = PythonOperator(
     python_callable=get_data_from_dvc,
     provide_context=True,
     op_args=[filename_preprocessed],
-    dag = data_dag
+    dag = new_data_dag
 )
 
 # function to merge dvc data with newly pulled data from api, returns data json
@@ -152,7 +151,7 @@ merge_data_task = PythonOperator(
     python_callable=merge_data,
     provide_context=True,
     op_args=[select_final_features_task.output, data_from_dvc_task.output],
-    dag = data_dag
+    dag = new_data_dag
 )
 
 # function to remove redundant rows, returns data json
@@ -161,7 +160,7 @@ redundant_removal_task = PythonOperator(
     python_callable=redundant_removal,
     provide_context=True,
     op_args=[merge_data_task.output],
-    dag = data_dag
+    dag = new_data_dag
 )
 
 # function to update data to dvc
@@ -170,16 +169,20 @@ update_data_to_dvc_task = PythonOperator(
     python_callable=update_data_to_dvc,
     provide_context=True,
     op_args=[redundant_removal_task.output],
-    dag = data_dag
+    dag = new_data_dag
+)
+
+delete_local_task = PythonOperator(
+    task_id = 'delete_local_task',
+    python_callable=delete_local_dvc_data,
+    provide_context=True,
+    dag = new_data_dag
 )
 # --------------------------
 
-
-# data downlaod api pipeline
 # get data from api (new data) -> get data from dvc -> merge new data with dvc -> push back to dvc
-data_from_dvc_task >> last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> engineer_features_task >> add_cyclic_features_task >> normalize_and_encode_task >> select_final_features_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task
-
+data_from_dvc_task >> last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> engineer_features_task >> add_cyclic_features_task >> normalize_and_encode_task >> select_final_features_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task #>> delete_local_task
 
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    data_dag.cli
+    new_data_dag.cli

@@ -6,7 +6,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 from dataset.scripts.dvc_manager import *
 from dataset.scripts.data import *
-# from dataset.scripts.data_schema import *
 
 # ----------------------------------------------------------
 # DataCollector
@@ -42,9 +41,6 @@ def merge_data(api_json, dvc_file_path):
         updated_data_df = pd.concat([dvc_df, api_df], ignore_index=True)
     else:
         updated_data_df = api_df
-
-    # json_data = updated_data_df.to_json(orient='records', lines=False)
-    # return json_data
     
     save_df_to_csv(updated_data_df, dvc_file_path)
     return dvc_file_path
@@ -75,26 +71,6 @@ def update_data_to_dvc(filename):
 def delete_local_dvc_data():
     dvc_manager_obj = DVCManager()
     dvc_manager_obj.delete_local_data()
-
-# ----------------------------------------------------------
-# Data Schema
-# def get_statistics_and_infer(df):
-#     schema_stats_generator = DataSchemaAndStatistics(df)
-#     stats = schema_stats_generator.generate_statistics()
-#     schema = schema_stats_generator.infer_schema()
-#     schema_stats_generator.save_schema("dataset/")
-#     return stats
-
-# def infer_schema(df):
-#     schema_stats_generator = DataSchemaAndStatistics(df)
-    
-
-# def validate_data(new_df):
-#     schema_stats_generator = DataSchemaAndStatistics(df)
-#     anomalies = schema_stats_generator.validate_data(new_df)
-
-# ----------------------------------------------------------
-# Data Bias
 
 
 # ----------------------------------------------------------

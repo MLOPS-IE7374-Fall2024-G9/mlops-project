@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../'
 
 import pandas as pd
 from datetime import datetime, timedelta
-from src.data_pipeline import ( 
+from dags.src.data_download import ( 
     get_start_end_dates,
     get_last_k_start_end_dates,
     get_updated_data_from_api,
