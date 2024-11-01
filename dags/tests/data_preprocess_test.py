@@ -58,6 +58,34 @@ def test_engineer_features():
     expected_rows = len(pd.read_json(df_json)) - max(6, 6)  
     assert len(df_engineered) == expected_rows, f"Expected {expected_rows} rows, but got {len(df_engineered)}"
 
+def test_add_cyclic_features():
+    df_json = pd.DataFrame({
+        "datetime": [
+            "2024-01-01", "2024-02-01", "2024-03-01", "2024-04-01",
+            "2024-05-01", "2024-06-01", "2024-07-01", "2024-08-01",
+            "2024-09-01", "2024-10-01", "2024-11-01", "2024-12-01"
+        ]
+    }).to_json(orient='records', lines=False)
+
+    cyclic_json = add_cyclic_features(df_json)
+    df_cyclic = pd.read_json(cyclic_json)
+    
+    assert "month_sin" in df_cyclic.columns, "Expected 'month_sin' column is missing"
+    assert "month_cos" in df_cyclic.columns, "Expected 'month_cos' column is missing"
+    
+    assert df_cyclic['month_sin'].between(-1, 1).all(), "'month_sin' values are out of range [-1, 1]"
+    assert df_cyclic['month_cos'].between(-1, 1).all(), "'month_cos' values are out of range [-1, 1]"
+    
+    expected_sin_cos = {
+        "2024-01-01": (0.5, 0.866025),  # Jan: (sin, cos)
+        "2024-07-01": (-0.5, -0.866025) # Jul: (sin, cos)
+    }
+    
+    for date_str, (expected_sin, expected_cos) in expected_sin_cos.items():
+        row = df_cyclic[df_cyclic['datetime'] == date_str]
+        assert np.isclose(row['month_sin'].values[0], expected_sin, atol=1e-5), f"Incorrect 'month_sin' for {date_str}"
+        assert np.isclose(row['month_cos'].values[0], expected_cos, atol=1e-5), f"Incorrect 'month_cos' for {date_str}"
+
 def main():
 
     test_clean_data()
@@ -65,3 +93,6 @@ def main():
 
     test_engineer_features()
     print("test_engineer_features passed.")
+
+    test_add_cyclic_features()
+    print("test_add_cyclic_features passed.")
