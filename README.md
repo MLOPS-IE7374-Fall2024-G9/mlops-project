@@ -136,12 +136,12 @@ MLOPS-PROJECT/
 
 ### Example Data and Processing Flow
 
-The raw dataset contains fields ``` datetime, tempF, windspeedMiles, weatherCode, precipMM, precipInches, humidity, visibility, visibilityMiles, pressure, pressureInches, cloudcover, HeatIndexC, HeatIndexF, DewPointC, DewPointF, WindChillC, WindChillF, WindGustMiles, WindGustKmph, FeelsLikeC, FeelsLikeF, uvIndex, subba-name, value, value-units, zone. 
-```
+The raw dataset contains fields:
+datetime, tempF, windspeedMiles, weatherCode, precipMM, precipInches, humidity, visibility, visibilityMiles, pressure, pressureInches, cloudcover, HeatIndexC, HeatIndexF, DewPointC, DewPointF, WindChillC, WindChillF, WindGustMiles, WindGustKmph, FeelsLikeC, FeelsLikeF, uvIndex, subba-name, value, value-units, zone. 
+
 Example row:
-```
 2019-06-05T17,82,12,176,0.3,0.0,81,9,5,1008,30,87,32,90,24,76,28,82,23,36,32,90,6,ERCO - Coast,13395,megawatthours,COAS
-```
+
 
 **Processing Flow**:
    - Data is collected from the API and processed through the pipeline as described, undergoing transformations such as cleaning, feature engineering, normalization, and encoding.
