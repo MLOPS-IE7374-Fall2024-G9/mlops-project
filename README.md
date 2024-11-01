@@ -32,6 +32,9 @@ This project focuses on forecasting energy demand using weather data. The foreca
 
 
 ## Repository structure
+The repository is organized as follows:
+
+```plaintext
 MLOPS-PROJECT/
 ├── .dvc/                     # DVC configuration and cache for data version control
 ├── .github/                  # GitHub workflows and actions for CI/CD
@@ -51,6 +54,7 @@ MLOPS-PROJECT/
 ├── airflow.cfg               # Configuration file for Airflow
 ├── README.md                 # Project documentation
 └── setup.sh                  # Shell script to set up the project environment
+```
 
 ## Key Components
 
