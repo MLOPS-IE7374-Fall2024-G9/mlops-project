@@ -75,7 +75,6 @@ send_email = EmailOperator(
     dag=raw_data_dag,
     on_failure_callback=email_notify_failure,
     on_success_callback=email_notify_success,
-    trigger_rule=TriggerRule.ALL_DONE
 )
 
 # ------------------------------------------------------------------------------------------------
