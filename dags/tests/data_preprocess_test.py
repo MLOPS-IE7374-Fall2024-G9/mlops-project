@@ -26,7 +26,6 @@ def test_clean_data():
     assert df_cleaned.isnull().sum().sum() == 0, "Missing values were not removed"
     assert len(df_cleaned) == 3, f"Expected 3 rows after removing duplicates, but got {len(df_cleaned)}"
 
-
 def test_engineer_features():
     df_json = pd.DataFrame({
         "tempF": [70, 71, 69, 68, 72, 74, 73, 75, 76, 78],
@@ -80,13 +79,40 @@ def test_add_cyclic_features():
         "2024-01-01": (0.5, 0.866025),  # Jan: (sin, cos)
         "2024-07-01": (-0.5, -0.866025) # Jul: (sin, cos)
     }
-
+    
     for date_str, (expected_sin, expected_cos) in expected_sin_cos.items():
         row = df_cyclic[df_cyclic['datetime'] == date_str]
         assert np.isclose(row['month_sin'].values[0], expected_sin, atol=1e-5), f"Incorrect 'month_sin' for {date_str}"
         assert np.isclose(row['month_cos'].values[0], expected_cos, atol=1e-5), f"Incorrect 'month_cos' for {date_str}"
 
+def test_normalize_and_encode():
+    df_json = pd.DataFrame({
+        "tempF": [60, 70, 80, 90],
+        "humidity": [30, 40, 50, 60],
+        "windspeedMiles": [5, 10, 15, 20],
+        "month_sin": [0.5, 0.866025, -0.5, -0.866025], 
+        "month_cos": [0.866025, 0.5, -0.866025, -0.5],  
+        "category": ["A", "B", "A", "C"], 
+        "datetime": ["2024-01-01", "2024-02-01", "2024-03-01", "2024-04-01"]
+    }).to_json(orient='records', lines=False)
     
+    normalized_json = normalize_and_encode(df_json)
+    df_normalized = pd.read_json(normalized_json)
+    
+    columns_to_normalize = ["tempF", "humidity", "windspeedMiles"]
+    for col in columns_to_normalize:
+        assert df_normalized[col].between(0, 1).all(), f"{col} values not normalized to [0, 1]"
+
+    assert df_normalized['month_sin'].between(0, 1).all(), "'month_sin' values are out of range [0, 1]"
+    assert df_normalized['month_cos'].between(0, 1).all(), "'month_cos' values are out of range [0, 1]"
+    
+    assert df_normalized['category'].dtype == int, "Category column not label-encoded as integer"
+    
+    unique_encoded_values = sorted(df_normalized['category'].unique())
+    expected_labels = [0, 1, 2]  # Based on ["A", "B", "C"]
+    assert unique_encoded_values == expected_labels, f"Unexpected label encoding: {unique_encoded_values}"
+
+
 def main():
 
     test_clean_data()
@@ -97,3 +123,6 @@ def main():
 
     test_add_cyclic_features()
     print("test_add_cyclic_features passed.")
+
+    test_normalize_and_encode()
+    print("test_normalize_and_encode passed.")
