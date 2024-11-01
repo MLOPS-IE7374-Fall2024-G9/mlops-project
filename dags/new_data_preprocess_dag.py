@@ -5,6 +5,13 @@ from datetime import datetime, timedelta
 from src.data_download import *
 from src.data_preprocess import *
 
+
+# ------------------------------------------------------------------------------------------------
+# variables
+delta_days = 7
+filename_preprocessed = "data_preprocess.csv"
+
+# ------------------------------------------------------------------------------------------------
 # default args
 default_args = {
     'owner': 'Group 9',
@@ -25,19 +32,13 @@ new_data_dag = DAG(
 )
 
 # ------------------------------------------------------------------------------------------------
-# variables
-delta_days = 7
-filename_raw = "data_raw.csv"
-filename_preprocessed = "data_preprocess.csv"
-
-# ------------------------------------------------------------------------------------------------
-# Email operators
+# Email operator
 def email_notify_success(context):
     success_email = EmailOperator(
         task_id='success_email',
-        to='keshri.r@northeastern.edu',
+        to=['keshri.r@northeastern.edu'],
         subject='Task Success',
-        html_content='<p>The task succeeded.</p>',
+        html_content='<p>New data download succeeded.</p>',
         dag=context['dag']
     )
     success_email.execute(context=context)
@@ -45,22 +46,22 @@ def email_notify_success(context):
 def email_notify_failure(context):
     success_email = EmailOperator(
         task_id='failure_email',
-        to='keshri.r@northeastern.edu',
+        to=['keshri.r@northeastern.edu'],
         subject='Task Failure',
-        html_content='<p>The task succeeded.</p>',
+        html_content='<p>New data download task Failed.</p>',
         dag=context['dag']
     )
     success_email.execute(context=context)
-
-# send_email = EmailOperator(
-#     task_id='send_email',
-#     to='keshri.r@northeastern.edu',    # Email address of the recipient
-#     subject='Notification from Airflow',
-#     html_content='<p>This is a notification email sent from Airflow.</p>',
-#     dag=data_dag,
-#     on_failure_callback=email_notify_failure,
-#     on_success_callback=email_notify_success
-# )
+    
+send_email = EmailOperator(
+    task_id='send_email',
+    to='keshri.r@northeastern.edu',    # Email address of the recipient
+    subject='Notification from Airflow',
+    html_content='<p>This is a notification email sent from Airflow. </p>',
+    dag=new_data_dag,
+    on_failure_callback=email_notify_failure,
+    on_success_callback=email_notify_success
+)
 
 # ------------------------------------------------------------------------------------------------
 # Python operators
@@ -181,7 +182,7 @@ delete_local_task = PythonOperator(
 # --------------------------
 
 # get data from api (new data) -> get data from dvc -> merge new data with dvc -> push back to dvc
-data_from_dvc_task >> last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> engineer_features_task >> add_cyclic_features_task >> normalize_and_encode_task >> select_final_features_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task #>> delete_local_task
+data_from_dvc_task >> last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> engineer_features_task >> add_cyclic_features_task >> normalize_and_encode_task >> select_final_features_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task >> delete_local_task >> send_email
 
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
