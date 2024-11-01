@@ -120,15 +120,9 @@ MLOPS-PROJECT/
    - **Flow**:
      - The API data is checked against the schema. If anomalies are found, an alert email is sent.
      - If no anomalies are detected, the data proceeds through the pipeline without interruptions.
-   - **Alerts**: Notifications are sent via email or Slack when anomalies are detected.
+   - **Alerts**: Notifications are sent via email when anomalies are detected.
 
-### 9. Pipeline Flow Optimization
-   - **Purpose**: Identifies and addresses bottlenecks in the pipeline.
-   - **Implementation**:
-     - Airflow’s Gantt chart is used to monitor task duration and detect slow-performing tasks.
-     - Tasks are optimized by parallelizing or improving performance as needed.
-
-### 10. Bias Detection
+### 9. Bias Detection
    - **Purpose**: Detects and mitigates bias in data by using data slicing and model training techniques.
    - **Implementation**:
      - Data slicing is used to create subsets of data to evaluate performance across different segments.
