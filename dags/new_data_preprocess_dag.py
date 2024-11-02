@@ -1,10 +1,11 @@
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
 from airflow.operators.email_operator import EmailOperator
 from airflow.utils.trigger_rule import TriggerRule
 from datetime import datetime, timedelta
 from src.data_download import *
 from src.data_preprocess import *
+from src.data_schema_validation import *
 
 
 # ------------------------------------------------------------------------------------------------
@@ -12,6 +13,16 @@ from src.data_preprocess import *
 delta_days = 7
 filename_preprocessed = "data_preprocess.csv"
 filename_raw = "data_raw.csv"
+
+# local functions
+# Function to determine whether to proceed based on validation result
+def check_validation_result(**kwargs):
+    validation_result = kwargs['ti'].xcom_pull(task_ids='validate_data_with_schema_task')
+    if validation_result == 1:
+        return 'merge_data_task'  # Task to continue if validation is successful
+    else:
+        return 'send_failure_email'  # Task to send failure email and stop flow
+
 
 # ------------------------------------------------------------------------------------------------
 # default args
@@ -65,8 +76,25 @@ send_email = EmailOperator(
     on_success_callback=email_notify_success, 
 )
 
+# Task to send notification email for validation failure
+send_data_validation_failure_email = EmailOperator(
+    task_id='send_failure_email',
+    to='keshri.r@northeastern.edu',
+    subject='Data Validation Failed',
+    html_content='<p>Data validation has failed. Please review the data.</p>',
+    dag=new_data_dag,
+)
+
 # ------------------------------------------------------------------------------------------------
 # Python operators
+# Branch operator to decide the next step based on validation result
+branch_task = BranchPythonOperator(
+    task_id='branch_on_validation',
+    python_callable=check_validation_result,
+    provide_context=True,
+    dag=new_data_dag,
+)
+
 # --------------------------
 # Data API Operators
 # function returns start and end date for last "number of days"
@@ -140,12 +168,22 @@ select_final_features_task = PythonOperator(
     dag=new_data_dag,
 )
 
+
 # function to pull preprocessed data from dvc, returns json
 processed_data_from_dvc_task = PythonOperator(
     task_id = 'processed_data_from_dvc_task',
     python_callable=get_data_from_dvc,
     provide_context=True,
     op_args=[filename_preprocessed],
+    dag = new_data_dag
+)
+
+# function to validate data with schema
+validate_data_with_schema_task =  PythonOperator(
+    task_id = 'validate_data_with_schema_task',
+    python_callable=validate_data,
+    provide_context=True,
+    op_args=[processed_data_from_dvc_task.output, select_final_features_task.output],
     dag = new_data_dag
 )
 
@@ -212,9 +250,12 @@ delete_local_task = PythonOperator(
 # --------------------------
 
 # get data from api (new data) -> get data from dvc -> merge new data with dvc -> push back to dvc
-last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> engineer_features_task >> add_cyclic_features_task >> normalize_and_encode_task >> select_final_features_task >> processed_data_from_dvc_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task
+last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> engineer_features_task >> add_cyclic_features_task >> normalize_and_encode_task >> select_final_features_task >> processed_data_from_dvc_task >> validate_data_with_schema_task >> branch_task
+branch_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task
+branch_task >> send_data_validation_failure_email
 raw_data_from_dvc_task >> merge_raw_data_task >> update_raw_data_to_dvc_task
-update_data_to_dvc_task >> update_raw_data_to_dvc_task >> delete_local_task >> send_email
+update_data_to_dvc_task >> update_raw_data_to_dvc_task >> delete_local_task 
+update_raw_data_to_dvc_task >> send_email
 
 
 
