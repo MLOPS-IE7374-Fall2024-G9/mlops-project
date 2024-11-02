@@ -19,8 +19,7 @@ def get_last_k_start_end_dates(days: int) -> tuple[str, str]:
     _, today = data_obj.get_yesterday_dates()
     
     # Calculate the start date based on the specified number of days
-    start_date = (pd.to_datetime(today) - timedelta(days=days-1)).strftime('%d-%m-%Y')
-    
+    start_date = (datetime.now() - timedelta(days=days-1)).strftime('%d-%m-%Y')
     return start_date, today
 
 def get_updated_data_from_api(dates: tuple[str, str]) -> pd.DataFrame:
