@@ -19,7 +19,7 @@ dag/
 - **src/**: Contains the Python modules used in the DAGs for various tasks, such as downloading, preprocessing, and validating data.
 - **tests/**: Holds test files to verify the DAG functionalities and the correctness of each function in `src`.
 - **new_data_preprocess_dag.py**: Airflow DAG script for downloading and preprocessing new data.
-- **raw_data_preprocess_dag.py**: (Not detailed here) A separate DAG script, potentially for handling raw data preprocessing tasks.
+- **raw_data_preprocess_dag.py**: Airflow DAG script, for handling raw api data preprocessing tasks.
 
 ---
 
