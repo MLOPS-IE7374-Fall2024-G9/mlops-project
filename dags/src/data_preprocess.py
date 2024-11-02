@@ -113,4 +113,17 @@ def select_final_features(df_json):
     return json_data_selected
 
 
+def preprocess_pipeline(file_path):
+    df = pd.read_csv(file_path)
 
+    df_json =  df.to_json(orient='records', lines=False)
+    df_json = clean_data(df_json)
+    df_json = engineer_features(df_json)
+    df_json = add_cyclic_features(df_json)
+    df_json = normalize_and_encode(df_json)
+    df_json = select_final_features(df_json)
+
+    df = pd.read_json(df_json)
+    df.to_csv(file_path)
+
+    return file_path
