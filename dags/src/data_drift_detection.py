@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from scipy.stats import ks_2samp, chi2_contingency
+from scipy.stats import ks_2samp
 from evidently import ColumnMapping
 from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset
@@ -30,7 +30,7 @@ class DataDriftDetector:
         # Initialize and generate the data drift report
         self.report = Report(metrics=[DataDriftPreset()])
         self.report.run(reference_data=self.baseline_data, current_data=self.new_data, column_mapping=column_mapping)
-        #self.report.save_html("/Users/nikhilsirisala/Desktop/drift_report.html") #To save locally
+        #self.report.save_html("/your-path/drift_report.html") #To save locally
         report_dict = self.report.as_dict()
         return report_dict
 
@@ -79,8 +79,6 @@ class DataDriftDetector:
 
 df = pd.read_csv('/Users/nikhilsirisala/Desktop/Course_Notes/MlOps/mlops-project/dataset/data/data_raw.csv')
 df = df.sample(frac=1, random_state=42).reset_index(drop=True)
-# df = df[df['subba-name']==19]
-#df = df.tail(10000)
 
 # Convert the 'datetime' column to datetime format
 df['datetime'] = pd.to_datetime(df['datetime'], errors='coerce')
@@ -96,21 +94,14 @@ drift_detector = DataDriftDetector(baseline_df, new_data_df)
 # Detect drift using Evidently
 drift_detector.detect_drift_evidently()
 evidently_results = drift_detector.get_results()
-#print("Evidently Drift Detection Results:", evidently_results)
-
-#evidently_df = pd.DataFrame.from_dict(evidently_results, orient="index")
 print("Evidently Drift Detection Results:",evidently_results)
  
 # Detect drift using KS Test
 ks_test_results = drift_detector.detect_drift_ks_test()
-# print("KS Test Drift Results:", ks_test_results)
-
 ks_df = pd.DataFrame.from_dict(ks_test_results, orient="index")
 print("KS Test Drift Results:",ks_df)
  
 # Detect drift using PSI
 psi_results = drift_detector.detect_drift_psi()
-#print("PSI Drift Results:", psi_results)
-
 psi_df = pd.DataFrame.from_dict(psi_results, orient="index")
 print("PSI Drift Results:", psi_df)
