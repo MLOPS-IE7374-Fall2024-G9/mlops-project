@@ -28,7 +28,7 @@ class DVCManager:
         self.data_dir = os.path.join(self.script_dir, "../data")
 
         # Configure dvc
-        #self.configure_dvc_credentials(json_credential_path)
+        self.configure_dvc_credentials(json_credential_path)
         self.all_data_filename = "data_raw.csv"
         self.processed_data_filename = "data_preprocessed.csv"
 
