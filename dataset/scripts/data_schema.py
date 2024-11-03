@@ -66,4 +66,3 @@ class DataSchemaAndStatistics:
             schema_dict = json.load(file)
         self.schema = pa.DataFrameSchema.from_json(schema_dict)
         logger.info(f"Schema loaded successfully from {file_path}")
-
