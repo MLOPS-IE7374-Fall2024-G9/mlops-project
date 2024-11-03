@@ -37,6 +37,9 @@ jobs:
           pip install -r requirements_test.txt
 
     - name: Run dags unit tests
+      env:
+        DEMAND_API_KEY=${{secrets.DEMAND_API_KEY}}
+        WEATHER_API_KEY=${{secrets.WEATHER_API_KEY}}
       run: |
         pytest dags/tests/tests.py --junitxml=pytest_dag_tests-report.xml
 
