@@ -6,3 +6,4 @@ dvc[gs]
 google-cloud-logging
 scikit-learn
 pandera
+fairlearn

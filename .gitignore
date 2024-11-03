@@ -19,6 +19,7 @@ mlartifacts
 Thumbs.db
 docker-compose-local.yaml
 mlflow.db
+bias_detection_results.pkl
 
 # Ignore Python cache and compiled Python files
 __pycache__/
