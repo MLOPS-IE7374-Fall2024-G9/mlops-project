@@ -12,6 +12,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 class DataSchemaAndStatistics:
     def __init__(self, data: pd.DataFrame):
         self.data = data
@@ -30,20 +31,17 @@ class DataSchemaAndStatistics:
         """
         Validates new data against the inferred schema.
         """
-        new_data.fillna(0, inplace=True)
-        
         if not self.schema:
             raise ValueError("Schema has not been inferred. Run infer_schema() first.")
-        
+
         try:
             validated_data = self.schema.validate(new_data, lazy=True)
             logger.info("New data validated successfully.")
-            return 1
+            return validated_data
         except pa.errors.SchemaErrors as e:
-            logger.info(new_data["pressureInches"])
             logger.error("Schema validation errors found:")
             logger.error(e)
-            return 0
+            return None
 
     def save_schema(self, file_path: str):
         """
@@ -51,10 +49,10 @@ class DataSchemaAndStatistics:
         """
         if not self.schema:
             raise ValueError("Schema has not been inferred. Run infer_schema() first.")
-        
+
         # Convert schema to a dictionary and save it as JSON
         schema_dict = self.schema.to_json()
-        with open(file_path, 'w') as file:
+        with open(file_path, "w") as file:
             json.dump(schema_dict, file, indent=4)
         logger.info(f"Schema saved successfully at {file_path}")
 
@@ -62,8 +60,7 @@ class DataSchemaAndStatistics:
         """
         Loads a schema from a specified file path in JSON format.
         """
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             schema_dict = json.load(file)
         self.schema = pa.DataFrameSchema.from_json(schema_dict)
         logger.info(f"Schema loaded successfully from {file_path}")
-

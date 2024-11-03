@@ -27,6 +27,7 @@ bias_detection_and_mitigation = DAG(
 data_path = '/opt/airflow/dataset/data/data_preprocess.csv'
 bias_results_path = '/opt/airflow/model/bias_detection_results.pkl'  # For storing intermediate results
 mitigated_data_path = '/opt/airflow/dataset/data/bias_mitigated_data.csv'
+
 filename_preprocessed = "data_preprocess.csv"
 
 
