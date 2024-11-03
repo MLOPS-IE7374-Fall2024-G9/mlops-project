@@ -49,7 +49,7 @@ new_data_dag = DAG(
 def email_notify_success(context):
     success_email = EmailOperator(
         task_id='success_email',
-        to=['keshri.r@northeastern.edu'],
+        to=["mlops.group.9@gmail.com"],
         subject='Task Success',
         html_content='<p>New data download succeeded.</p>',
         dag=context['dag']
@@ -59,7 +59,7 @@ def email_notify_success(context):
 def email_notify_failure(context):
     success_email = EmailOperator(
         task_id='failure_email',
-        to=['keshri.r@northeastern.edu'],
+        to=["mlops.group.9@gmail.com"],
         subject='Task Failure',
         html_content='<p>New data download task Failed.</p>',
         dag=context['dag']
@@ -68,7 +68,7 @@ def email_notify_failure(context):
 
 send_email = EmailOperator(
     task_id='send_email',
-    to='keshri.r@northeastern.edu',    # Email address of the recipient
+    to=["mlops.group.9@gmail.com"],    # Email address of the recipient
     subject='Notification from Airflow',
     html_content='<p>This is a notification email sent from Airflow. </p>',
     dag=new_data_dag,
@@ -79,7 +79,7 @@ send_email = EmailOperator(
 # Task to send notification email for validation failure
 send_data_validation_failure_email = EmailOperator(
     task_id='send_failure_email',
-    to='keshri.r@northeastern.edu',
+    to=["mlops.group.9@gmail.com"],
     subject='Data Validation Failed',
     html_content='<p>Data validation has failed. Please review the data.</p>',
     dag=new_data_dag,
