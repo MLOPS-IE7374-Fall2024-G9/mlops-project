@@ -149,3 +149,4 @@ def test_normalize_and_encode():
     unique_encoded_values = sorted(df_normalized['category'].unique())
     expected_labels = [0, 1, 2]  # Based on ["A", "B", "C"]
     assert unique_encoded_values == expected_labels, f"Unexpected label encoding: {unique_encoded_values}"
+    
