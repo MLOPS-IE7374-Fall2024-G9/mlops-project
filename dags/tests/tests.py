@@ -143,9 +143,13 @@ def test_normalize_and_encode():
 
     assert df_normalized['month_sin'].between(0, 1).all(), "'month_sin' values are out of range [0, 1]"
     assert df_normalized['month_cos'].between(0, 1).all(), "'month_cos' values are out of range [0, 1]"
+
+    print(df_normalized['category'].dtype)
+    print(df_normalized['category'])
     
     assert df_normalized['category'].dtype == int, "Category column not label-encoded as integer"
     
     unique_encoded_values = sorted(df_normalized['category'].unique())
     expected_labels = [0, 1, 2]  # Based on ["A", "B", "C"]
     assert unique_encoded_values == expected_labels, f"Unexpected label encoding: {unique_encoded_values}"
+    

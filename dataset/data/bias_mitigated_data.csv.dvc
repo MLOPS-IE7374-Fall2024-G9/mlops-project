@@ -1,6 +1,6 @@
 outs:
 - md5: bef7f1f391314b35f7c581903d86a4a9
   size: 14763996
-  hash: md5
-  path: data_preprocess.csv
   isexec: true
+  hash: md5
+  path: bias_mitigated_data.csv
