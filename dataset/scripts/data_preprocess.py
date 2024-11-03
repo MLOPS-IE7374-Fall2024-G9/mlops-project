@@ -9,15 +9,9 @@ class DataPreprocessor:
     A class to preprocess data for a machine learning pipeline, including data cleaning,
     feature engineering, cyclic feature addition, normalization, encoding, and DVC tracking.
     """
-
-    def __init__(self, delta_days=7, filename_preprocessed="data_preprocess.csv", filename_raw="data_raw.csv"):
-        """
-        Initializes the DataPreprocessor class with optional configurations.
-        """
-        self.delta_days = delta_days
-        self.filename_preprocessed = filename_preprocessed
-        self.filename_raw = filename_raw
-
+    def __init__(self):
+        pass
+    
     def save_data(self, df, step_name="processed_data"):
         """
         Saves DataFrame to CSV and tracks with DVC for version control.
@@ -76,8 +70,8 @@ class DataPreprocessor:
         Adds cyclic features to capture seasonality patterns.
         """
         df = pd.read_json(df_json)
-        df['datetime'] = pd.to_datetime(df['datetime'])
-        df['month'] = df['datetime'].dt.month
+        df['datetime_1'] = pd.to_datetime(df['datetime'])
+        df['month'] = df['datetime_1'].dt.month
         df['month_sin'] = np.round(np.sin(2 * np.pi * df['month'] / 12), decimals=6)
         df['month_cos'] = np.round(np.cos(2 * np.pi * df['month'] / 12), decimals=6)
         df.drop(columns=['month'], inplace=True)
@@ -90,7 +84,7 @@ class DataPreprocessor:
         Normalizes numerical features and encodes categorical features.
         """
         df = pd.read_json(df_json)
-        columns_to_normalize = df.select_dtypes(include=[np.number]).columns.difference(['month_sin', 'month_cos'])
+        columns_to_normalize = df.select_dtypes(include=[np.number]).columns.difference(['month_sin', 'month_cos', "zone", "datetime", "subba-name"])
         df[columns_to_normalize] = df[columns_to_normalize].apply(lambda x: (x - x.min()) / (x.max() - x.min()))
         df['month_cos'] = (df['month_cos'] + 1) / 2
         df['month_sin'] = (df['month_sin'] + 1) / 2
@@ -98,8 +92,8 @@ class DataPreprocessor:
         for col in df.select_dtypes(include=['object']).columns:
             if col != 'datetime':
                 df[col] = df[col].astype(str)
-                le = LabelEncoder()
-                df[col] = le.fit_transform(df[col])
+                # le = LabelEncoder()
+                # df[col] = le.fit_transform(df[col])
 
         print("Data normalization and encoding complete.")
         json_data = df.to_json(orient='records', lines=False)
