@@ -66,47 +66,7 @@ def select_final_features(df_json):
 
 
 def preprocess_pipeline(file_path):
-    # Get total number of rows in the file
-    total_rows = sum(1 for _ in open(file_path)) - 1  # Exclude header row
-    chunk_size = max(1, total_rows // 100)  # Ensure at least 1 row per chunk
-
-    print(f"Total rows: {total_rows}, Chunk size: {chunk_size}")
-
     # Initialize the preprocessor object
     preprocess_obj = DataPreprocessor()
-    
-    # Define the output file path for the preprocessed data
-    preprocessed_file_path = os.path.join(os.path.dirname(file_path), "data_preprocess.csv")
-
-    # Open the output file in write mode to prepare for saving processed chunks
-    with open(preprocessed_file_path, 'w') as output_file:
-        # Read the data in chunks
-        for i, chunk in enumerate(pd.read_csv(file_path, chunksize=chunk_size)):
-            print(f"Processing chunk {i+1}...")
-            
-            # Ensure columns are in the correct data type
-            chunk['datetime'] = chunk['datetime'].astype(str)
-            chunk['zone'] = chunk['zone'].astype(str)
-            chunk['subba-name'] = chunk['subba-name'].astype(str)
-            
-            # Convert to JSON format for DAG compatibility
-            df_json = chunk.to_json(orient='records', lines=False)
-            
-            # Preprocessing steps
-            df_json = preprocess_obj.clean_data(df_json)
-            df_json = preprocess_obj.engineer_features(df_json)
-            df_json = preprocess_obj.add_cyclic_features(df_json)
-            df_json = preprocess_obj.normalize_and_encode(df_json)
-            df_json = preprocess_obj.select_final_features(df_json)
-            
-            # Convert back to DataFrame
-            processed_chunk = pd.read_json(df_json)
-            
-            # Save the chunk to CSV, appending from the second chunk onward
-            header = (i == 0)  # Write header only for the first chunk
-            processed_chunk.to_csv(output_file, index=False, mode='a', header=header)
-            print(f"Chunk {i+1} processed and saved.")
-    
-    print("All chunks processed and saved to the final preprocessed file.")
-
+    preprocessed_file_path = preprocess_obj.preprocess_pipeline(file_path, chunk_by_subba=False)
     return preprocessed_file_path

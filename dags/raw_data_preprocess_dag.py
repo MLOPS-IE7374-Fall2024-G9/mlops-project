@@ -105,7 +105,8 @@ delete_local_task = PythonOperator(
 # get data from dvc (raw data) -> preprocess raw data -> push back to dvc
 data_from_dvc_task >> preprocess_pipeline_task >> update_data_to_dvc_task
 preprocess_pipeline_task >> [delete_local_task]
-update_data_to_dvc_task >> delete_local_task >> send_email
+update_data_to_dvc_task >> delete_local_task 
+update_data_to_dvc_task >> send_email
 
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":

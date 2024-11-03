@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 import datetime
 import subprocess
+import os
 
 class DataPreprocessor:
     """
@@ -118,3 +119,83 @@ class DataPreprocessor:
         print("Feature selection complete: selected features retained.")
         json_data_selected = df_selected.to_json(orient='records', lines=False)
         return json_data_selected
+    
+    def preprocess_pipeline(self, file_path, chunk_by_subba=True):
+        """
+        Processes the data by either chunking based on unique 'subba-name' values or by row count (100 rows).
+        Each subset is processed independently and saved in a single output CSV file.
+        """
+        # Define the output file path for the preprocessed data
+        preprocessed_file_path = os.path.join(os.path.dirname(file_path), "data_preprocess.csv")
+
+        if chunk_by_subba:
+            # Load the entire dataset
+            data = pd.read_csv(file_path)
+            unique_subbas = data['subba-name'].unique()  # Get unique values of 'subba-name'
+
+            print(f"Total unique 'subba-name' values: {len(unique_subbas)}")
+
+            with open(preprocessed_file_path, 'w') as output_file:
+                for i, subba in enumerate(unique_subbas):
+                    print(f"Processing chunk {i+1} for subba-name: {subba}...")
+                    
+                    # Filter the data for the current 'subba-name'
+                    chunk = data[data['subba-name'] == subba]
+
+                    # Ensure columns are in the correct data type
+                    chunk['datetime'] = chunk['datetime'].astype(str)
+                    chunk['zone'] = chunk['zone'].astype(str)
+                    chunk['subba-name'] = chunk['subba-name'].astype(str)
+                    
+                    # Convert to JSON format for DAG compatibility
+                    df_json = chunk.to_json(orient='records', lines=False)
+                    
+                    # Preprocessing steps
+                    df_json = self.clean_data(df_json)
+                    df_json = self.engineer_features(df_json)
+                    df_json = self.add_cyclic_features(df_json)
+                    df_json = self.normalize_and_encode(df_json)
+                    df_json = self.select_final_features(df_json)
+                    
+                    # Convert back to DataFrame
+                    processed_chunk = pd.read_json(df_json)
+                    
+                    # Save the chunk to CSV, appending from the second chunk onward
+                    header = (i == 0)  # Write header only for the first chunk
+                    processed_chunk.to_csv(output_file, index=False, mode='a', header=header)
+                    print(f"Chunk {i+1} processed and saved for subba-name: {subba}.")
+        else:
+            # Get total number of rows in the file
+            total_rows = sum(1 for _ in open(file_path)) - 1  # Exclude header row
+            chunk_size = max(1, total_rows // 100)  # Ensure at least 1 row per chunk
+            print(f"Total rows: {total_rows}, Chunk size: {chunk_size}")
+
+            with open(preprocessed_file_path, 'w') as output_file:
+                for i, chunk in enumerate(pd.read_csv(file_path, chunksize=chunk_size)):
+                    print(f"Processing chunk {i+1}...")
+
+                    # Ensure columns are in the correct data type
+                    chunk['datetime'] = chunk['datetime'].astype(str)
+                    chunk['zone'] = chunk['zone'].astype(str)
+                    chunk['subba-name'] = chunk['subba-name'].astype(str)
+                    
+                    # Convert to JSON format for DAG compatibility
+                    df_json = chunk.to_json(orient='records', lines=False)
+                    
+                    # Preprocessing steps
+                    df_json = self.clean_data(df_json)
+                    df_json = self.engineer_features(df_json)
+                    df_json = self.add_cyclic_features(df_json)
+                    df_json = self.normalize_and_encode(df_json)
+                    df_json = self.select_final_features(df_json)
+                    
+                    # Convert back to DataFrame
+                    processed_chunk = pd.read_json(df_json)
+                    
+                    # Save the chunk to CSV, appending from the second chunk onward
+                    header = (i == 0)  # Write header only for the first chunk
+                    processed_chunk.to_csv(output_file, index=False, mode='a', header=header)
+                    print(f"Chunk {i+1} processed and saved.")
+            
+        print("All chunks processed and saved to the final preprocessed file.")
+        return preprocessed_file_path
