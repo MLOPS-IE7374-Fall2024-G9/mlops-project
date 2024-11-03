@@ -1,0 +1,56 @@
+# Name of the git hub action
+name: Run dag tests
+
+# Trigger conditions
+# on push or pull on branches, folders, files etc
+# change the trigger branches according to your respective branch
+on:
+  pull_request:
+    branches:
+      # - aakash_dev
+      # - rajat_dev
+      # - amogha_dev
+      # - jahnavi_dev
+      # - nikhil_dev
+      # - samanvya_dev
+      - dev
+
+jobs:
+  dags_test_job:
+    runs-on: ubuntu-latest 
+
+    # Check out the code from the repository
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    # Set up Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    # Install dependencies
+    - name: Install dependencies
+      run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_test.txt
+
+    - name: Run dags unit tests
+      run: |
+        pytest dags/tests/tests.py --junitxml=pytest_dag_tests-report.xml
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: dag_test-results
+        path: pytest_dag_tests-report.xml
+
+    - name: Notify on success
+      if: success()
+      run: echo "Tests passed successfully!"
+
+    - name: Notify on failure
+      if: failure()
+      run: echo "Tests failed."
