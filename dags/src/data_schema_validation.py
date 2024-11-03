@@ -28,3 +28,16 @@ def validate_data(dvc_file_name, api_json):
         return 0
     else:
         return 1
+
+def fix_anomalies(api_json):
+    api_df = pd.read_json(api_json)
+
+    data_schema_obj = DataSchemaAndStatistics(api_df)
+    api_df = data_schema_obj.fix_anomalies(api_df)
+
+    json_data_cleaned = api_df.to_json(orient='records', lines=False)
+    return json_data_cleaned
+
+
+
+
