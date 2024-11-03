@@ -39,7 +39,7 @@ new_data_dag = DAG(
     "new_data_dag",
     default_args=default_args,
     description="New Data Download and Preprocess DAG",
-    schedule_interval=None,
+    schedule_interval='@daily',
     catchup=False,
     tags=['new_data_dag']
 )
