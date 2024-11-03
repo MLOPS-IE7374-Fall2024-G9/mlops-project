@@ -15,18 +15,29 @@ This project focuses on forecasting energy demand using weather data. The foreca
    ./setup.sh
    ```
 
+   If the script doesnt work on linux, convert it using the following -
+   ```bash
+   sudo apt install dos2unix
+   dos2unix setup.sh
+   ```
+   
+   Then run it
+   ```bash
+   ./setup.sh
+   ```
+   
    This script will:
    - Copy necessary configuration files from the `airflow-config` directory.
    - Create a `.env` file with required environment variables.
 
-3. **Build and start the Docker containers**:
+4. **Build and start the Docker containers**:
    ```bash
    docker-compose up --build -d
    ```
 
    This command will build the Docker images and start the containers in detached mode.
 
-4. **Access the Airflow UI**:
+5. **Access the Airflow UI**:
    - Open your web browser and navigate to [http://localhost:8000/home](http://localhost:8000/home).
    - From here, you can start running the Airflow DAGs to orchestrate the energy demand forecasting workflows.
 
