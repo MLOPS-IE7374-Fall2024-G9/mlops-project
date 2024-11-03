@@ -4,6 +4,7 @@ from scipy.stats import ks_2samp
 from evidently import ColumnMapping
 from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset
+from data_download import *
  
 class DataDriftDetector:
     def __init__(self, baseline_data: pd.DataFrame, new_data: pd.DataFrame):
@@ -76,14 +77,15 @@ class DataDriftDetector:
         return self.report.as_dict()
  
 
+file_path = get_data_from_dvc('data_raw.csv') #pulling data from DVC
 
-df = pd.read_csv('/Users/nikhilsirisala/Desktop/Course_Notes/MlOps/mlops-project/dataset/data/data_raw.csv')
+df = pd.read_csv(file_path)
 df = df.sample(frac=1, random_state=42).reset_index(drop=True)
 
 # Convert the 'datetime' column to datetime format
 df['datetime'] = pd.to_datetime(df['datetime'], errors='coerce')
 
-
+#using the existing file to detect drift - need to connect with the daily data 
 split_point = int(len(df) * 0.7)
 baseline_df = df.iloc[:split_point]
 new_data_df = df.iloc[split_point:]
