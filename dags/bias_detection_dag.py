@@ -8,6 +8,7 @@ import pickle
 
 # Import necessary functions or define them here if not imported
 # from my_bias_module import detect_bias, conditional_mitigation
+from src.data_download import *
 
 default_args = {
     'owner': 'user',
@@ -27,7 +28,10 @@ data_path = '/opt/airflow/dataset/data/data_preprocess.csv'
 bias_results_path = '/opt/airflow/model/bias_detection_results.pkl'  # For storing intermediate results
 mitigated_data_path = '/opt/airflow/dataset/data/bias_mitigated_data.csv'
 
-def identify_bias():
+filename_preprocessed = "data_preprocess.csv"
+
+
+def identify_bias(data_path):
     # Load the new data
     data = pd.read_csv(data_path)
     target_col = 'value'
@@ -59,9 +63,18 @@ def mitigate_bias():
     mitigated_data.to_csv(mitigated_data_path, index=False)
 
 # Define the tasks
+processed_data_from_dvc_task = PythonOperator(
+    task_id = 'processed_data_from_dvc_task',
+    python_callable=get_data_from_dvc,
+    provide_context=True,
+    op_args=[filename_preprocessed],
+    dag = bias_detection_and_mitigation
+)
+
 identify_bias_task = PythonOperator(
     task_id='identify_bias',
     python_callable=identify_bias,
+    op_args=[processed_data_from_dvc_task.output],
     dag=bias_detection_and_mitigation,
 )
 
@@ -72,7 +85,7 @@ mitigate_bias_task = PythonOperator(
 )
 
 # Set task dependencies
-identify_bias_task >> mitigate_bias_task
+processed_data_from_dvc_task >> identify_bias_task >> mitigate_bias_task
 
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":

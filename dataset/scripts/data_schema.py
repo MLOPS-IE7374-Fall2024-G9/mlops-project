@@ -30,6 +30,8 @@ class DataSchemaAndStatistics:
         """
         Validates new data against the inferred schema.
         """
+        new_data.fillna(0, inplace=True)
+        
         if not self.schema:
             raise ValueError("Schema has not been inferred. Run infer_schema() first.")
         
@@ -38,6 +40,7 @@ class DataSchemaAndStatistics:
             logger.info("New data validated successfully.")
             return 1
         except pa.errors.SchemaErrors as e:
+            logger.info(new_data["pressureInches"])
             logger.error("Schema validation errors found:")
             logger.error(e)
             return 0
