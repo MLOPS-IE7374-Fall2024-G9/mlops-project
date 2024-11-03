@@ -30,7 +30,6 @@ class DataSchemaAndStatistics:
         """
         Validates new data against the inferred schema.
         """
-        new_data.fillna(0, inplace=True)
         
         if not self.schema:
             raise ValueError("Schema has not been inferred. Run infer_schema() first.")
@@ -40,10 +39,38 @@ class DataSchemaAndStatistics:
             logger.info("New data validated successfully.")
             return 1
         except pa.errors.SchemaErrors as e:
-            logger.info(new_data["pressureInches"])
+            new_data.fillna(0, inplace=True)
             logger.error("Schema validation errors found:")
             logger.error(e)
             return 0
+        
+    def fix_anomalies(self, df: pd.DataFrame) -> None:
+        """
+        Identifies and fixes common data anomalies.
+        """
+        # Fix missing values
+        df.fillna(0, inplace=True)  # Replace NaNs with 0
+        
+        # Remove duplicates
+        df.drop_duplicates(inplace=True)
+        
+        # Ensure no negative values for specific columns
+        columns_to_check = [
+            'precipMM', 'visibility', 'HeatIndexF', 'WindChillF', 'windspeedMiles',
+            'FeelsLikeF', 'tempF_rolling_mean', 'windspeedMiles_rolling_mean', 
+            'humidity_rolling_mean', 'pressure', 'pressureInches', 'cloudcover', 
+            'uvIndex', 'tempF_rolling_std', 'windspeedMiles_rolling_std', 
+            'humidity_rolling_std', 'tempF_lag_2', 'tempF_lag_4', 'tempF_lag_6', 
+            'windspeedMiles_lag_2', 'windspeedMiles_lag_4', 'windspeedMiles_lag_6', 
+            'humidity_lag_2', 'humidity_lag_4', 'humidity_lag_6', 'value'
+        ]
+        for col in columns_to_check:
+            if col in df.columns:
+                df[col] = df[col].apply(lambda x: x if x >= 0 else 0)
+        
+        logger.info("Anomalies fixed successfully.")
+
+        return df
 
     def save_schema(self, file_path: str):
         """
