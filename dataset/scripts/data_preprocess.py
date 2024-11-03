@@ -93,8 +93,8 @@ class DataPreprocessor:
         for col in df.select_dtypes(include=['object']).columns:
             if col != 'datetime':
                 df[col] = df[col].astype(str)
-                # le = LabelEncoder()
-                # df[col] = le.fit_transform(df[col])
+                le = LabelEncoder()
+                df[col] = le.fit_transform(df[col])
 
         print("Data normalization and encoding complete.")
         json_data = df.to_json(orient='records', lines=False)

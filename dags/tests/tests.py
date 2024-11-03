@@ -130,7 +130,7 @@ def test_normalize_and_encode():
         "windspeedMiles": [5, 10, 15, 20],
         "month_sin": [0.5, 0.866025, -0.5, -0.866025], 
         "month_cos": [0.866025, 0.5, -0.866025, -0.5],  
-        "category": ["A", "B", "C"], 
+        "category": ["A", "B", "A", "C"], 
         "datetime": ["2024-01-01", "2024-02-01", "2024-03-01", "2024-04-01"]
     }).to_json(orient='records', lines=False)
     
@@ -143,6 +143,9 @@ def test_normalize_and_encode():
 
     assert df_normalized['month_sin'].between(0, 1).all(), "'month_sin' values are out of range [0, 1]"
     assert df_normalized['month_cos'].between(0, 1).all(), "'month_cos' values are out of range [0, 1]"
+
+    print(df_normalized['category'].dtype)
+    print(df_normalized['category'])
     
     assert df_normalized['category'].dtype == int, "Category column not label-encoded as integer"
     
