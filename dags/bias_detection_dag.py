@@ -84,9 +84,18 @@ mitigate_bias_task = PythonOperator(
     dag=bias_detection_and_mitigation,
 )
 
-# Set task dependencies
-processed_data_from_dvc_task >> identify_bias_task >> mitigate_bias_task
+# function to update data to dvc
+mitigated_data_to_dvc_task = PythonOperator(
+    task_id = 'mitigated_data_to_dvc_task',
+    python_callable=update_data_to_dvc,
+    provide_context=True,
+    op_args=[mitigated_data_path],
+    dag = bias_detection_and_mitigation
+)
 
+# Set task dependencies
+processed_data_from_dvc_task >> identify_bias_task >> mitigate_bias_task >> mitigated_data_to_dvc_task
+ 
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
     bias_detection_and_mitigation.cli

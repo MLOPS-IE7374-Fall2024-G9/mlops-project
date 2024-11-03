@@ -3,7 +3,7 @@
 *.csv
 data_preprocess.csv
 data_raw.csv
-
+bias_mitigated_data.csv
 
 # Ignore virtual environment directories and environment files
 mlopsenv/
