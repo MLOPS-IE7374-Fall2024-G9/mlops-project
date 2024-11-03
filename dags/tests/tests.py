@@ -130,7 +130,7 @@ def test_normalize_and_encode():
         "windspeedMiles": [5, 10, 15, 20],
         "month_sin": [0.5, 0.866025, -0.5, -0.866025], 
         "month_cos": [0.866025, 0.5, -0.866025, -0.5],  
-        "category": ["A", "B", "C"], 
+        "category": ["A", "B", "C", "D"], 
         "datetime": ["2024-01-01", "2024-02-01", "2024-03-01", "2024-04-01"]
     }).to_json(orient='records', lines=False)
     
@@ -147,6 +147,6 @@ def test_normalize_and_encode():
     assert df_normalized['category'].dtype == int, "Category column not label-encoded as integer"
     
     unique_encoded_values = sorted(df_normalized['category'].unique())
-    expected_labels = [0, 1, 2]  # Based on ["A", "B", "C"]
+    expected_labels = [0, 1, 2, 3]  # Based on ["A", "B", "C"]
     assert unique_encoded_values == expected_labels, f"Unexpected label encoding: {unique_encoded_values}"
     
