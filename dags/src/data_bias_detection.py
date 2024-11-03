@@ -4,15 +4,12 @@ from fairlearn.metrics import MetricFrame, selection_rate
 from sklearn.metrics import accuracy_score
 from sklearn.utils import resample
 
-<<<<<<< HEAD
 import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-=======
->>>>>>> b4afdcfc7ea8c7c39cd09d3f6da6960382375e8c
 def detect_bias(data: pd.DataFrame, target_col: str, sensitive_col: str) -> dict:
     """
     Perform bias detection on a DataFrame using a specified sensitive feature.
