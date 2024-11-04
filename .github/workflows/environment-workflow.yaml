@@ -1,0 +1,33 @@
+name: Update .env with Secrets
+
+# Define the triggers
+on:
+  # Manual trigger
+  workflow_dispatch:
+
+  # Cron trigger for automatic monthly execution (e.g., 1st of every month at midnight UTC)
+  schedule:
+    - cron: '0 0 1 * *'  # Runs on the 1st of every month
+
+env:
+  DEMAND_API_KEY: ${{ secrets.DEMAND_API_KEY }}
+  WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
+
+jobs:
+  update_env_file:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
+
+      - name: Create .env File Locally
+        run: |
+          echo "DEMAND_API_KEY=${{ secrets.DEMAND_API_KEY }}" > .env
+          echo "WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}" >> .env
+
+      - name: Upload .env File to VM
+        run: |
+          scp -o StrictHostKeyChecking=no .env ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }}:/home/${{ secrets.AIRFLOW_VM_USERNAME }}/.env
