@@ -86,6 +86,13 @@ ks_test_task = PythonOperator(
     dag=drift_data_dag
 )
 
+psi_task = PythonOperator(
+    task_id='detect_drift_psi',
+    python_callable=detect_drift_psi,
+    provide_context=True,
+    dag=drift_data_dag
+)
+
 # ------------------------------------------------------------------------------------------------
-# Set task dependencies
-load_data_task >> [evidently_task, ks_test_task] >> send_email
+# Task dependencies
+load_data_task >> [evidently_task, ks_test_task, psi_task] >> send_email

@@ -4,7 +4,8 @@ from scipy.stats import ks_2samp
 from evidently import ColumnMapping
 from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset
- 
+from src.data_download import get_data_from_dvc
+
 class DataDriftDetector:
     def __init__(self, baseline_data: pd.DataFrame, new_data: pd.DataFrame):
         """
