@@ -121,4 +121,4 @@ ks_test_task = PythonOperator(
 
 # ------------------------------------------------------------------------------------------------
 # Set task dependencies
-load_data_task >> [evidently_task, ks_test_task]
+load_data_task >> [evidently_task, ks_test_task] >> send_email
