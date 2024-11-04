@@ -91,8 +91,8 @@ MLOPS-PROJECT/
 ### 1. Data Acquisition
    - **Purpose**: This component is responsible for downloading or fetching data from necessary sources. Sources include APIs for demand data collection and weather data collection.
    - **Flow**:
-     - Data is collected from external APIs for weather and demand information every 7 days (number of days is configurable).
-     - For each run, data for the last 7 days is fetched hourly for multiple regions across Texas, New York, and New England (dataset/scripts/data.py).
+     - Data is collected from external APIs for weather and demand information daily (number of days is configurable).
+     - For each run, data from yesterday is fetched hourly for multiple regions across Texas, New York, and New England (dataset/scripts/data.py).
    - **Data Structure**: Raw data contains columns such as `datetime`, `tempF`, `windspeedMiles`, `weatherCode`, `humidity`, etc., along with identifiers for regions and zones.
    -  **Usage**:
       -  There are two scripts that have the data acquisition code.
@@ -135,7 +135,7 @@ MLOPS-PROJECT/
      6. Merge API data with DVC-stored historical data.
      7. Push the merged data back to DVC.
      8. Send a success notification email.
-   - **Scheduling**: The DAG is scheduled to run every day to maintain up-to-date data.
+   - **Scheduling**: The DAG is scheduled to run everyday to maintain up-to-date data.
 
    2)
    - **Purpose**: Bulk Preprocess raw data into preprocessed data
@@ -154,7 +154,7 @@ MLOPS-PROJECT/
      3. Run bias mitigation
      4. Upload mitigated data to dvc
      5. Send a success notification email
-   - **Scheduling**: The DAG is scheduled to run every 7 days. 
+   - **Scheduling**: The DAG is scheduled to run everyday
 
 
 ### 5. Data Versioning with DVC
@@ -195,6 +195,14 @@ MLOPS-PROJECT/
      - Data slicing is used to create subsets of data to evaluate performance across different segments.
      - Fairlearn tool is used to implement data slicing. Data is sliced based on "subba-name" which is the region for electricity demand.
      - A bias detection model is also trained to identify potential biases in the data and results, allowing for continuous monitoring of fairness.
+    
+### 10. Data Drift Detection
+- **Purpose**: To identify shifts in the underlying data distribution between the baseline dataset and newly collected data, which can affect model performance. Monitoring data drift helps ensure the model remains accurate and reliable over time.
+- **Implementation**:
+  - **Evidently AI Data Drift Detection**: Utilizes the DataDriftPreset metric from Evidently AI to generate detailed reports on data drift across various features, both numerical and categorical. This includes HTML and JSON outputs summarizing drift results for analysis.
+  - **Kolmogorov-Smirnov (KS) Test**: Applied to numerical features to compare cumulative distribution functions (CDFs) of baseline and new data. The KS test returns a p-value indicating whether drift has occurred.
+  - **Population Stability Index (PSI)**: Measures the stability of feature distributions by comparing the proportions of values in specified bins between baseline and new datasets. PSI values above certain thresholds indicate drift.
+
 
 ### Example Data and Processing Flow
 
