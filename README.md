@@ -193,7 +193,7 @@ MLOPS-PROJECT/
    - **Purpose**: Detects and mitigates bias in data by using data slicing and model training techniques.
    - **Implementation**:
      - Data slicing is used to create subsets of data to evaluate performance across different segments.
-     - Fairleanr tool is used to implement data slicing. Data is sliced based on "subba-name" which is the region for electricity demand.
+     - Fairlearn tool is used to implement data slicing. Data is sliced based on "subba-name" which is the region for electricity demand.
      - A bias detection model is also trained to identify potential biases in the data and results, allowing for continuous monitoring of fairness.
 
 ### Example Data and Processing Flow

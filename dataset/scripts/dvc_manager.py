@@ -15,12 +15,6 @@ logger = logging.getLogger(__name__)
 
 class DVCManager:
     def __init__(self, json_credential_path="mlops-437516-b9a69694c897.json"):
-        # ### TEMP - do it using docker
-        # subprocess.run(["apt-get", "update"], check=True)
-        # subprocess.run(["apt-get","install", "-y", "git"], check=True)
-        # subprocess.run(["git", "init"], check=True)
-        # ###
-
         # Get the directory of the current script
         self.script_dir = os.path.dirname(__file__)  
 

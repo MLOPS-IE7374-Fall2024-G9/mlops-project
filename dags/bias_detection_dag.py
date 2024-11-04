@@ -11,9 +11,11 @@ import pickle
 from src.data_download import *
 
 default_args = {
-    'owner': 'user',
+    'owner': 'Group 9',
     'start_date': datetime(2024, 11, 1),
-    'retries': 1,
+    'retries': 0, # Number of retries in case of task failure
+    'retry_delay': timedelta(minutes=5), # Delay before retries
+    "execution_timeout": timedelta(minutes=10),
 }
 
 bias_detection_and_mitigation = DAG(
@@ -21,6 +23,7 @@ bias_detection_and_mitigation = DAG(
     default_args=default_args,
     description='A DAG with separate tasks for bias detection and mitigation',
     schedule_interval='@daily',
+    tags=['bias_detection_and_mitigation']
 )
 
 # File paths for data

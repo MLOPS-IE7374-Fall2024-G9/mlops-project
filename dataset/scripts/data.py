@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------
 class DataRegions:
+    # TEMP Commented out for faster run of each dag
     def __init__(self):
         self.regions = {
             # "texas": {

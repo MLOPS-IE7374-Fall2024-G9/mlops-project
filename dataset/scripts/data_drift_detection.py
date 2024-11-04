@@ -5,7 +5,7 @@ from evidently import ColumnMapping
 from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset
 from src.data_download import get_data_from_dvc
- 
+
 class DataDriftDetector:
     def __init__(self, baseline_data: pd.DataFrame, new_data: pd.DataFrame):
         """
@@ -15,8 +15,8 @@ class DataDriftDetector:
         self.new_data = new_data
         self.report = None
  
- #Evidently Check
-    def detect_drift_evidently(self):
+    #Evidently Check
+    def detect_drift_evidently(self, path_to_save):
         """
         Detect drift between baseline and new datasets using Evidently.
         """
@@ -31,12 +31,13 @@ class DataDriftDetector:
         # Initialize and generate the data drift report
         self.report = Report(metrics=[DataDriftPreset()])
         self.report.run(reference_data=self.baseline_data, current_data=self.new_data, column_mapping=column_mapping)
-        #self.report.save_html("/your-path/drift_report.html") #To save locally
+        self.report.save_html(path_to_save) #To save locally
+
         report_dict = self.report.as_dict()
         return report_dict
 
 
- #Kolmogorov-Smirnov test 
+    #Kolmogorov-Smirnov test 
     def detect_drift_ks_test(self, threshold=0.05):
         """
         Detect drift in numerical features using Kolmogorov-Smirnov test.
@@ -49,7 +50,7 @@ class DataDriftDetector:
             drift_results[col] = {'p_value': p_value, 'drift': p_value < threshold}
         return drift_results
  
- #PSI test
+    #PSI test
     def detect_drift_psi(self, bins=10, threshold=0.2, epsilon=1e-10):
         """
         Detect drift in numerical features using Population Stability Index (PSI).

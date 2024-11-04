@@ -4,28 +4,43 @@ import os
 # Adjust the import path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 
-
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
-from src.data_download import ( 
-    get_start_end_dates,
-    get_last_k_start_end_dates,
-    get_updated_data_from_api,
-)
+import pytest
+import json
+from io import StringIO
+import warnings
 
-from dags.src.data_preprocess import(
-    clean_data, 
-    engineer_features,
-    add_cyclic_features,
-    normalize_and_encode
-)
+from src.data_download import * 
+from dags.src.data_preprocess import *
+from dags.src.data_schema_validation import *
+from dags.src.data_bias_detection import detect_bias, conditional_mitigation
 
 
+# Ignore all warnings in tests
+warnings.filterwarnings("ignore")
 
+# ----------------------------------------------------------
+# Sample data for testing
+sample_csv_data = """
+datetime,precipMM,weatherCode,visibility,HeatIndexF,WindChillF,windspeedMiles,FeelsLikeF,value
+2019-01-01T00,0.5,100,10,36,29,5,32,1500
+2019-01-01T01,0.2,200,12,37,30,7,33,1600
+"""
+
+sample_api_json = """
+[
+    {"datetime": "2019-01-01T00", "precipMM": 0.5, "weatherCode": 100, "visibility": 10, "HeatIndexF": 36, "WindChillF": 29, "windspeedMiles": 5, "FeelsLikeF": 32, "value": 1500},
+    {"datetime": "2019-01-01T01", "precipMM": 0.2, "weatherCode": 200, "visibility": 12, "HeatIndexF": 37, "WindChillF": 30, "windspeedMiles": 7, "FeelsLikeF": 33, "value": 1600}
+]
+"""
+
+# ----------------------------------------------------------
+# data_download.py
 def test_get_start_end_dates():
-    today = datetime.now().strftime('%d-%m-%Y')
-    yesterday = (datetime.now() - timedelta(days=1)).strftime('%d-%m-%Y')
+    today = datetime.datetime.now().strftime('%d-%m-%Y')
+    yesterday = (datetime.datetime.now() - timedelta(days=1)).strftime('%d-%m-%Y')
     func_yesterday, func_today = get_start_end_dates()
     
     assert func_yesterday == yesterday, f"Expected {yesterday} but got {func_yesterday}"
@@ -33,8 +48,8 @@ def test_get_start_end_dates():
 
 def test_get_last_k_start_end_dates():
     days = 5
-    today = datetime.now().strftime('%d-%m-%Y')
-    start_date = (datetime.now() - timedelta(days=days-1)).strftime('%d-%m-%Y')
+    today = datetime.datetime.now().strftime('%d-%m-%Y')
+    start_date = (datetime.datetime.now() - timedelta(days=days-1)).strftime('%d-%m-%Y')
     func_start_date, func_today = get_last_k_start_end_dates(days)
     
     assert func_start_date == start_date, f"Expected {start_date} but got {func_start_date}"
@@ -47,11 +62,13 @@ def test_get_updated_data_from_api():
     api_json = get_updated_data_from_api(dates)
     api_df = pd.read_json(api_json, orient='records')
 
-    func_yesterday_formatted = datetime.strptime(func_yesterday, "%d-%m-%Y").strftime("%Y-%m-%d")
+    func_yesterday_formatted = datetime.datetime.strptime(func_yesterday, "%d-%m-%Y").strftime("%Y-%m-%d")
     
     assert any(func_yesterday_formatted in str(dt) for dt in api_df['datetime'].values), f"Expected yesterday's date ({func_yesterday_formatted}) in API data but it was not found."
 
 
+# ----------------------------------------------------------
+# data_preprocess.py
 def test_clean_data():
     df_json = pd.DataFrame({
         "col1": [1, 2, None, 3, 1],
@@ -153,3 +170,113 @@ def test_normalize_and_encode():
     expected_labels = [0, 1, 2]  # Based on ["A", "B", "C"]
     assert unique_encoded_values == expected_labels, f"Unexpected label encoding: {unique_encoded_values}"
     
+# ---------------------------------------------------------------
+# data_schema.py
+@pytest.fixture
+def sample_csv_file(tmpdir):
+    file_path = tmpdir.join("sample_data.csv")
+    with open(file_path, "w") as f:
+        f.write(sample_csv_data)
+    return str(file_path)
+
+@pytest.fixture
+def sample_api_json_data():
+    return sample_api_json
+
+def test_validate_data(sample_csv_file, sample_api_json_data):
+    # Check if API data validates correctly against CSV schema
+    is_valid = validate_data(sample_csv_file, sample_api_json_data)
+    assert is_valid == 1, "API data did not validate against schema."
+
+def test_fix_anomalies(sample_api_json_data):
+    # Introduce negative and NaN anomalies in data
+    api_data = json.loads(sample_api_json_data)
+    api_data[0]["visibility"] = -5
+    api_data[1]["HeatIndexF"] = None
+
+    # Fix anomalies
+    fixed_data = fix_anomalies(json.dumps(api_data))
+    fixed_df = pd.read_json(StringIO(fixed_data))
+
+    # Check for fixed anomalies
+    assert (fixed_df["visibility"] >= 0).all(), "Negative values in 'visibility' not fixed"
+    assert fixed_df["HeatIndexF"].isnull().sum() == 0, "NaN values in 'HeatIndexF' not fixed"
+
+# ---------------------------------------------------------------
+# data_bias_detection.py 
+
+def test_detect_bias_output_structure():
+    # Create a sample DataFrame for testing bias detection
+    data = pd.DataFrame({
+        'value': [1, 0, 1, np.nan, 1, 0, 1, np.nan, 0, 1, 1, 0],
+        'subba-name': ['A', 'B', 'A', 'A', 'B', 'B', 'A', 'B', 'A', 'A', 'B', 'B']
+    })
+    target_col = 'value'
+    sensitive_col = 'subba-name'
+
+    # Run the detect_bias function
+    bias_output = detect_bias(data, target_col, sensitive_col)
+
+    # Assertions to check the structure of the output
+    assert isinstance(bias_output, dict), "Expected output to be a dictionary"
+    assert 'metrics_by_group' in bias_output, "Expected 'metrics_by_group' key in output"
+    assert 'overall_metrics' in bias_output, "Expected 'overall_metrics' key in output"
+    assert 'demographic_parity_difference' in bias_output, "Expected 'demographic_parity_difference' key in output"
+
+def test_detect_bias_metrics_values():
+    # Create a sample DataFrame for testing
+    data = pd.DataFrame({
+        'value': [1, 0, 1, np.nan, 1, 0, 1, np.nan, 0, 1, 1, 0],
+        'subba-name': ['A', 'B', 'A', 'A', 'B', 'B', 'A', 'B', 'A', 'A', 'B', 'B']
+    })
+    target_col = 'value'
+    sensitive_col = 'subba-name'
+
+    # Run the detect_bias function
+    bias_output = detect_bias(data, target_col, sensitive_col)
+    metrics_by_group = bias_output['metrics_by_group']
+    overall_metrics = bias_output['overall_metrics']
+
+    # Assertions to check the validity of the metrics
+    assert not metrics_by_group.empty, "Metrics by group should not be empty"
+    assert overall_metrics['Selection Rate'] >= 0, "Selection rate should be non-negative"
+    assert overall_metrics['Selection Rate'] <= 1, "Selection rate should be at most 1"
+
+def test_conditional_mitigation_output():
+    # Create a sample DataFrame for testing conditional mitigation
+    data = pd.DataFrame({
+        'value': [1, 0, 1, np.nan, 1, 0, 1, np.nan, 0, 1],
+        'subba-name': ['A', 'B', 'A', 'A', 'B', 'B', 'A', 'B', 'A', 'A']
+    })
+    target_col = 'value'
+    sensitive_col = 'subba-name'
+
+    # Run detect_bias and conditional_mitigation functions
+    bias_output = detect_bias(data, target_col, sensitive_col)
+    mitigated_data = conditional_mitigation(data, target_col, sensitive_col, bias_output)
+
+    # Assertions to check the structure of the mitigated data
+    assert isinstance(mitigated_data, pd.DataFrame), "Expected mitigated data to be a DataFrame"
+    assert len(mitigated_data) >= len(data), "Mitigated data should have more rows than original data due to resampling"
+
+def test_conditional_mitigation_groups():
+    # Create a sample DataFrame for testing group mitigation
+    data = pd.DataFrame({
+        'value': [1, 0, 1, np.nan, 1, 0, 1, np.nan, 0, 1, 1, 0],
+        'subba-name': ['A', 'B', 'A', 'A', 'B', 'B', 'A', 'B', 'A', 'A', 'B', 'B']
+    })
+    target_col = 'value'
+    sensitive_col = 'subba-name'
+
+    # Run detect_bias and conditional_mitigation functions
+    bias_output = detect_bias(data, target_col, sensitive_col)
+    mitigated_data = conditional_mitigation(data, target_col, sensitive_col, bias_output)
+
+    # Check if expected subgroups are present in the mitigated data
+    unique_groups = mitigated_data[sensitive_col].unique()
+    assert 'A' in unique_groups, "Expected group 'A' to be in mitigated data"
+    assert 'B' in unique_groups, "Expected group 'B' to be in mitigated data"
+
+
+if __name__ == '__main__':
+    test_conditional_mitigation_output()
