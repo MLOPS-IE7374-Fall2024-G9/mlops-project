@@ -245,8 +245,8 @@ def test_detect_bias_metrics_values():
 def test_conditional_mitigation_output():
     # Create a sample DataFrame for testing conditional mitigation
     data = pd.DataFrame({
-        'value': [1, 0, 1, np.nan, 1, 0, 1, np.nan, 0, 1, 1, 0],
-        'subba-name': ['A', 'B', 'A', 'A', 'B', 'B', 'A', 'B', 'A', 'A', 'B', 'B']
+        'value': [1, 0, 1, np.nan, 1, 0, 1, np.nan, 0, 1],
+        'subba-name': ['A', 'B', 'A', 'A', 'B', 'B', 'A', 'B', 'A', 'A']
     })
     target_col = 'value'
     sensitive_col = 'subba-name'
