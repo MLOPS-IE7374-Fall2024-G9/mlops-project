@@ -5,4 +5,5 @@ python-dotenv==1.0.0
 dvc[gs]
 google-cloud-logging
 scikit-learn
-evidently
+pandera
+fairlearn

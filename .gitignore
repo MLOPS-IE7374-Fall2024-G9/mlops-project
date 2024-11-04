@@ -3,7 +3,7 @@
 *.csv
 data_preprocess.csv
 data_raw.csv
-
+bias_mitigated_data.csv
 
 # Ignore virtual environment directories and environment files
 mlopsenv/
@@ -19,6 +19,7 @@ mlartifacts
 Thumbs.db
 docker-compose-local.yaml
 mlflow.db
+bias_detection_results.pkl
 
 # Ignore Python cache and compiled Python files
 __pycache__/

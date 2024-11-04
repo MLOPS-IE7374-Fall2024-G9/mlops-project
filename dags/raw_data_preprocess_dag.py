@@ -29,28 +29,12 @@ raw_data_dag = DAG(
 # variables
 filename_raw = "data_raw.csv"
 
-# local functions
-def preprocess_pipeline(file_path):
-    df = pd.read_csv(file_path)
-
-    df_json =  df.to_json(orient='records', lines=False)
-    df_json = clean_data(df_json)
-    df_json = engineer_features(df_json)
-    df_json = add_cyclic_features(df_json)
-    df_json = normalize_and_encode(df_json)
-    df_json = select_final_features(df_json)
-
-    df = pd.read_json(df_json)
-    df.to_csv(file_path)
-
-    return file_path
-
 # ------------------------------------------------------------------------------------------------
 # Email operators
 def email_notify_success(context):
     success_email = EmailOperator(
         task_id='success_email',
-        to=['keshri.r@northeastern.edu'],
+        to=["mlops.group.9@gmail.com"],
         subject='Task Success',
         html_content='<p>Raw data preprocess succeeded.</p>',
         dag=context['dag']
@@ -60,7 +44,7 @@ def email_notify_success(context):
 def email_notify_failure(context):
     success_email = EmailOperator(
         task_id='failure_email',
-        to=['keshri.r@northeastern.edu'],
+        to=["mlops.group.9@gmail.com"],
         subject='Task Failure',
         html_content='<p>Raw data preprocess task Failed.</p>',
         dag=context['dag']
@@ -69,7 +53,7 @@ def email_notify_failure(context):
     
 send_email = EmailOperator(
     task_id='send_email',
-    to=['keshri.r@northeastern.edu'],    # Email address of the recipient
+    to=["mlops.group.9@gmail.com"],    # Email address of the recipient
     subject='Notification from Airflow',
     html_content='<p>This is a notification email sent from Airflow. </p>',
     dag=raw_data_dag,
@@ -121,7 +105,8 @@ delete_local_task = PythonOperator(
 # get data from dvc (raw data) -> preprocess raw data -> push back to dvc
 data_from_dvc_task >> preprocess_pipeline_task >> update_data_to_dvc_task
 preprocess_pipeline_task >> [delete_local_task]
-update_data_to_dvc_task >> delete_local_task >> send_email
+update_data_to_dvc_task >> delete_local_task 
+update_data_to_dvc_task >> send_email
 
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
