@@ -60,10 +60,22 @@ class DataDriftDetector:
         """
         drift_results = {}
         for col in self.baseline_data.select_dtypes(include=[np.number]).columns:
-            baseline_counts, _ = np.histogram(self.baseline_data[col], bins=bins)
-            new_counts, _ = np.histogram(self.new_data[col], bins=bins)
-            baseline_counts = baseline_counts / len(self.baseline_data) + epsilon
-            new_counts = new_counts / len(self.new_data) + epsilon
+            # Drop NaN values
+            baseline_col = self.baseline_data[col].dropna()
+            new_col = self.new_data[col].dropna()
+
+            # Proceed only if both datasets have data after dropping NaNs
+            if baseline_col.empty or new_col.empty:
+                continue
+
+            baseline_counts, _ = np.histogram(baseline_col, bins=bins)
+            new_counts, _ = np.histogram(new_col, bins=bins)
+
+            # Normalize counts
+            baseline_counts = baseline_counts / len(baseline_col) + epsilon
+            new_counts = new_counts / len(new_col) + epsilon
+
+            # Calculate PSI
             psi = np.sum((baseline_counts - new_counts) * np.log(baseline_counts / new_counts))
             drift_results[col] = {'PSI': psi, 'drift': psi > threshold}
         return drift_results
