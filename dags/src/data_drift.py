@@ -54,3 +54,15 @@ def detect_drift_ks_test(**kwargs):
     ks_test_results = detector.detect_drift_ks_test()
     print("KS Test Drift Results:", ks_test_results)
     kwargs['ti'].xcom_push(key='ks_test_results', value=ks_test_results)
+
+# Population Stability Index Test for drift detection
+def detect_drift_psi(**kwargs):
+    baseline_dict = kwargs['ti'].xcom_pull(key='baseline_df', task_ids='load_data')
+    new_data_dict = kwargs['ti'].xcom_pull(key='new_data_df', task_ids='load_data')
+    baseline_df = pd.DataFrame.from_dict(baseline_dict)
+    new_data_df = pd.DataFrame.from_dict(new_data_dict)
+
+    detector = DataDriftDetector(baseline_df, new_data_df)
+    psi_results = detector.detect_drift_psi()
+    print("PSI Drift Results:", psi_results)
+    kwargs['ti'].xcom_push(key='psi_results', value=psi_results)
