@@ -39,8 +39,8 @@ sample_api_json = """
 # ----------------------------------------------------------
 # data_download.py
 def test_get_start_end_dates():
-    today = datetime.now().strftime('%d-%m-%Y')
-    yesterday = (datetime.now() - timedelta(days=1)).strftime('%d-%m-%Y')
+    today = datetime.datetime.now().strftime('%d-%m-%Y')
+    yesterday = (datetime.datetime.now() - timedelta(days=1)).strftime('%d-%m-%Y')
     func_yesterday, func_today = get_start_end_dates()
     
     assert func_yesterday == yesterday, f"Expected {yesterday} but got {func_yesterday}"
@@ -48,8 +48,8 @@ def test_get_start_end_dates():
 
 def test_get_last_k_start_end_dates():
     days = 5
-    today = datetime.now().strftime('%d-%m-%Y')
-    start_date = (datetime.now() - timedelta(days=days-1)).strftime('%d-%m-%Y')
+    today = datetime.datetime.now().strftime('%d-%m-%Y')
+    start_date = (datetime.datetime.now() - timedelta(days=days-1)).strftime('%d-%m-%Y')
     func_start_date, func_today = get_last_k_start_end_dates(days)
     
     assert func_start_date == start_date, f"Expected {start_date} but got {func_start_date}"
@@ -62,7 +62,7 @@ def test_get_updated_data_from_api():
     api_json = get_updated_data_from_api(dates)
     api_df = pd.read_json(api_json, orient='records')
 
-    func_yesterday_formatted = datetime.strptime(func_yesterday, "%d-%m-%Y").strftime("%Y-%m-%d")
+    func_yesterday_formatted = datetime.datetime.strptime(func_yesterday, "%d-%m-%Y").strftime("%Y-%m-%d")
     
     assert any(func_yesterday_formatted in str(dt) for dt in api_df['datetime'].values), f"Expected yesterday's date ({func_yesterday_formatted}) in API data but it was not found."
 
