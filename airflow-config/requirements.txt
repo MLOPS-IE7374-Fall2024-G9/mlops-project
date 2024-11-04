@@ -7,3 +7,4 @@ google-cloud-logging
 scikit-learn
 pandera
 fairlearn
+evidently

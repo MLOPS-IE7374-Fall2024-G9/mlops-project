@@ -4,9 +4,11 @@
 data/
 ├── data_preprocess.csv.dvc       # Preprocessed data file, tracked by DVC
 ├── data_raw.csv.dvc              # Raw API data file, tracked by DVC
+├── bias_mitigated_data.csv.dvc   # Bias mitigated data file, tracked by DVC
 
 scripts/
-├── data_bias.py                  # Script for detecting data bias across specified subsets
+├── data_bias.py                  # Script for detecting data bias across specified subsets using statistical methods
+├── data_bias_withmodel.py        # Script for detecting data bias and model bias using a xgb_reg model (initial training)
 ├── data_downloader.py            # Script for downloading and saving data from API
 ├── data_preprocess.py            # Script for data preprocessing (not detailed here)
 ├── data_schema.py                # Script for data schema validation (not detailed here)
@@ -61,7 +63,19 @@ This script provides schema inference and validation for ensuring data consisten
 - **Data Validation**: The `validate_data` method validates new data against the inferred schema, logging any schema errors.
 - **Schema Saving and Loading**: The `save_schema` and `load_schema` methods allow the schema to be saved as JSON and loaded when needed.
 
-### 5. `data.py`
+### 5. `data_bias_withmodel.py`
+This script detects potential biases in a machine learning model’s predictions by analyzing subsets of data based on specified sensitive features (e.g., zone, subba-name and cloudcover). It uses Fairlearn for data slicing and calculates performance metrics across groups and identifyies any deviations that could indicate bias.
+
+**Logic and Purpose**:
+- **Model Loading**: The `load_model` method loads a pre-trained model from a pickle file for predictions.
+- **Data Preparation**: The `prepare_data` method formats the dataset, separating it into features and target variables, and splitting it into training and test sets.
+- **Prediction Generation**: The `generate_predictions` method produces predictions on the test set using the model, essential for evaluating performance.
+- **Data Augmentation**: The `augment_test_data` method adds columns (zone, subba-name, cloudcover) to the test set to allow for bias analysis on these attributes.
+- **Sensitive Feature Setup**: The `set_sensitive_features` method defines sensitive features (zone and cloudcover_high_low) to analyze potential group-level biases.
+- **Bias Evaluation**: The `evaluate_bias` method calculates metrics (e.g., Mean Squared Error) for each sensitive group using MetricFrame, highlighting any performance disparities.
+- **Metric Reporting**: The `get_group_metrics` method retrieves the group-wise metrics for detailed bias examination.
+
+### 6. `data.py`
 This module includes the main data processing classes used in other scripts, such as `DataCollector` and `DataRegions`, for managing data collection and organization.
 
 **Logic and Purpose**:
