@@ -28,3 +28,35 @@ new_data_dag = DAG(
 )
 
 # ------------------------------------------------------------------------------------------------
+# Email operator
+def email_notify_success(context):
+    success_email = EmailOperator(
+        task_id='success_email',
+        to=['keshri.r@northeastern.edu'],
+        subject='Task Success',
+        html_content='<p> Data drift dag succeeded.</p>',
+        dag=context['dag']
+    )
+    success_email.execute(context=context)
+
+def email_notify_failure(context):
+    success_email = EmailOperator(
+        task_id='failure_email',
+        to=['keshri.r@northeastern.edu'],
+        subject='Task Failure',
+        html_content='<p>Data drift dag Failed.</p>',
+        dag=context['dag']
+    )
+    success_email.execute(context=context)
+
+send_email = EmailOperator(
+    task_id='send_email',
+    to='keshri.r@northeastern.edu',    # Email address of the recipient
+    subject='Notification from Airflow',
+    html_content='<p>This is a notification email sent from Airflow. </p>',
+    dag=new_data_dag,
+    on_failure_callback=email_notify_failure,
+    on_success_callback=email_notify_success, 
+)
+
+# ------------------------------------------------------------------------------------------------
