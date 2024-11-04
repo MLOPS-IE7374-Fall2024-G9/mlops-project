@@ -15,6 +15,8 @@ import warnings
 from src.data_download import * 
 from dags.src.data_preprocess import *
 from dags.src.data_schema_validation import *
+from dags.src.data_bias_detection import detect_bias, conditional_mitigation
+
 
 # Ignore all warnings in tests
 warnings.filterwarnings("ignore")
@@ -199,3 +201,82 @@ def test_fix_anomalies(sample_api_json_data):
     # Check for fixed anomalies
     assert (fixed_df["visibility"] >= 0).all(), "Negative values in 'visibility' not fixed"
     assert fixed_df["HeatIndexF"].isnull().sum() == 0, "NaN values in 'HeatIndexF' not fixed"
+
+# ---------------------------------------------------------------
+# data_bias_detection.py 
+
+def test_detect_bias_output_structure():
+    # Create a sample DataFrame for testing bias detection
+    data = pd.DataFrame({
+        'value': [1, 0, 1, np.nan, 1, 0, 1, np.nan, 0, 1, 1, 0],
+        'subba-name': ['A', 'B', 'A', 'A', 'B', 'B', 'A', 'B', 'A', 'A', 'B', 'B']
+    })
+    target_col = 'value'
+    sensitive_col = 'subba-name'
+
+    # Run the detect_bias function
+    bias_output = detect_bias(data, target_col, sensitive_col)
+
+    # Assertions to check the structure of the output
+    assert isinstance(bias_output, dict), "Expected output to be a dictionary"
+    assert 'metrics_by_group' in bias_output, "Expected 'metrics_by_group' key in output"
+    assert 'overall_metrics' in bias_output, "Expected 'overall_metrics' key in output"
+    assert 'demographic_parity_difference' in bias_output, "Expected 'demographic_parity_difference' key in output"
+
+def test_detect_bias_metrics_values():
+    # Create a sample DataFrame for testing
+    data = pd.DataFrame({
+        'value': [1, 0, 1, np.nan, 1, 0, 1, np.nan, 0, 1, 1, 0],
+        'subba-name': ['A', 'B', 'A', 'A', 'B', 'B', 'A', 'B', 'A', 'A', 'B', 'B']
+    })
+    target_col = 'value'
+    sensitive_col = 'subba-name'
+
+    # Run the detect_bias function
+    bias_output = detect_bias(data, target_col, sensitive_col)
+    metrics_by_group = bias_output['metrics_by_group']
+    overall_metrics = bias_output['overall_metrics']
+
+    # Assertions to check the validity of the metrics
+    assert not metrics_by_group.empty, "Metrics by group should not be empty"
+    assert overall_metrics['Selection Rate'] >= 0, "Selection rate should be non-negative"
+    assert overall_metrics['Selection Rate'] <= 1, "Selection rate should be at most 1"
+
+def test_conditional_mitigation_output():
+    # Create a sample DataFrame for testing conditional mitigation
+    data = pd.DataFrame({
+        'value': [1, 0, 1, np.nan, 1, 0, 1, np.nan, 0, 1],
+        'subba-name': ['A', 'B', 'A', 'A', 'B', 'B', 'A', 'B', 'A', 'A']
+    })
+    target_col = 'value'
+    sensitive_col = 'subba-name'
+
+    # Run detect_bias and conditional_mitigation functions
+    bias_output = detect_bias(data, target_col, sensitive_col)
+    mitigated_data = conditional_mitigation(data, target_col, sensitive_col, bias_output)
+
+    # Assertions to check the structure of the mitigated data
+    assert isinstance(mitigated_data, pd.DataFrame), "Expected mitigated data to be a DataFrame"
+    assert len(mitigated_data) >= len(data), "Mitigated data should have more rows than original data due to resampling"
+
+def test_conditional_mitigation_groups():
+    # Create a sample DataFrame for testing group mitigation
+    data = pd.DataFrame({
+        'value': [1, 0, 1, np.nan, 1, 0, 1, np.nan, 0, 1, 1, 0],
+        'subba-name': ['A', 'B', 'A', 'A', 'B', 'B', 'A', 'B', 'A', 'A', 'B', 'B']
+    })
+    target_col = 'value'
+    sensitive_col = 'subba-name'
+
+    # Run detect_bias and conditional_mitigation functions
+    bias_output = detect_bias(data, target_col, sensitive_col)
+    mitigated_data = conditional_mitigation(data, target_col, sensitive_col, bias_output)
+
+    # Check if expected subgroups are present in the mitigated data
+    unique_groups = mitigated_data[sensitive_col].unique()
+    assert 'A' in unique_groups, "Expected group 'A' to be in mitigated data"
+    assert 'B' in unique_groups, "Expected group 'B' to be in mitigated data"
+
+
+if __name__ == '__main__':
+    test_conditional_mitigation_output()
