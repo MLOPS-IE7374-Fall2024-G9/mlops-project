@@ -13,7 +13,8 @@ on:
       # - jahnavi_dev
       # - nikhil_dev
       # - samanvya_dev
-      - dev
+      # - dev
+      - main
 # env:
 #   DEMAND_API_KEY:${{secrets.DEMAND_API_KEY}}
 #   WEATHER_API_KEY:${{secrets.WEATHER_API_KEY}}

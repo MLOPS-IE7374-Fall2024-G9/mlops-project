@@ -73,13 +73,23 @@ def conditional_mitigation(data: pd.DataFrame, target_col: str, sensitive_col: s
     """
     biased_groups = bias_detection_output['demographic_parity_difference']
     metrics_by_group = bias_detection_output['metrics_by_group']
+    overall_metrics = bias_detection_output['overall_metrics']
     
+    print('before mitifation: ',data.shape,'\n')
+    print('--------------------------------')
+    print('Metrics by group')
     print(metrics_by_group)
+    print('--------------------------------')
+    print('\ndemographica_parity_difference')
     print(biased_groups)
+    print('--------------------------------')
+    print('\nOverall metrics')
+    print(overall_metrics)
+    print('--------------------------------')
     # Identify groups to mitigate based on a threshold (e.g., significant difference in selection rate)
-    threshold = 0.5  # Define your threshold for bias
+    threshold = 0.05  # Define your threshold for bias
     groups_to_mitigate = metrics_by_group[
-        abs(metrics_by_group['Selection Rate'] - bias_detection_output['overall_metrics']['Selection Rate']) > threshold
+        abs(metrics_by_group['Selection Rate'] - overall_metrics['Selection Rate']) > threshold
     ]
 
     print("Groups to mitigate:", groups_to_mitigate)
