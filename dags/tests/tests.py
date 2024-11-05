@@ -307,7 +307,7 @@ def test_detect_drift_evidently():
     # Validate the results
     assert evidently_results is not None, "Evidently drift detection results should not be None"
     assert isinstance(evidently_results, dict), "Evidently drift detection results should be a dictionary"
-    
+   
     # Access the drift results for each column
     drift_by_columns = evidently_results["metrics"][1]["result"]["drift_by_columns"]
     
@@ -317,3 +317,12 @@ def test_detect_drift_evidently():
         assert "drift_score" in drift_by_columns[feature], f"'{feature}' should have a 'drift_score' in the results"
         assert "drift_detected" in drift_by_columns[feature], f"'{feature}' should have a 'drift_detected' indicator in the results"
 
+
+# detect_drift_ks_test Function
+def test_detect_drift_ks_test():
+    detector = DataDriftDetector(baseline_df, new_data_df)
+    ks_test_results = detector.detect_drift_ks_test()
+
+    # Validate the results
+    assert ks_test_results is not None, "KS Test drift detection results should not be None"
+    assert isinstance(ks_test_results, dict), "KS Test drift detection results should be a dictionary"
