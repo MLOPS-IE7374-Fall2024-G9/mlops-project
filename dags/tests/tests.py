@@ -280,6 +280,7 @@ def test_conditional_mitigation_groups():
 
 # ---------------------------------------------------------------
 # data_drift.py 
+# ---------------------------------------------------------------
 
 # Function to generate sample data with drift
 def sample_data():
@@ -289,7 +290,7 @@ def sample_data():
         'pressure': np.random.normal(1013, 10, 1000)
     })
     new_data = pd.DataFrame({
-        'tempF': np.random.normal(75, 10, 1000),  # Mean change to simulate drift
+        'tempF': np.random.normal(75, 10, 1000),  # Changing mean to simulate drift
         'humidity': np.random.normal(55, 5, 1000),
         'pressure': np.random.normal(1015, 10, 1000)
     })
@@ -315,5 +316,4 @@ def test_detect_drift_evidently():
         assert feature in drift_by_columns, f"Evidently results should contain drift data for feature '{feature}'"
         assert "drift_score" in drift_by_columns[feature], f"'{feature}' should have a 'drift_score' in the results"
         assert "drift_detected" in drift_by_columns[feature], f"'{feature}' should have a 'drift_detected' indicator in the results"
-    
-    print("Evidently Drift Detection Results:", evidently_results)
+
