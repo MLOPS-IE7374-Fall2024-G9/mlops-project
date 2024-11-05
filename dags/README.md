@@ -7,10 +7,15 @@ The directory structure is organized as follows:
 ```
 dag/
 ├── src/
+│   ├── data_bias_detection.py
 │   ├── data_download.py
+│   ├── data_drift.py
 │   ├── data_preprocess.py
 │   ├── data_schema_validation.py
+│   ├── model_pipeline.py
 ├── tests/
+├── bias_detection_dag.py
+├── data_drift_detection_dag.py
 ├── new_data_preprocess_dag.py
 ├── raw_data_preprocess_dag.py
 ```
@@ -18,6 +23,8 @@ dag/
 ### Explanation
 - **src/**: Contains the Python modules used in the DAGs for various tasks, such as downloading, preprocessing, and validating data.
 - **tests/**: Holds test files to verify the DAG functionalities and the correctness of each function in `src`.
+- **bias_detection_dag.py**: Airflow DAG script for bias detection and mitigation of processed data.
+- **data_drift_detection_dag.py**: Airflow DAG script for data drift detection.
 - **new_data_preprocess_dag.py**: Airflow DAG script for downloading and preprocessing new data.
 - **raw_data_preprocess_dag.py**: Airflow DAG script, for handling raw api data preprocessing tasks.
 
@@ -103,6 +110,51 @@ This DAG handles the preprocessing of raw data obtained from DVC. It focuses on 
 5. **Email Notifications**:
    - `send_email`: Sends a notification email upon successful completion of the DAG.
    - `email_notify_failure`: Sends an alert if any task in the DAG fails.
+
+---
+
+## `bias_detection_and_mitigation.py` - DAG for Bias Detection and Mitigation
+
+The purpose of this DAG is to automate the detection and mitigation of bias in the dataset. It performs several steps that include loading data, identifying biases, applying conditional mitigation strategies, and updating the data repository with the mitigated results. The DAG uses Airflow for orchestration and ensures continuous monitoring of fairness in the dataset.
+
+### DAG Steps and Explanation
+
+1. **Load Data**:
+   - `processed_data_from_dvc_task`: Retrieves the preprocessed data from DVC for bias detection.
+
+2. **Identify Bias**:
+   - `identify_bias_task`: Loads the new data and detects biases based on the specified target and sensitive columns. The results are saved for use in the next step.
+
+3. **Mitigate Bias**:
+   - `mitigate_bias_task`: Loads the original data and the identified biases, then applies conditional mitigation techniques based on the results from the bias detection step.
+
+4. **Update Mitigated Data**:
+   - `mitigated_data_to_dvc_task`: Saves the mitigated dataset back to DVC for version control, ensuring that the data reflects the applied bias mitigation strategies.
+
+5. **Task Dependencies**:
+   - The DAG sets up a sequence of task dependencies that dictate the flow of data processing from loading to mitigation, ensuring that each step is executed in the correct order.
+
+---
+
+## `drift_data_dag.py` - DAG for Data Drift Detection
+
+The purpose of this DAG is to automate the process of detecting data drift in the dataset. It includes tasks for loading the data, performing various statistical tests to identify drift, and notifying stakeholders about the results. The DAG leverages Airflow to orchestrate these tasks and utilizes different methods to assess changes in data distribution.
+
+### DAG Steps and Explanation
+
+1. **Load Data**:
+   - `load_data_task`: Loads the preprocessed data from the specified file for drift detection.
+
+2. **Detect Drift**:
+   - `detect_drift_evidently`: Utilizes the Evidently library to generate a comprehensive drift report in HTML format, which summarizes the findings related to drift in the dataset.
+   - `detect_drift_ks_test`: Applies the Kolmogorov-Smirnov test to identify significant changes between distributions of features in the dataset.
+   - `detect_drift_psi`: Uses the Population Stability Index (PSI) method to assess the stability of the dataset over time.
+
+3. **Email Notifications**:
+   - `send_email`: Sends notifications regarding the success or failure of the DAG execution, alerting stakeholders to the status of the drift detection process.
+
+4. **Task Dependencies**:
+   - The DAG establishes dependencies that ensure the data loading task is completed before drift detection tasks are executed, followed by the email notification.
 
 ---
 

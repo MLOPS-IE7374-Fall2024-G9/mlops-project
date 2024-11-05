@@ -254,7 +254,7 @@ last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> e
 branch_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task
 branch_task >> send_data_validation_failure_email
 raw_data_from_dvc_task >> merge_raw_data_task >> update_raw_data_to_dvc_task
-update_data_to_dvc_task >> update_raw_data_to_dvc_task >> delete_local_task 
+[update_data_to_dvc_task , update_raw_data_to_dvc_task] >> delete_local_task 
 update_raw_data_to_dvc_task >> send_email
 
 

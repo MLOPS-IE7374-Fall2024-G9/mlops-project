@@ -7,12 +7,14 @@ data/
 ├── bias_mitigated_data.csv.dvc   # Bias mitigated data file, tracked by DVC
 
 scripts/
-├── data_bias.py                  # Script for detecting data bias across specified subsets using statistical methods
-├── data_bias_withmodel.py        # Script for detecting data bias and model bias using a xgb_reg model (initial training)
-├── data_downloader.py            # Script for downloading and saving data from API
-├── data_preprocess.py            # Script for data preprocessing (not detailed here)
-├── data_schema.py                # Script for data schema validation (not detailed here)
 ├── data.py                       # Main data module containing classes for data processing
+├── data_bias.py                  # Script for detecting data bias across specified subsets using statistical methods
+├── data_bias_with_model.py       # Script for detecting data bias and model bias using a xgb_reg model
+├── data_downloader.py            # Script for downloading and saving data from API
+├── data_drift_detection.py       # Script for data drift detection
+├── data_preprocess.py            # Script for data preprocessing
+├── data_preprocess_script.py     # CMD line Script for data preprocessing, uses data_preprocess.py
+├── data_schema.py                # Script for data schema validation
 ├── dvc_manager.py                # Manages DVC operations for data versioning
 ├── README.md                     # Documentation for the project
 ```
@@ -63,7 +65,7 @@ This script provides schema inference and validation for ensuring data consisten
 - **Data Validation**: The `validate_data` method validates new data against the inferred schema, logging any schema errors.
 - **Schema Saving and Loading**: The `save_schema` and `load_schema` methods allow the schema to be saved as JSON and loaded when needed.
 
-### 5. `data_bias_withmodel.py`
+### 5. `data_bias_with_model.py`
 This script detects potential biases in a machine learning model’s predictions by analyzing subsets of data based on specified sensitive features (e.g., zone, subba-name and cloudcover). It uses Fairlearn for data slicing and calculates performance metrics across groups and identifyies any deviations that could indicate bias.
 
 **Logic and Purpose**:
@@ -125,3 +127,25 @@ The `DVCManager` class facilitates DVC operations for version control and data m
 - **Upload Data**: The `upload_data_to_dvc` method saves data to a CSV, adds it to DVC, pushes it to the remote, and deletes the local CSV file after a successful push.
 - **Download Data**: The `download_data_from_dvc` method pulls the latest dataset from DVC, loads it into a DataFrame, and optionally deletes the local CSV files.
 - **Local Data Management**: The `delete_local_data` method deletes any CSV files left locally after DVC operations.
+
+### 7. `data_drift_detection.py`
+This module implements the `DataDriftDetector` class, which is used to identify drift in datasets by comparing a baseline dataset against new data.
+
+**Logic and Purpose**:
+- **Initialization**: The `DataDriftDetector` class is initialized with two datasets: a baseline dataset and a new dataset. This allows for comparisons to detect data drift over time.
+
+- **Drift Detection Using Evidently**: 
+  - The `detect_drift_evidently` method utilizes the Evidently library to generate a comprehensive report on data drift between the baseline and new datasets.
+  - **Column Mapping**: Defines the numerical features to be analyzed for drift.
+  - **Report Generation**: Runs the analysis and saves the drift report in HTML format to a specified path.
+
+- **Kolmogorov-Smirnov Test**:
+  - The `detect_drift_ks_test` method performs a statistical test (Kolmogorov-Smirnov test) to compare distributions of numerical features in the baseline and new datasets.
+  - **Results**: Returns a dictionary indicating p-values and whether drift is detected for each feature.
+
+- **Population Stability Index (PSI) Test**:
+  - The `detect_drift_psi` method calculates the PSI for numerical features to assess drift based on changes in distribution.
+  - **Results**: Returns a dictionary of PSI values and drift flags for each feature, with thresholds indicating significant drift.
+
+- **Result Retrieval**:
+  - The `get_results` method provides access to the drift detection results in JSON format for further analysis, ensuring that a report has been generated before retrieval.
