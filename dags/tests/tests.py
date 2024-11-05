@@ -278,5 +278,3 @@ def test_conditional_mitigation_groups():
     assert 'B' in unique_groups, "Expected group 'B' to be in mitigated data"
 
 
-if __name__ == '__main__':
-    test_conditional_mitigation_output()

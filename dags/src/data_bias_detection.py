@@ -44,9 +44,14 @@ def detect_bias(data: pd.DataFrame, target_col: str, sensitive_col: str) -> dict
     overall_metrics = metric_frame.overall
     demographic_parity_difference = metric_frame.difference(method='between_groups')
 
+    print('By Group Metric Analysis')
     print(metrics_by_group)
-    print(overall_metrics)
-    print(demographic_parity_difference)
+    print('--------------------------------\n')
+    print('Overall Metric Analysis')
+    print('\n', overall_metrics)
+    print('--------------------------------\n')
+    print('Demographic Parity Difference between groups')
+    print('\n', demographic_parity_difference)
     
     result = {
         'metrics_by_group': metrics_by_group,
@@ -102,3 +107,8 @@ def conditional_mitigation(data: pd.DataFrame, target_col: str, sensitive_col: s
         data = pd.concat([data, additional_samples], ignore_index=True)
     
     return data
+
+
+if __name__ == '__main__':
+    data = pd.read_csv('/Users/akm/Desktop/mlops-project/data_preprocess.csv')
+    detect_bias(data,'value','subba-name')
