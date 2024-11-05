@@ -326,3 +326,8 @@ def test_detect_drift_ks_test():
     # Validate the results
     assert ks_test_results is not None, "KS Test drift detection results should not be None"
     assert isinstance(ks_test_results, dict), "KS Test drift detection results should be a dictionary"
+    # Check that each feature in the dataframe has a p_value in the results
+    for feature, result in ks_test_results.items():
+        assert "p_value" in result, f"KS Test results for feature '{feature}' should contain 'p_value'"
+        assert 0 <= result["p_value"] <= 1, f"KS Test p-value for feature '{feature}' should be within [0, 1]"
+   
