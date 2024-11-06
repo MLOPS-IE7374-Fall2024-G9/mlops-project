@@ -16,6 +16,7 @@ from src.data_download import *
 from dags.src.data_preprocess import *
 from dags.src.data_schema_validation import *
 from dags.src.data_bias_detection import detect_bias, conditional_mitigation
+from dags.src.data_drift import DataDriftDetector
 
 
 # Ignore all warnings in tests
@@ -277,6 +278,68 @@ def test_conditional_mitigation_groups():
     assert 'A' in unique_groups, "Expected group 'A' to be in mitigated data"
     assert 'B' in unique_groups, "Expected group 'B' to be in mitigated data"
 
+# ---------------------------------------------------------------
+# data_drift.py 
+# ---------------------------------------------------------------
 
-if __name__ == '__main__':
-    test_conditional_mitigation_output()
+# Function to generate sample data with drift
+def sample_data():
+    baseline_data = pd.DataFrame({
+        'tempF': np.random.normal(70, 10, 1000),
+        'humidity': np.random.normal(50, 5, 1000),
+        'pressure': np.random.normal(1013, 10, 1000)
+    })
+    new_data = pd.DataFrame({
+        'tempF': np.random.normal(75, 10, 1000),  # Changing mean to simulate drift
+        'humidity': np.random.normal(55, 5, 1000),
+        'pressure': np.random.normal(1015, 10, 1000)
+    })
+    return baseline_data, new_data
+
+baseline_df, new_data_df = sample_data()
+
+# detect_drift_evidently Function
+def test_detect_drift_evidently():
+    detector = DataDriftDetector(baseline_df, new_data_df)
+    drift_report_filename = "drift_report.json"
+    evidently_results = detector.detect_drift_evidently(drift_report_filename)
+
+    # Validate the results
+    assert evidently_results is not None, "Evidently drift detection results should not be None"
+    assert isinstance(evidently_results, dict), "Evidently drift detection results should be a dictionary"
+   
+    # Access the drift results for each column
+    drift_by_columns = evidently_results["metrics"][1]["result"]["drift_by_columns"]
+    
+    # Check that each feature in the dataframe has a result entry
+    for feature in baseline_df.columns:
+        assert feature in drift_by_columns, f"Evidently results should contain drift data for feature '{feature}'"
+        assert "drift_score" in drift_by_columns[feature], f"'{feature}' should have a 'drift_score' in the results"
+        assert "drift_detected" in drift_by_columns[feature], f"'{feature}' should have a 'drift_detected' indicator in the results"
+
+
+# detect_drift_ks_test Function
+def test_detect_drift_ks_test():
+    detector = DataDriftDetector(baseline_df, new_data_df)
+    ks_test_results = detector.detect_drift_ks_test()
+
+    # Validate the results
+    assert ks_test_results is not None, "KS Test drift detection results should not be None"
+    assert isinstance(ks_test_results, dict), "KS Test drift detection results should be a dictionary"
+    # Check that each feature in the dataframe has a p_value in the results
+    for feature, result in ks_test_results.items():
+        assert "p_value" in result, f"KS Test results for feature '{feature}' should contain 'p_value'"
+        assert 0 <= result["p_value"] <= 1, f"KS Test p-value for feature '{feature}' should be within [0, 1]"
+
+# detect_drift_psi Function
+def test_detect_drift_psi():
+    detector = DataDriftDetector(baseline_df, new_data_df)
+    psi_results = detector.detect_drift_psi()
+
+    # Validate the results
+    assert psi_results is not None, "PSI drift detection results should not be None"
+    assert isinstance(psi_results, dict), "PSI drift detection results should be a dictionary"
+    # Check that each feature in the dataframe has a PSI in the results
+    for feature, result in psi_results.items():
+        assert "PSI" in result, f"PSI results for feature '{feature}' should contain 'PSI'"
+        assert result["PSI"] >= 0, f"PSI value for feature '{feature}' should be non-negative"
