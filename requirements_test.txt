@@ -204,3 +204,4 @@ zc.lockfile==3.0.post1
 zipp==3.20.2
 zope.interface==7.1.0
 pandera
+evidently
