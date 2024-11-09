@@ -8,7 +8,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import pandas as pd
  
 # Setting MLflow tracking URI
-mlflow.set_tracking_uri("http://localhost:5001")
+mlflow.set_tracking_uri("http://localhost:5000")
  
 # Experiment name
 # mlflow.create_experiment("Electricity Demand Prediction_1")
