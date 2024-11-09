@@ -77,7 +77,7 @@ def end_run():
         print(f"Error ending the MLflow run: {e}")
 
 
-data= pd.read_csv('/Users/akm/Desktop/mlops-project/preprocessed_data.csv')
+data= pd.read_csv('/Users/amoghagadde/Desktop/Amogha/Northeastern/SEM_3/ML_Ops/Project/mlops-project/dataset/data/preprocessed_data.csv')
 X = data.drop(columns=['value'])
 y = data[['value']]
 
@@ -98,7 +98,7 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 run_name = f"{tags['model_name']}_{tags['version']}_{timestamp}"
  
 # Start the MLflow run with the descriptive run name and tags
-set_tracking_uri("http://127.0.0.1:5001")
+set_tracking_uri("http://127.0.0.1:5000")
 run = start_mlflow_run(run_name=run_name, tags=tags)
  
 
