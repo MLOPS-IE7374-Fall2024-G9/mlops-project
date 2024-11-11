@@ -13,13 +13,15 @@ mlops_env/
 mlruns/
 mlartifacts
 .envrc
+# mlruns/
+# mlartifacts
 
 
 # Ignore system-specific files
 .DS_Store
 Thumbs.db
 docker-compose-local.yaml
-mlflow.db
+# mlflow.db
 bias_detection_results.pkl
 
 # Ignore Python cache and compiled Python files
@@ -39,3 +41,5 @@ mlops-437516-b9a69694c897.json
 # Ignore log files
 *.log
 
+# mlflow files
+mlflow_secrets.txt
