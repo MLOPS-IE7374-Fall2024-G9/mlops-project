@@ -33,13 +33,23 @@ class FeatureImportanceAnalyzer:
             logging.error(f"An error occurred while loading the model: {e}")
 
     def load_data(self):
-        pass
+        try:
+            self.data = pd.read_csv(self.data_path, delimiter=',')
+            target_column = 'value'   #need to change
+            self.X = self.data.drop(columns=[target_column])
+            self.y = self.data[target_column]
+            logging.info("Data loaded and split successfully.")
+        except FileNotFoundError:
+            logging.error("Error: Data file not found. Check the data path.")
+        except Exception as e:
+            logging.error(f"An error occurred while loading the data: {e}")
 
 if __name__ == "__main__":
-    # Example paths (use the correct paths in your environment)
     model_path = '/Users/nikhilsirisala/Desktop/Course_Notes/MlOps/mlops-project/model/xgb_reg.pkl'
-    data_path = '/Users/nikhilsirisala/Desktop/Course_Notes/MlOps/mlops-project/dataset/data/bias_mitigated_data.csv.dvc'
+    data_path = '/Users/nikhilsirisala/Desktop/Course_Notes/MlOps/mlops-project/dataset/data/bias_mitigated_data.csv'
 
-    # Create an instance of the FeatureImportanceAnalyzer class
+    # Instance of the FeatureImportanceAnalyzer class
     analyzer = FeatureImportanceAnalyzer(model_path, data_path)
     analyzer.load_model()
+    analyzer.load_data()
+
