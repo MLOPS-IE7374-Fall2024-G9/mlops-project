@@ -25,6 +25,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 import json
 from dataset_loader import load_and_split_dataset
 import logging
+from datetime import datetime
 
 # Setting up logger
 logger = logging.getLogger("ModelTrainer")
@@ -38,7 +39,7 @@ logger.addHandler(ch)
 class ModelTrainer:
     def __init__(self, config_path, dataset_path, load_existing_model=False):
         self.config = self.load_config(config_path)
-        
+
         self.dataset_path = dataset_path
         self.features = self.config["features"]
         self.label = self.config["label"]
@@ -89,23 +90,41 @@ class ModelTrainer:
         return X_train, X_val, X_test, y_train, y_val, y_test
 
     def save_model(self, model, model_type):
-        """Save the trained model using pickle."""
-        model_filename = os.path.join(self.model_save_path, f"{model_type}_model.pkl")
+        """Save the trained model using pickle with a timestamp."""
+        # Get the current timestamp
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        
+        # Construct the filename with timestamp
+        model_filename = os.path.join(self.model_save_path, f"{model_type}_model_{timestamp}.pkl")
+        
+        # Save the model to the pickle file
         with open(model_filename, 'wb') as f:
             pickle.dump(model, f)
+        
         logger.info(f"Model saved to {model_filename}")
 
     def load_model(self, model_type):
-        """Load the trained model from pickle."""
-        model_filename = os.path.join(self.model_save_path, f"{model_type}_model.pkl")
-        if os.path.exists(model_filename):
-            with open(model_filename, 'rb') as f:
-                model = pickle.load(f)
-            logger.info(f"Model loaded from {model_filename}")
-            return model
-        else:
-            logger.error(f"No model found at {model_filename}")
+        """Load the most recent trained model based on timestamp."""
+        # List all files in the pickle folder
+        model_files = [f for f in os.listdir(self.model_save_path) if f.startswith(f"{model_type}_model")]
+        
+        if not model_files:
+            logger.error(f"No models found for {model_type}.")
             return None
+        
+        # Sort the files by timestamp (filename format ensures correct sorting)
+        model_files.sort(reverse=True)  # Most recent file first
+        
+        # Get the most recent model file
+        most_recent_model_file = model_files[0]
+        
+        # Load the model from the most recent file
+        model_filename = os.path.join(self.model_save_path, most_recent_model_file)
+        with open(model_filename, 'rb') as f:
+            model = pickle.load(f)
+        
+        logger.info(f"Model loaded from {model_filename}")
+        return model
 
     def train_lr(self, X_train, y_train, X_val, y_val, model=None):
         # Use the provided model or create a new one if none is given
@@ -146,13 +165,14 @@ class ModelTrainer:
         return model, accuracy, loss
 
     def train_xgboost(self, X_train, y_train, X_val, y_val):
-        model = xgb.XGBClassifier(
-            use_label_encoder=False, 
-            eval_metric='mlogloss', 
-            max_depth=self.config["xgboost_max_depth"],
-            learning_rate=self.config["learning_rate"],
-            n_estimators=self.config["xgboost_n_estimators"]
-        )
+        model = xgb.XGBRegressor(objective='reg:squarederror', 
+                                 random_state=42,
+                                 reg_alpha=0.1, 
+                                 reg_lambda=1.0,
+                                 learning_rate=self.config["learning_rate"], 
+                                 n_estimators=1000, 
+                                 min_child_weight=5)
+        
         model.fit(X_train, y_train)
         y_pred = model.predict(X_val)
         accuracy = accuracy_score(y_val, y_pred)
