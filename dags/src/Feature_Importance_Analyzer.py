@@ -1,6 +1,3 @@
-# SHAP: Based on game theory, SHAP assigns each feature an importance value by measuring its contribution to the prediction. It offers consistent feature importance at both the global and local levels.
-# LIME: Perturbs input data and builds an interpretable model locally around a specific prediction to show how features impact that particular outcome.
-
 import pickle
 import pandas as pd
 import numpy as np
@@ -8,7 +5,7 @@ import logging
 import shap
 import matplotlib.pyplot as plt
 
-# Configure logging
+#logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
@@ -62,11 +59,10 @@ class FeatureImportanceAnalyzer:
             return
 
         try:
-            # Align columns to match model's training data
             if hasattr(self.model, 'feature_names_in_'):
                 self.X = self.X[self.model.feature_names_in_]
 
-            # Create a SHAP explainer for tree-based models
+            # SHAP explainer for tree-based models
             explainer = shap.TreeExplainer(self.model)
             self.shap_values = explainer(self.X)
             logging.info("SHAP values computed successfully.")
