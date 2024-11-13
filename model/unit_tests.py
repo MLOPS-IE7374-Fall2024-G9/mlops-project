@@ -7,7 +7,7 @@ from unittest.mock import patch, mock_open, MagicMock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), './')))
 
-from src.dataset_loader import load_config, load_and_split_dataset
+from scripts.dataset_loader import load_config, load_and_split_dataset
 
 # Sample paths for testing
 SAMPLE_DATA_PATH = "sample_dataset.csv"
