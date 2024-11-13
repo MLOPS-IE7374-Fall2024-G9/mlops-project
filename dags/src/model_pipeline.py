@@ -10,7 +10,11 @@ from google.cloud import storage
 from datetime import datetime
 
 
-def upload_model_to_gcs(local_model_path, bucket_name="mlops-g9-bucket", model_name="retrained_xgb_model"):
+# Set the path to your service account key file
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:\Users\misja\OneDrive\Desktop\JAHNAVI\NEU\MLOps\noble-velocity-441519-c9-7d0a38e31972.json"
+
+
+def upload_model_to_gcs(local_model_path, bucket_name="mlops-g9-bucket", model_name="xgb_model"):
     # Initialize Google Cloud Storage client
     storage_client = storage.Client(project="noble-velocity-441519-c9")
 
@@ -102,14 +106,15 @@ def train_model(df, target_column="value"):
     # Generate a timestamped filename for the local model path
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     model_filename = f"xgb_retrained_{timestamp}.pkl"
-    model_directory = r"C:\Users\misja\OneDrive\Desktop\JAHNAVI\NEU\mlops-project\model"
+    model_directory = r"C:\Users\misja\OneDrive\Desktop\JAHNAVI\NEU\mlops-project\model\pickle"
     local_model_path = os.path.join(model_directory, model_filename)
 
     joblib.dump(xgb_reg, local_model_path)
     print(f"Model saved locally at {local_model_path}")
 
     # Upload the model to Google Cloud Storage
-    model_uri = upload_model_to_gcs(local_model_path=local_model_path, bucket_name=bucket_name)
+    bucket_name = "mlops-g9-bucket"
+    model_uri = upload_model_to_gcs(local_model_path,bucket_name)
     
     return xgb_reg, X_train, X_test, y_train, y_test, model_uri
     
