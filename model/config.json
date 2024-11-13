@@ -1,4 +1,12 @@
 {
     "test_size": 0.2,
-    "validation_size": 0.1
+    "validation_size": 0.1,
+    "features": ["visibility"],
+    "label": "value",
+    "lr_max_iter": 1000,
+    "learning_rate": 0.001,
+    "epochs": 5,
+    "batch_size": 64,
+    "xgboost_max_depth": 6,
+    "xgboost_n_estimators": 100
 }
