@@ -57,7 +57,9 @@ def load_processed_data(filename="bias_mitigated_data.csv",target_column="value"
         return None, None, None, None
 
 
-def download_model_from_gcs(gcs_model_uri, local_directory=r"C:\Users\misja\OneDrive\Desktop\JAHNAVI\NEU\mlops-project\model"):
+def download_model_from_gcs(gcs_model_uri):
+    local_directory = os.path.dirname(os.path.abspath(__file__)) + "../../model/pickle/"
+
     # Initialize the Google Cloud Storage client
     storage_client = storage.Client()
     
@@ -85,7 +87,6 @@ def load_model(gcs_model_uri):
     print("Model loaded for predictions.")
     return model
 
-
 def train_model(df, target_column="value"):
     X = df.drop(columns=[target_column])
     y = df[target_column]
@@ -102,19 +103,17 @@ def train_model(df, target_column="value"):
     # Generate a timestamped filename for the local model path
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     model_filename = f"xgb_retrained_{timestamp}.pkl"
-    model_directory = r"C:\Users\misja\OneDrive\Desktop\JAHNAVI\NEU\mlops-project\model"
+    model_directory = os.path.dirname(os.path.abspath(__file__)) + "../../model/pickle/"
     local_model_path = os.path.join(model_directory, model_filename)
 
     joblib.dump(xgb_reg, local_model_path)
     print(f"Model saved locally at {local_model_path}")
 
     # Upload the model to Google Cloud Storage
-    model_uri = upload_model_to_gcs(local_model_path=local_model_path, bucket_name=bucket_name)
-    
+    bucket_name = "mlops-g9-bucket"
+    model_uri = upload_model_to_gcs(local_model_path,bucket_name)
     return xgb_reg, X_train, X_test, y_train, y_test, model_uri
     
-    
-
 
 # Function to Test the Model
 def test_and_evaluate_model(model, X_test, y_test):
