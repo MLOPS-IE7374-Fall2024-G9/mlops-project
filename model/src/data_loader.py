@@ -6,6 +6,7 @@ import os
 import argparse
 import logging
 import json
+import subprocess
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -47,19 +48,13 @@ def load_and_split_dataset(path, test_size, validation_size, random_state=42, sa
     # Save the datasets locally if the flag is set
     if save_locally:
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        data_dir = os.path.join(script_dir, "data")
+        data_dir = os.path.join(script_dir, "../data")
         os.makedirs(data_dir, exist_ok=True)
         
         # File paths for the datasets
         train_path = os.path.join(data_dir, "train_data.csv")
         validation_path = os.path.join(data_dir, "validation_data.csv")
         test_path = os.path.join(data_dir, "test_data.csv")
-        
-        # # Remove existing files if they exist
-        # for file_path in [train_path, validation_path, test_path]:
-        #     if os.path.exists(file_path):
-        #         os.remove(file_path)
-        #         logger.info(f"Existing file '{file_path}' removed to allow overwriting.")
         
         # Save new datasets
         train_data.to_csv(train_path, index=False)
@@ -69,6 +64,9 @@ def load_and_split_dataset(path, test_size, validation_size, random_state=42, sa
         logger.info(f"Datasets saved to {data_dir} directory.")
     
     return train_data, validation_data, test_data
+
+def download_data():
+    subprocess.run(["dvc", "pull"], check=True)
 
 def main():
     parser = argparse.ArgumentParser(description="Load, split, and optionally save a dataset.")
@@ -80,6 +78,7 @@ def main():
     
     # Load configuration for test_size and validation_size from the specified config file
     try:
+        download_data()
         test_size, validation_size = load_config(args.config)
         load_and_split_dataset(args.path, test_size, validation_size, save_locally=args.save_locally)
         logger.info("Dataset loaded, split, and processed successfully.")

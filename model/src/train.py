@@ -11,6 +11,7 @@ import mlflow
 import mlflow.sklearn
 import mlflow.tensorflow
 import mlflow.xgboost
+from mlflow.tracking import MlflowClient
 import pandas as pd
 from sklearn.linear_model import LinearRegression  # Updated to LinearRegression
 from sklearn.metrics import accuracy_score
@@ -246,6 +247,39 @@ class ModelTrainer:
             
             # Save the model to disk after training
             self.save_model(model, model_type)
+
+    def select_best_model(self, model_type, metric="R2"):
+        """Selects the best model based on the specified metric from MLflow experiments."""
+        client = MlflowClient()
+        
+        # Define experiment by name or use the active experiment ID
+        experiment_id = client.get_experiment_by_name("Default").experiment_id
+        
+        # Query all runs for this experiment
+        runs = client.search_runs(
+            experiment_ids=[experiment_id],
+            filter_string=f"params.model_type = '{model_type}'",
+            order_by=[f"metrics.{metric} DESC"],  # Order by the specified metric, descending
+            max_results=1  # Get only the top run
+        )
+        
+        if runs:
+            best_run = runs[0]
+            best_run_id = best_run.info.run_id
+            logger.info(f"Best {model_type} model selected with {metric} = {best_run.data.metrics[metric]} (Run ID: {best_run_id})")
+            
+            # Load the best model from MLflow
+            if model_type == "lr":
+                model = mlflow.sklearn.load_model(f"runs:/{best_run_id}/linear_regression")
+            elif model_type == "lstm":
+                model = mlflow.tensorflow.load_model(f"runs:/{best_run_id}/lstm")
+            elif model_type == "xgboost":
+                model = mlflow.xgboost.load_model(f"runs:/{best_run_id}/xgboost")
+            
+            return model
+        else:
+            logger.warning(f"No runs found for model type '{model_type}' with metric '{metric}'")
+            return None
 
 def main():
     # Command line argument parsing
