@@ -3,6 +3,7 @@ import pandera as pa
 import json
 from typing import Optional, Any
 import logging
+import argparse
 
 # Setup logging
 logging.basicConfig(
@@ -93,3 +94,44 @@ class DataSchemaAndStatistics:
             schema_dict = json.load(file)
         self.schema = pa.DataFrameSchema.from_json(schema_dict)
         logger.info(f"Schema loaded successfully from {file_path}")
+
+def main():
+    parser = argparse.ArgumentParser(description="Data Schema and Statistics Tool")
+    parser.add_argument("--file", type=str, help="Path to the CSV file to load data", required=True)
+    parser.add_argument("--infer-schema", action="store_true", help="Infer schema from data")
+    parser.add_argument("--validate-data", type=str, help="Path to new data CSV file for validation")
+    parser.add_argument("--fix-anomalies", action="store_true", help="Fix anomalies in the data")
+    parser.add_argument("--save-schema", type=str, help="File path to save inferred schema as JSON")
+    parser.add_argument("--load-schema", type=str, help="File path to load schema from JSON")
+    
+    args = parser.parse_args()
+
+    # Load initial data
+    data = pd.read_csv(args.file)
+    tool = DataSchemaAndStatistics(data)
+
+    # Infer schema
+    if args.infer_schema:
+        tool.infer_schema()
+
+    # Load schema if specified
+    if args.load_schema:
+        tool.load_schema(args.load_schema)
+
+    # Validate new data if provided
+    if args.validate_data:
+        new_data = pd.read_csv(args.validate_data)
+        tool.validate_data(new_data)
+
+    # Fix anomalies in the loaded data if specified
+    if args.fix_anomalies:
+        tool.fix_anomalies(data)
+
+    # Save schema to file if specified
+    if args.save_schema:
+        tool.save_schema(args.save_schema)
+
+if __name__ == "__main__":
+    main()
+
+# usage - python script_name.py --file data.csv --infer-schema --save-schema schema.json --validate-data new_data.csv

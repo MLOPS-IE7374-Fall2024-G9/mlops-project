@@ -6,6 +6,7 @@ from fairlearn.metrics import MetricFrame
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.model_selection import train_test_split
 from typing import Dict
+import argparse
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -93,3 +94,35 @@ class ModelBiasDetector:
         """Retrieve metrics by group."""
         logging.info("Retrieving group metrics.")
         return self.metric_frame.by_group
+
+
+if __name__ == "__main__":
+    # Set up argument parser for command-line arguments
+    parser = argparse.ArgumentParser(description="Detect model bias in predictions.")
+    parser.add_argument("--model_path", type=str, required=True, help="Path to the model pickle file.")
+    parser.add_argument("--data_path", type=str, required=True, help="Path to the CSV data file containing all data.")
+    
+    args = parser.parse_args()
+
+    # Load data
+    try:
+        df_all = pd.read_csv(args.data_path)
+        logging.info("Data loaded successfully from %s.", args.data_path)
+    except Exception as e:
+        logging.error("Failed to load data from %s. Error: %s", args.data_path, e)
+        raise
+
+    # Initialize ModelBiasDetector
+    detector = ModelBiasDetector(model_path=args.model_path, df_all=df_all)
+
+    # Prepare data and run bias detection
+    detector.prepare_data(df_all)
+    detector.generate_predictions()
+    detector.augment_test_data()
+    detector.set_sensitive_features()
+    
+    # Evaluate and print group metrics
+    group_metrics = detector.evaluate_bias()
+    print(group_metrics)
+
+# usage python data_bias_with_model.py --model_path path/to/model.pkl --data_path path/to/data.csv
