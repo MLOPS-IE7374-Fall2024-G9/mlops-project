@@ -4,6 +4,7 @@ from mlflow import MlflowClient
 from mlflow.models import infer_signature
 import mlflow.sklearn
 import mlflow.keras
+import mlflow.xgboost
 from urllib.parse import urlparse
 
 # Setting MLflow tracking URI
@@ -116,10 +117,12 @@ def log_param(param_name, value):
         print(f"Error logging parameter '{param_name}': {e}")
 
 # Function to log a model
-def log_model(model, model_name, X_train, predictions, signature=None):
+def log_model(model, model_name, X_train=None, predictions=None, signature=None):
     try:
-        # Log the model with its signature
-        signature = signature or infer_signature(X_train, predictions)
+        # Infer the signature only if X_train and predictions are provided
+        if signature is None and X_train is not None and predictions is not None:
+            signature = infer_signature(X_train, predictions)
+        
         mlflow.sklearn.log_model(model, model_name, signature=signature)
         print(f"Logged model '{model_name}' with signature.")
     except Exception as e:

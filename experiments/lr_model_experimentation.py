@@ -1,8 +1,8 @@
 from datetime import datetime
 import os
-import mlflow
-import mlflow.sklearn
-from mlflow.models import infer_signature
+# import mlflow
+# import mlflow.sklearn
+# from mlflow.models import infer_signature
 from urllib.parse import urlparse
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -30,8 +30,8 @@ from mlflow_utils import *
 
 # X_train, X_test, y_train, y_test = train_test_split(X,y,train_size=0.8,test_size=0.2) 
 
-data= pd.read_csv('/Users/amoghagadde/Desktop/Amogha/Northeastern/SEM_3/ML_Ops/Project/mlops-project/dataset/data/bias_mitigated_data.csv')
-
+data= pd.read_csv('/Users/amoghagadde/Desktop/Amogha/Northeastern/SEM_3/ML_Ops/Project/bias_mitigated_data.csv')
+data = data.dropna()
 X = data.drop(columns=['value', 'datetime'])
 y = data[['value']]
 
@@ -40,7 +40,7 @@ X_train, X_test, y_train, y_test = train_test_split(X,y,train_size=0.8,test_size
 # Define tags
 tags = {
     "model_name": "Linear Regression",
-    "version": "v1.0",
+    "version": "v2.0",
     # "dataset_version": "v2",
     "purpose": "Model Selection"
 }
@@ -94,10 +94,10 @@ if run:
 
         # Infer signature
         predictions_lin = lin_reg.predict(X_train)
-        signature_lin = infer_signature(X_train, predictions_lin)
+        # signature_lin = infer_signature(X_train, predictions_lin)
 
         # Log the model using the new function from mlflow_utils.py
-        log_model(lin_reg, "Linear Regression model", X_train, predictions_lin, signature_lin)
+        log_model(lin_reg, "Linear Regression model", X_train=X_train, predictions = predictions_lin)
 
         # Debugging: Confirm run status
         print(f"Run {run.info.run_id} finished successfully!")
