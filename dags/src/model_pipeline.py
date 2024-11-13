@@ -10,9 +10,9 @@ from google.cloud import storage
 from datetime import datetime
 
 
-def upload_model_to_gcs(local_model_path, bucket_name="your-bucket-name", model_name="retrained_xgb_model"):
+def upload_model_to_gcs(local_model_path, bucket_name="mlops-g9-bucket", model_name="retrained_xgb_model"):
     # Initialize Google Cloud Storage client
-    storage_client = storage.Client()
+    storage_client = storage.Client(project="noble-velocity-441519-c9")
 
     # Generate a unique filename with a timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -56,9 +56,6 @@ def load_processed_data(filename="bias_mitigated_data.csv",target_column="value"
         print(f"An error occurred: {e}")
         return None, None, None, None
 
-import joblib
-from google.cloud import storage
-import os
 
 def download_model_from_gcs(gcs_model_uri, local_directory=r"C:\Users\misja\OneDrive\Desktop\JAHNAVI\NEU\mlops-project\model"):
     # Initialize the Google Cloud Storage client
