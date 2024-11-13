@@ -77,7 +77,7 @@ def end_run():
         print(f"Error ending the MLflow run: {e}")
 
 
-data= pd.read_csv('/Users/amoghagadde/Desktop/Amogha/Northeastern/SEM_3/ML_Ops/Project/mlops-project/dataset/data/preprocessed_data.csv')
+data= pd.read_csv(r'C:\Users\misja\OneDrive\Desktop\JAHNAVI\NEU\mlops-project\dataset\data\data_preprocess.csv')
 X = data.drop(columns=['value'])
 y = data[['value']]
 
