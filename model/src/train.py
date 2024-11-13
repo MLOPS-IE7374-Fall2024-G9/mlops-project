@@ -37,30 +37,48 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 class ModelTrainer:
-    def __init__(self, config_path, dataset_path, load_existing_model=False):
+    def __init__(self, config_path, load_existing_model=False):
         self.config = self.load_config(config_path)
 
-        self.dataset_path = dataset_path
+        # Set paths to local dataset folders
+        self.train_data_path = os.path.join(os.path.dirname(__file__), '../data/train_data.csv')
+        self.validation_data_path = os.path.join(os.path.dirname(__file__), '../data/validate_data.csv')
+        self.test_data_path = os.path.join(os.path.dirname(__file__), '../data/test_data.csv')
+
+        #self.dataset_path = dataset_path
         self.features = self.config["features"]
         self.label = self.config["label"]
         self.test_size = self.config["test_size"]
         self.validation_size = self.config["validation_size"]
         self.learning_rate = self.config["learning_rate"]
         self.load_existing_model = load_existing_model
-        self.model_save_path = os.path.join(os.path.dirname(__file__), 'pickle')
+        self.model_save_path = os.path.join(os.path.dirname(__file__), '../pickle')
 
         # Create the folder if it doesn't exist
         if not os.path.exists(self.model_save_path):
             os.makedirs(self.model_save_path)
 
-        # Load and split dataset
-        try:
-            self.train_data, self.validation_data, self.test_data = load_and_split_dataset(
-                dataset_path, self.test_size, self.validation_size, save_locally=False
-            )
-        except FileNotFoundError as e:
-            logger.error(f"Error loading dataset: {e}")
-            raise
+    def load_dataset(self, dataset_path=None):
+        if dataset_path != None:
+            self.dataset_path = dataset_path
+
+            try:
+                self.train_data, self.validation_data, self.test_data = load_and_split_dataset(
+                    dataset_path, self.test_size, self.validation_size, save_locally=False
+                )
+            except FileNotFoundError as e:
+                logger.error(f"Error loading dataset: {e}")
+                raise
+        
+        else:
+            try:
+                # Load datasets from local folder paths
+                self.train_data = pd.read_csv(self.train_data_path)
+                self.validation_data = pd.read_csv(self.validation_data_path)
+                self.test_data = pd.read_csv(self.test_data_path)
+            except FileNotFoundError as e:
+                logger.error(f"Error loading dataset: {e}")
+                raise
 
     def load_config(self, config_path):
         """Load configuration from a JSON file."""
@@ -232,14 +250,15 @@ class ModelTrainer:
 def main():
     # Command line argument parsing
     parser = argparse.ArgumentParser(description="Train models using different algorithms and track using MLflow.")
-    parser.add_argument("path", type=str, help="Path to the dataset CSV file.")
+    parser.add_argument("path", type=str, nargs='?', default=None, help="Path to the dataset CSV file. Optional if using default paths.")
     parser.add_argument("--config", type=str, default="config.json", help="Path to the configuration JSON file.")
     parser.add_argument("--model", type=str, choices=['lr', 'lstm', 'xgboost'], help="The type of model to train.")
     parser.add_argument("--load_existing_model", action='store_true', help="Flag to load an existing model instead of retraining.")
     
     args = parser.parse_args()
 
-    trainer = ModelTrainer(args.config, args.path, args.load_existing_model)
+    trainer = ModelTrainer(args.config, args.load_existing_model)
+    trainer.load_dataset(args.path)
     trainer.train(args.model)
 
 if __name__ == "__main__":

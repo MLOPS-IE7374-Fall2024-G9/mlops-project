@@ -1,3 +1,4 @@
 tensorflow
 mlflow
 xgboost
+dvc[gs]
