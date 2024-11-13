@@ -112,8 +112,6 @@ def train_model(df, target_column="value"):
     # Upload the model to Google Cloud Storage
     bucket_name = "mlops-g9-bucket"
     model_uri = upload_model_to_gcs(local_model_path,bucket_name)
-    model_uri = upload_model_to_gcs(local_model_path=local_model_path)
-    
     return xgb_reg, X_train, X_test, y_train, y_test, model_uri
     
 
