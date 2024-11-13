@@ -76,9 +76,14 @@ def end_run():
         print(f"Error ending the MLflow run: {e}")
 
 
+<<<<<<< HEAD
 data= pd.read_csv('/Users/amoghagadde/Desktop/Amogha/Northeastern/SEM_3/ML_Ops/Project/bias_mitigated_data.csv')
 data = data.dropna()
 X = data.drop(columns=['value', 'datetime'])
+=======
+data= pd.read_csv(r'C:\Users\misja\OneDrive\Desktop\JAHNAVI\NEU\mlops-project\dataset\data\data_preprocess.csv')
+X = data.drop(columns=['value'])
+>>>>>>> dev
 y = data[['value']]
 
 # X_train, X_test, y_train, y_test = train_test_split(X,y,train_size=0.8,test_size=0.2)
