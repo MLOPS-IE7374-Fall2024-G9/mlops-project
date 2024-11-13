@@ -1,6 +1,5 @@
 # usage - python script_name.py path/to/dataset.csv --config path/to/config.json --save_locally
 
-
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import os
@@ -51,9 +50,21 @@ def load_and_split_dataset(path, test_size, validation_size, random_state=42, sa
         data_dir = os.path.join(script_dir, "data")
         os.makedirs(data_dir, exist_ok=True)
         
-        train_data.to_csv(os.path.join(data_dir, "train_data.csv"), index=False)
-        validation_data.to_csv(os.path.join(data_dir, "validation_data.csv"), index=False)
-        test_data.to_csv(os.path.join(data_dir, "test_data.csv"), index=False)
+        # File paths for the datasets
+        train_path = os.path.join(data_dir, "train_data.csv")
+        validation_path = os.path.join(data_dir, "validation_data.csv")
+        test_path = os.path.join(data_dir, "test_data.csv")
+        
+        # # Remove existing files if they exist
+        # for file_path in [train_path, validation_path, test_path]:
+        #     if os.path.exists(file_path):
+        #         os.remove(file_path)
+        #         logger.info(f"Existing file '{file_path}' removed to allow overwriting.")
+        
+        # Save new datasets
+        train_data.to_csv(train_path, index=False)
+        validation_data.to_csv(validation_path, index=False)
+        test_data.to_csv(test_path, index=False)
         
         logger.info(f"Datasets saved to {data_dir} directory.")
     

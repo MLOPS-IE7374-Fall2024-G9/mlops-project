@@ -1,0 +1,19 @@
+{
+    "test_size": 0.2,
+    "validation_size": 0.1,
+    "features": ["precipMM", "weatherCode", "visibility", "HeatIndexF", "WindChillF",
+    "windspeedMiles", "FeelsLikeF", "tempF_rolling_mean", "windspeedMiles_rolling_mean",
+    "humidity_rolling_mean", "value", "pressure", "pressureInches", "cloudcover", "uvIndex",
+    "tempF_rolling_std", "windspeedMiles_rolling_std", "humidity_rolling_std",
+    "tempF_lag_2", "windspeedMiles_lag_2", "humidity_lag_2",
+    "tempF_lag_4", "windspeedMiles_lag_4", "humidity_lag_4",
+    "tempF_lag_6", "windspeedMiles_lag_6", "humidity_lag_6",
+    "month_sin", "month_cos"],
+    "label": "value",
+    "lr_max_iter": 1000,
+    "learning_rate": 0.001,
+    "epochs": 5,
+    "batch_size": 64,
+    "xgboost_max_depth": 6,
+    "xgboost_n_estimators": 100
+}
