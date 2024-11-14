@@ -96,8 +96,11 @@ class FeatureImportanceAnalyzer:
 
 
 if __name__ == "__main__":
-    model_path = '/Users/nikhilsirisala/Desktop/Course_Notes/MlOps/mlops-project/model/pickle/xgboost_model_2024-11-12_23-47-17.pkl'
-    data_path = '/Users/nikhilsirisala/Desktop/Course_Notes/MlOps/mlops-project/dataset/data/bias_mitigated_data.csv'
+    current_script_dir = os.path.dirname(os.path.realpath(__file__))
+
+    #Relative paths for model and data
+    model_path = os.path.join(current_script_dir, "../../model/pickle/xgboost_model_2024-11-12_23-47-17.pkl")
+    data_path = os.path.join(current_script_dir, "../../dataset/data/bias_mitigated_data.csv")
 
     # Instance of the FeatureImportanceAnalyzer class
     analyzer = FeatureImportanceAnalyzer(model_path, data_path)
