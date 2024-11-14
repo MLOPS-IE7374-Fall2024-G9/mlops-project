@@ -101,12 +101,14 @@ def conditional_mitigation(data: pd.DataFrame, target_col: str, sensitive_col: s
 
     # Apply a chosen mitigation strategy (e.g., reweighting, resampling)
     # Example: Resample the underrepresented group(s)
+    new_data = data.copy(deep = True)
+
     for group in groups_to_mitigate.index:
-        group_data = data[data[sensitive_col] == group]
+        group_data = new_data[new_data[sensitive_col] == group]
         additional_samples = group_data.sample(frac=0.5, replace=True, random_state=42)
-        data = pd.concat([data, additional_samples], ignore_index=True)
+        new_data = pd.concat([new_data, additional_samples], ignore_index=True)
     
-    return data
+    return new_data
 
 
 if __name__ == '__main__':
