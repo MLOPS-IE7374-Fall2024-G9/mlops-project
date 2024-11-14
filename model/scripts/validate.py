@@ -22,7 +22,10 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 class ModelValidator:
-    def __init__(self, config_path, model_type, dataset_path=None):
+    def __init__(self, config_path=None, model_type="xgboost"):
+        if config_path == None:
+            config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+
         # Set paths to local dataset folders
         self.train_data_path = os.path.join(os.path.dirname(__file__), '../data/train_data.csv')
         self.validation_data_path = os.path.join(os.path.dirname(__file__), '../data/validate_data.csv')
@@ -31,7 +34,6 @@ class ModelValidator:
         self.config = self.load_config(config_path)
         self.test_size = self.config["test_size"]
         self.validation_size = self.config["validation_size"]
-        self.dataset_path = dataset_path
         self.model_type = model_type
         self.model_save_path = os.path.join(os.path.dirname(__file__), '../pickle')
         

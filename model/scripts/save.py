@@ -20,7 +20,7 @@ class ModelManager:
         self.project_id = project_id
         self.storage_client = storage.Client(project=project_id)
 
-    def upload_model_to_gcs(self, local_model_path, model_name="retrained_xgb_model"):
+    def upload_model_to_gcs(self, local_model_path, model_name="xgboost_model"):
         """Uploads a model to Google Cloud Storage with a unique timestamped filename."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         model_filename = f"{model_name}_{timestamp}.pkl"

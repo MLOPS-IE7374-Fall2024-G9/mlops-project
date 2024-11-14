@@ -32,9 +32,10 @@ from src.model_pipeline import *
 ####
 
 # variables 
-filename = "bias_mitigated_data.csv"
+filename = "data_preprocess.csv"
 mse_threshold = 1000  # Example MSE threshold for model evaluation
 r2_threshold = 0.7  # Example R2 threshold for model evaluation
+model_name = "xgboost"
 
 # default args
 default_args = {
@@ -79,7 +80,7 @@ def evaluate_model_and_branch(**kwargs):
         return 'save_model_task'  # Continue to save model task
 
 def choose_task_based_on_trigger(**kwargs):
-    train_from_scratch = kwargs['dag_run'].conf.get('train_from_scratch', 'false') == 'true'
+    train_from_scratch = False #kwargs['dag_run'].conf.get('train_from_scratch', 'false') == 'true'
     if train_from_scratch:
         return 'train_on_all_data_task'  # Train on all data
     else:
@@ -128,6 +129,7 @@ download_model_task = PythonOperator(
     task_id = 'download_model_task',
     python_callable=download_model_from_gcs,
     provide_context=True,
+    op_args=[model_name],
     dag = model_train_evaluate
 )
 
@@ -136,7 +138,7 @@ train_on_all_data_task = PythonOperator(
     task_id = 'train_on_all_data_task',
     python_callable=train_model,
     provide_context=True,
-    op_args=[data_from_dvc_task.output],
+    op_args=[data_from_dvc_task.output, model_name],
     dag = model_train_evaluate
 )
 
@@ -152,8 +154,9 @@ fine_tune_on_new_data_task = PythonOperator(
 # evaluate the model -> returns the evaluation metrics and model path
 evaluate_model_task = PythonOperator(
     task_id = 'evaluate_model_task',
-    python_callable=test_and_evaluate_model,
+    python_callable=validate_model,
     provide_context=True,
+    op_args=[fine_tune_on_new_data_task.output, train_on_all_data_task.output, data_from_dvc_task.output],
     dag = model_train_evaluate
 )
 

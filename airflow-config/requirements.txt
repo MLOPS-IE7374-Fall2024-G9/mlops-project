@@ -8,3 +8,6 @@ scikit-learn
 pandera
 fairlearn
 evidently
+tensorflow
+mlflow
+xgboost
