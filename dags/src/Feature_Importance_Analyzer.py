@@ -1,3 +1,4 @@
+import os
 import pickle
 import pandas as pd
 import numpy as np
@@ -69,22 +70,33 @@ class FeatureImportanceAnalyzer:
         except Exception as e:
             logging.error(f"An error occurred while computing SHAP values: {e}")
 
-    def plot_shap_summary(self):
+    def plot_shap_summary(self, report_filename="shap_summary_plot.png", show_plot=False):
         #SHAP summary plot
         if not hasattr(self, 'shap_values'):
             logging.error("SHAP values not computed. Run `compute_shap_values()` first.")
             return
 
         try:
-            shap.summary_plot(self.shap_values, self.X)
-            plt.savefig("shap_summary_plot.png")
-            logging.info("SHAP summary plot generated and saved.")
+            # Determine the current script directory and build the file path
+            current_script_dir = os.path.dirname(os.path.realpath(__file__))
+            reports_dir = os.path.join(current_script_dir, "../reports/")
+            os.makedirs(reports_dir, exist_ok=True)
+            
+            # Construct the file path
+            plot_path = os.path.join(reports_dir, report_filename)
+            
+            # Generate and save the SHAP summary plot
+            shap.summary_plot(self.shap_values, self.X, show=show_plot)
+            plt.savefig(plot_path)
+            plt.close()
+            
+            logging.info(f"SHAP summary plot generated and saved at {plot_path}.")
         except Exception as e:
             logging.error(f"An error occurred while plotting SHAP summary: {e}")
 
 
 if __name__ == "__main__":
-    model_path = '/Users/nikhilsirisala/Desktop/Course_Notes/MlOps/mlops-project/model/xgb_reg.pkl'
+    model_path = '/Users/nikhilsirisala/Desktop/Course_Notes/MlOps/mlops-project/model/pickle/xgboost_model_2024-11-12_23-47-17.pkl'
     data_path = '/Users/nikhilsirisala/Desktop/Course_Notes/MlOps/mlops-project/dataset/data/bias_mitigated_data.csv'
 
     # Instance of the FeatureImportanceAnalyzer class
