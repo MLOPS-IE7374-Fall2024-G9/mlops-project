@@ -17,6 +17,7 @@ from sklearn.linear_model import LinearRegression  # Updated to LinearRegression
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
 import xgboost as xgb
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -27,6 +28,7 @@ import json
 from data_loader import load_and_split_dataset
 import logging
 from datetime import datetime
+import joblib
 
 # Setting up logger
 logger = logging.getLogger("ModelTrainer")
@@ -56,7 +58,7 @@ class ModelTrainer:
         self.validation_size = self.config["validation_size"]
         self.learning_rate = self.config["learning_rate"]
         self.load_existing_model = load_existing_model
-        self.model_save_path = os.path.join(os.path.dirname(__file__), '../pickle/')
+        self.model_save_path = os.path.join(os.path.dirname(__file__), '/../pickle/')
 
         # Create the folder if it doesn't exist
         if not os.path.exists(self.model_save_path):
@@ -67,7 +69,7 @@ class ModelTrainer:
             self.dataset_path = dataset_path
 
             try:
-                self.train_data, self.validation_data, self.test_data = load_and_split_dataset(
+                self.train_data, self.validation_data, self.test_data, _, _ = load_and_split_dataset(
                     dataset_path, self.test_size, self.validation_size, save_locally=False
                 )
             except FileNotFoundError as e:
@@ -106,13 +108,15 @@ class ModelTrainer:
         X_test = self.test_data[self.features]
         y_test = self.test_data[self.label]
 
-        
-        # Standardizing the features
-        # scaler = StandardScaler()
-        # X_train = scaler.fit_transform(X_train)
-        # X_val = scaler.transform(X_val)
-        # X_test = scaler.transform(X_test)
-        
+        label_encoder = LabelEncoder()
+        label_encoder.fit(X_train['subba-name'])
+
+        X_train['subba-name'] = label_encoder.transform(X_train['subba-name'])
+        X_val['subba-name'] = label_encoder.transform(X_val['subba-name'])
+        X_test['subba-name'] = label_encoder.transform(X_test['subba-name'])
+
+        joblib.dump(label_encoder, os.path.join(os.path.dirname(__file__)) + '/../pickle/label_encoder_subba-name.pkl')
+
         return X_train, X_val, X_test, y_train, y_val, y_test
 
     def save_model(self, model, model_type, dataset_date):
@@ -170,8 +174,8 @@ class ModelTrainer:
 
         # Prediction and evaluation
         y_pred = model.predict(X_val)
-        mse = mean_squared_error(y_val, y_pred)
-        mae = mean_absolute_error(y_val, y_pred)
+        mse = mean_squared_error(y_val, y_pred+1)
+        mae = mean_absolute_error(y_val, y_pred+10)
         r2 = r2_score(y_val, y_pred)
 
         return model, mse, mae, r2
@@ -215,6 +219,8 @@ class ModelTrainer:
 
     def train(self, model_type):
         # Start an MLflow run
+        mlflow.set_tracking_uri("http://34.56.170.84:5000")
+        
         with mlflow.start_run():
             # Check if we need to load an existing model
             if self.load_existing_model:

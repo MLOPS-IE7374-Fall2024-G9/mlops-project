@@ -28,7 +28,7 @@ def load_config(config_path):
     
     return config["test_size"], config["validation_size"]
 
-def load_and_split_dataset(path, test_size, validation_size, random_state=42, save_locally=False):
+def load_and_split_dataset(path, test_size, validation_size, random_state=42, save_locally=False, sensitive_cols=["subba-name"]):
     # Check if the file exists
     if not os.path.exists(path):
         logger.error(f"The file at path '{path}' does not exist.")
@@ -36,14 +36,17 @@ def load_and_split_dataset(path, test_size, validation_size, random_state=42, sa
     
     logger.info(f"Loading dataset from {path}")
     data = pd.read_csv(path)
-    
+
     # Split the data into train and test sets
     logger.info("Splitting data into train and test sets")
-    train_data, test_data = train_test_split(data, test_size=test_size, random_state=random_state)
+    #train_data, test_data = train_test_split(data, sensitive_cols, test_size=test_size, random_state=random_state, stratify = sensitive_cols)
+    sensitive_feature = data[sensitive_cols].copy()
+    train_data, test_data, sensitive_train, sensitive_test = train_test_split(data, sensitive_feature, test_size=test_size, random_state=random_state, stratify=sensitive_feature)
     
     # Further split the train data into train and validation sets
     logger.info("Splitting train data into train and validation sets")
-    train_data, validation_data = train_test_split(train_data, test_size=validation_size / (1 - test_size), random_state=random_state)
+    sensitive_feature = train_data[sensitive_cols].copy()
+    train_data, validation_data, sensitive_train, sensitive_val = train_test_split(train_data, sensitive_feature, test_size=validation_size / (1 - test_size), random_state=random_state, stratify=sensitive_feature)
     
     # Save the datasets locally if the flag is set
     if save_locally:
@@ -63,7 +66,7 @@ def load_and_split_dataset(path, test_size, validation_size, random_state=42, sa
         
         logger.info(f"Datasets saved to {data_dir} directory.")
     
-    return train_data, validation_data, test_data
+    return train_data, validation_data, test_data, sensitive_train, sensitive_test
 
 def download_data():
     subprocess.run(["dvc", "pull"], check=True)
@@ -78,9 +81,10 @@ def main():
     
     # Load configuration for test_size and validation_size from the specified config file
     try:
-        download_data()
+        #download_data()
         test_size, validation_size = load_config(args.config)
-        load_and_split_dataset(args.path, test_size, validation_size, save_locally=args.save_locally)
+        train_data, validation_data, test_data, sensitive_train, sensitive_test = load_and_split_dataset(args.path, test_size, validation_size, save_locally=args.save_locally)
+        print(train_data.info(), sensitive_train.info(), test_data.info(), sensitive_test.info())
         logger.info("Dataset loaded, split, and processed successfully.")
     except (FileNotFoundError, ValueError) as e:
         logger.error(e)
