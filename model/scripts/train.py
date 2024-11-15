@@ -174,8 +174,8 @@ class ModelTrainer:
 
         # Prediction and evaluation
         y_pred = model.predict(X_val)
-        mse = mean_squared_error(y_val, y_pred+1)
-        mae = mean_absolute_error(y_val, y_pred+10)
+        mse = mean_squared_error(y_val, y_pred)
+        mae = mean_absolute_error(y_val, y_pred)
         r2 = r2_score(y_val, y_pred)
 
         return model, mse, mae, r2
@@ -220,7 +220,7 @@ class ModelTrainer:
     def train(self, model_type):
         # Start an MLflow run
         mlflow.set_tracking_uri("http://34.56.170.84:5000")
-        
+
         with mlflow.start_run():
             # Check if we need to load an existing model
             if self.load_existing_model:
