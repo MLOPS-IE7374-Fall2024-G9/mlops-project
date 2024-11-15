@@ -35,113 +35,56 @@ class MLflowModelRegistry:
         )
         print(f"Model version registered: {model_uri}")
 
-    def register_model(
-        self, run_id: str, model_name: str, metric: str, ascending: bool = True
-    ):
+    def get_best_model(self, model_name: str, metric: str, ascending: bool = True):
         """
-        Registers a model as either a champion or a challenger based on its performance.
+        Retrieves the best model version based on a specific metric.
 
         Args:
-            run_id (str): The run ID of the new model to be registered.
             model_name (str): The name of the model in the registry.
-            metric (str): The metric to evaluate models on.
-            ascending (bool): Whether lower metric values are better (default: True).
+            metric (str): The metric to evaluate the models on.
+            ascending (bool): Whether to sort metrics in ascending order (default: True).
 
         Returns:
-            dict: Information about the registered model and its status (champion or challenger).
+            dict: Information about the best model version.
         """
-        # Get the metric value for the new model
-        run = self.client.get_run(run_id)
-        new_metric_value = run.data.metrics.get(metric)
+        # Search for all versions of the model in the registry
+        model_versions = self.client.search_model_versions(f"name='{model_name}'")
 
-        if new_metric_value is None:
-            raise ValueError(f"Metric '{metric}' not found in run {run_id}")
+        # Collect run IDs associated with each model version
+        run_ids = [version.run_id for version in model_versions]
+        print(model_versions)
+        print(run_ids)
+        print("#########")
+        # Query runs associated with these run IDs and filter by the specified metric
+        runs = mlflow.search_runs(
+            experiment_ids=None,
+            filter_string=f"run_id IN {tuple(run_ids)}",
+            order_by=[f"metrics.{metric} {'ASC' if ascending else 'DESC'}"],
+        )
 
-        try:
-            # Try to retrieve existing versions of the model
-            model_versions = self.client.search_model_versions(f"name='{model_name}'")
+        # If no runs are found, return None
+        if runs.empty:
+            print("No model found with the specified metric.")
+            return None
 
-            # If there are existing models, find the best current version based on the metric
-            best_model_version = None
-            best_metric_value = None
+        # Get the best run (first row after sorting)
+        best_run = runs.iloc[0]
 
-            for version in model_versions:
-                current_run = self.client.get_run(version.run_id)
-                current_metric_value = current_run.data.metrics.get(metric)
+        # Find corresponding model version based on run_id
+        best_model_version = next(
+            version
+            for version in model_versions
+            if version.run_id == best_run["run_id"]
+        )
 
-                if current_metric_value is not None:
-                    if (
-                        best_model_version is None
-                        or (ascending and current_metric_value < best_metric_value)
-                        or (not ascending and current_metric_value > best_metric_value)
-                    ):
-                        best_model_version = version
-                        best_metric_value = current_metric_value
+        print(
+            f"Best model: {best_model_version.version} with {metric}: {best_run[f'metrics.{metric}']}"
+        )
 
-            # Compare new model's performance with the best existing model
-            if (ascending and new_metric_value < best_metric_value) or (
-                not ascending and new_metric_value > best_metric_value
-            ):
-                # Register new model as champion if it's better
-                registered_model = mlflow.register_model(
-                    f"runs:/{run_id}/model", model_name
-                )
-
-                # Assign alias "champion" to this new version
-                mlflow.update_model_version_alias(
-                    model_name, registered_model.version, alias="champion"
-                )
-
-                print(
-                    f"New champion registered: Version {registered_model.version} with {metric}: {new_metric_value}"
-                )
-                return {
-                    "version": registered_model.version,
-                    "metric": new_metric_value,
-                    "status": "champion",
-                }
-            else:
-                # Register it as a challenger if it's not better
-                registered_model = mlflow.register_model(
-                    f"runs:/{run_id}/model", model_name
-                )
-
-                # Assign alias "challenger" to this version
-                mlflow.update_model_version_alias(
-                    model_name, registered_model.version, alias="challenger"
-                )
-
-                print(
-                    f"New challenger registered: Version {registered_model.version} with {metric}: {new_metric_value}"
-                )
-                return {
-                    "version": registered_model.version,
-                    "metric": new_metric_value,
-                    "status": "challenger",
-                }
-
-        except RestException as e:
-            # If no models are found in the registry (i.e., first time registering this model), register as champion
-            if e.error_code == "RESOURCE_DOES_NOT_EXIST":
-                registered_model = mlflow.register_model(
-                    f"runs:/{run_id}/model", model_name
-                )
-
-                # Assign alias "champion" since this is the first version
-                mlflow.update_model_version_alias(
-                    model_name, registered_model.version, alias="champion"
-                )
-
-                print(
-                    f"First version of '{model_name}' registered as champion: Version {registered_model.version} with {metric}: {new_metric_value}"
-                )
-                return {
-                    "version": registered_model.version,
-                    "metric": new_metric_value,
-                    "status": "champion",
-                }
-            else:
-                raise e
+        return {
+            "version": best_model_version.version,
+            "metric": best_run[f"metrics.{metric}"],
+        }
 
     def revert_to_previous_version(self, model_name: str):
         """
@@ -190,6 +133,51 @@ class MLflowModelRegistry:
         models = self.client.search_registered_models()
 
         return models
+
+    def fetch_and_initialize_latest_model(self, experiment_name):
+        """
+        Fetches the latest model trained in an MLflow experiment and initializes it.
+
+        Args:
+            experiment_name (str): The name of the MLflow experiment.
+
+        Returns:
+            model: The initialized model object.
+        """
+        try:
+
+            # Get the experiment details
+            experiment = self.client.get_experiment_by_name(experiment_name)
+            if not experiment:
+                raise ValueError(f"Experiment '{experiment_name}' does not exist.")
+
+            # Get the latest run ID from the experiment
+            runs = self.client.search_runs(
+                experiment_ids=[experiment.experiment_id],
+                order_by=["metrics.accuracy DESC"],  # Adjust metric if needed
+                max_results=1,
+            )
+
+            if not runs:
+                raise ValueError(f"No runs found in experiment '{experiment_name}'.")
+
+            latest_run = runs[0]
+            run_id = latest_run.info.run_id
+
+            # Fetch the model artifact URI
+            model_uri = f"runs:/{run_id}/model"
+            print(model_uri)
+            # Load the model
+            model = mlflow.pyfunc.load_model(model_uri)
+
+            print(
+                f"Successfully fetched and loaded the latest model from run ID: {run_id}"
+            )
+            return model
+
+        except Exception as e:
+            print(f"Error fetching or initializing the model: {e}")
+            return None
 
 
 # Example usage
