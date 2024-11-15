@@ -109,13 +109,6 @@ def load_model(gcs_model_uri):
     print("Model loaded for predictions.")
     return model
 
-# ---------------------------------------------------------------
-def train_model(data_path, model_name):
-    trainer = ModelTrainer(load_existing_model=True)
-    trainer.load_dataset(data_path)
-    trainer.train(model_name)
-    return model_name
-
 # Function to Test the Model
 def test_and_evaluate_model(model, X_test, y_test):
     # Make predictions
@@ -130,20 +123,39 @@ def test_and_evaluate_model(model, X_test, y_test):
 
     return {"r2 score": r2, "mse": mse}
 
-# Function to Validate the Model
-def validate_model(model_finetune, model_train, dataset_path):
-    if model_finetune:
-        validator = ModelValidator(model_type=model_finetune)
-    else:
-        validator = ModelValidator(model_type=model_train)
-    
-    validator.load_dataset(dataset_path=dataset_path)
-    validator.evaluate()
+
+# ---------------------------------------------------------------
+
+def download_model_artifacts():
+    local_directory = os.path.dirname(os.path.abspath(__file__)) + "../../model/pickle/"
+
+    return local_directory
+
+def train_model(data_path, model_name, load_existing_model=False):
+    trainer = ModelTrainer(load_existing_model=load_existing_model)
+    trainer.load_dataset(data_path)
+    trainer.train(model_name)
+    return model_name
+
+def validate_model(model_finetune, model_train, dataset_path, thresholds):
+    trainer = ModelTrainer(load_existing_model=False)
+    trainer.load_dataset(dataset_path)
 
     if model_finetune:
-        return model_finetune
+        trainer.load_model_artifact(model_finetune)
     else:
-        return model_train
+        trainer.load_model_artifact(model_train)
+    mse, mae, r2 = trainer.evaluate()
+
+    return mse, mae, r2
+
+def threshold_verification(thresholds, validation_outputs):
+    # validate if the model is under the threshold
+    mse, mae, r2 = validation_outputs
+
+
+    
+    
 
 
 

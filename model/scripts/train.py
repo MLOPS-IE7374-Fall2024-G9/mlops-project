@@ -188,6 +188,25 @@ class ModelTrainer:
         logger.info(f"Model loaded from {model_filename}")
         return model, dataset_date
     
+    def load_model_artifact(self, model_type):
+        """Load the most recent model based on model type and timestamp."""
+        model_files = [f for f in os.listdir(self.model_save_path) if f.startswith(f"{self.model_type}_model")]
+        
+        if not model_files:
+            logger.error(f"No models found for {self.model_type}.")
+            raise FileNotFoundError(f"No saved model found for {self.model_type}.")
+        
+        model_files.sort(reverse=True)  # Sort by timestamp (most recent first)
+        model_filename = os.path.join(self.model_save_path, model_files[0])
+
+        # Load the model
+        with open(model_filename, 'rb') as f:
+            model = pickle.load(f)
+        
+        logger.info(f"Model loaded from {model_filename}")
+        self.model = model
+        return model
+    
     def load_model_mlflow(self, model_type):
         """Loads the model based on the type from the mlflow upstream server"""
         pass
@@ -334,6 +353,8 @@ class ModelTrainer:
         log_metric("MSE", mse)
         log_metric("MAE", mae)
         log_metric("R2", r2)
+
+        return mse, mae, r2
 
 def main():
     # Command line argument parsing

@@ -11,8 +11,10 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 
 
+#os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "D:\Everything Relevant\1) Education\Masters\1) NEU\All-Semesters\5th Semester\MLOps\Project\test\mlops-project\mlflow-gcp.json"
+
 # Load and preprocess data
-data = pd.read_csv('/Users/amoghagadde/Desktop/Amogha/Northeastern/SEM_3/ML_Ops/Project/mlops-project/dataset/data/data_preprocess.csv')
+data = pd.read_csv('./dataset/data/data_preprocess.csv')
 
 # Split features and target
 X = data.drop(columns=['value', 'datetime', 'zone'])
@@ -43,10 +45,10 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 run_name = f"{tags['model_name']}_{tags['version']}_{timestamp}"
 
 # Start MLflow run
-set_tracking_uri("http://127.0.0.1:5001")
-run = start_mlflow_run(run_name=run_name, tags=tags)
+set_tracking_uri("http://34.56.170.84:5000")
+#run = start_mlflow_run(run_name=run_name, tags=tags)
 
-if run:
+with mlflow.start_run():
     # Define the model and parameter distribution for RandomizedSearchCV
     xgb_reg = XGBRegressor(objective='reg:squarederror', random_state=42)
     param_dist = {
@@ -98,5 +100,3 @@ if run:
 
     # End MLflow run
     end_run()
-else:
-    print("MLflow run was not started. Check for errors.")

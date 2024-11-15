@@ -36,6 +36,7 @@ filename = "data_preprocess.csv"
 mse_threshold = 1000  # Example MSE threshold for model evaluation
 r2_threshold = 0.7  # Example R2 threshold for model evaluation
 model_name = "xgboost"
+thresholds = (1000, 1000, 0.5)
 
 # default args
 default_args = {
@@ -56,31 +57,28 @@ model_train_evaluate = DAG(
     tags=['model_train_evaluate']
 )
 
+
 # --------------------------
-def evaluate_model_and_branch(**kwargs):
-    model_path = kwargs['ti'].xcom_pull(task_ids='download_model_task')
-    data_path = kwargs['ti'].xcom_pull(task_ids='data_from_dvc_task')
-        
-    # TODO
-    # load the model
-    # load the data - get the xtest and ytest
+# email for training done
+train_pass_email = EmailOperator(
+    task_id='send_pass_email',
+    to=["mlops.group.9@gmail.com"],
+    subject='Training done',
+    html_content='<p>Training done.</p>',
+    dag=model_train_evaluate,
+)
 
-    eval_metrics = test_and_evaluate_model(model, X_test, y_test)  # Custom evaluation function
-    mse = eval_metrics["mse"]
-    r2 = eval_metrics["r2 score"]
-    
-    # Save the evaluation metrics in XCom for further use
-    kwargs['ti'].xcom_push(key="mse", value=mse)
-    kwargs['ti'].xcom_push(key="r2", value=r2)
-    
-    # Branch based on the thresholds
-    if mse > mse_threshold or r2 < r2_threshold:
-        return 'no_save_model_task'  # Branch to no save model task
-    else:
-        return 'save_model_task'  # Continue to save model task
+train_fail_email = EmailOperator(
+    task_id='send_failure_email',
+    to=["mlops.group.9@gmail.com"],
+    subject='Training failed',
+    html_content='<p>Training failed.</p>',
+    dag=model_train_evaluate,
+)
 
+# --------------------------
 def choose_task_based_on_trigger(**kwargs):
-    train_from_scratch = False #kwargs['dag_run'].conf.get('train_from_scratch', 'false') == 'true'
+    train_from_scratch = True #kwargs['dag_run'].conf.get('train_from_scratch', 'false') == 'true'
     if train_from_scratch:
         return 'train_on_all_data_task'  # Train on all data
     else:
@@ -123,13 +121,11 @@ branch_model_evaluation_task = BranchPythonOperator(
 )
 
 
-
-# load model - downloads the model and returns the model path
+# load model - downloads all the models and returns the model path
 download_model_task = PythonOperator(
     task_id = 'download_model_task',
-    python_callable=download_model_from_gcs,
+    python_callable=download_model_artifacts,
     provide_context=True,
-    op_args=[model_name],
     dag = model_train_evaluate
 )
 
@@ -147,7 +143,7 @@ fine_tune_on_new_data_task = PythonOperator(
     task_id = 'train_on_all_data_task',
     python_callable=train_model,
     provide_context=True,
-    op_args=[data_from_dvc_task.output, download_model_task.output],
+    op_args=[data_from_dvc_task.output, model_name, True],
     dag = model_train_evaluate
 )
 
@@ -160,13 +156,18 @@ evaluate_model_task = PythonOperator(
     dag = model_train_evaluate
 )
 
+# check evaluation with respect to thresholds
+threshold_check_task = PythonOperator(
+    task_id = 'threshold_check_task',
+    python_callable=threshold_verification,
+    provide_context=True,
+    op_args=[thresholds, evaluate_model_task.output],
+    dag = model_train_evaluate
+)
 
 data_from_dvc_task >> choose_task  # Branching decision
-choose_task >> [train_on_all_data_task, download_model_task] >> branch_model_evaluation_task# Based on flag, either train or download
-
-branch_model_evaluation_task >> evaluate_model_task  # If training from scratch, evaluate
-branch_model_evaluation_task >> fine_tune_on_new_data_task >> evaluate_model_task  # If loading model, fine tune and evaluate
-
+choose_task >> download_model_task >> choose_task [train_on_all_data_task, fine_tune_on_new_data_task] >> evaluate_model_task  # If training from scratch, evaluate
+evaluate_model_task >> threshold_check_task
 
 if __name__ == "__main__":
     model_train_evaluate.cli

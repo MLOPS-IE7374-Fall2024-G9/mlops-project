@@ -72,7 +72,7 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 run_name = f"{tags['model_name']}_{tags['version']}_{timestamp}"
  
 # Start the MLflow run with the descriptive run name and tags
-set_tracking_uri("http://127.0.0.1:5001")
+set_tracking_uri("34.56.170.84:5000")
 run = start_mlflow_run(run_name=run_name, tags=tags)
  
 
