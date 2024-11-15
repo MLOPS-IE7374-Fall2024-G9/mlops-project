@@ -1,8 +1,8 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from datetime import datetime
-from src.data_bias_detection import detect_bias
-from src.data_bias_detection import conditional_mitigation
+from dags.src.data_bias_detection_and_mitigation import detect_bias
+from dags.src.data_bias_detection_and_mitigation import conditional_mitigation
 import pandas as pd
 import pickle
 

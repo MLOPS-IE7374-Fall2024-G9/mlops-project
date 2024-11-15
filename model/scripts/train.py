@@ -24,7 +24,7 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 import json
-from dataset_loader import load_and_split_dataset
+from data_loader import load_and_split_dataset
 import logging
 from datetime import datetime
 
@@ -38,7 +38,10 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 class ModelTrainer:
-    def __init__(self, config_path, load_existing_model=False):
+    def __init__(self, config_path=None, load_existing_model=False):
+        if config_path == None:
+            config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+
         self.config = self.load_config(config_path)
 
         # Set paths to local dataset folders
@@ -53,7 +56,7 @@ class ModelTrainer:
         self.validation_size = self.config["validation_size"]
         self.learning_rate = self.config["learning_rate"]
         self.load_existing_model = load_existing_model
-        self.model_save_path = os.path.join(os.path.dirname(__file__), '../pickle')
+        self.model_save_path = os.path.join(os.path.dirname(__file__), '../pickle/')
 
         # Create the folder if it doesn't exist
         if not os.path.exists(self.model_save_path):
@@ -91,34 +94,44 @@ class ModelTrainer:
         
         return config
 
-    def preprocess_data(self):
+    def preprocess_data(self, date=None):
         # Define features and label
+        if date!=None:
+            self.train_data = self.train_data[self.train_data['datetime'] >= date]
+
         X_train = self.train_data[self.features]
         y_train = self.train_data[self.label]
         X_val = self.validation_data[self.features]
         y_val = self.validation_data[self.label]
         X_test = self.test_data[self.features]
         y_test = self.test_data[self.label]
+
         
         # Standardizing the features
-        scaler = StandardScaler()
-        X_train = scaler.fit_transform(X_train)
-        X_val = scaler.transform(X_val)
-        X_test = scaler.transform(X_test)
+        # scaler = StandardScaler()
+        # X_train = scaler.fit_transform(X_train)
+        # X_val = scaler.transform(X_val)
+        # X_test = scaler.transform(X_test)
         
         return X_train, X_val, X_test, y_train, y_val, y_test
 
-    def save_model(self, model, model_type):
+    def save_model(self, model, model_type, dataset_date):
         """Save the trained model using pickle with a timestamp."""
         # Get the current timestamp
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         
         # Construct the filename with timestamp
-        model_filename = os.path.join(self.model_save_path, f"{model_type}_model_{timestamp}.pkl")
-        
+        model_filename = os.path.join(self.model_save_path, f"{model_type}_model_.pkl")
+
+        # Store the model and the date in a dictionary
+        model_data = {
+            'model': model,
+            'dataset_date': dataset_date
+        }
+
         # Save the model to the pickle file
         with open(model_filename, 'wb') as f:
-            pickle.dump(model, f)
+            pickle.dump(model_data, f)
         
         logger.info(f"Model saved to {model_filename}")
 
@@ -140,10 +153,12 @@ class ModelTrainer:
         # Load the model from the most recent file
         model_filename = os.path.join(self.model_save_path, most_recent_model_file)
         with open(model_filename, 'rb') as f:
-            model = pickle.load(f)
+            model_data = pickle.load(f)
         
+        model = model_data["model"]
+        dataset_date = model_data["dataset_date"]
         logger.info(f"Model loaded from {model_filename}")
-        return model
+        return model, dataset_date
 
     def train_lr(self, X_train, y_train, X_val, y_val, model=None):
         # Use the provided model or create a new one if none is given
@@ -199,19 +214,22 @@ class ModelTrainer:
         return model, accuracy
 
     def train(self, model_type):
-        # Preprocess the data
-        X_train, X_val, X_test, y_train, y_val, y_test = self.preprocess_data()
-
         # Start an MLflow run
         with mlflow.start_run():
             # Check if we need to load an existing model
             if self.load_existing_model:
-                model = self.load_model(model_type)
+                model, date = self.load_model(model_type)
                 if model is None:
                     logger.error(f"Failed to load existing model for {model_type}. Starting fresh training.")
                     model = None
+                    raise
+                else:
+                    # Preprocess the data
+                    X_train, X_val, X_test, y_train, y_val, y_test = self.preprocess_data(date)
             else:
                 model = None
+                # Preprocess the data
+                X_train, X_val, X_test, y_train, y_val, y_test = self.preprocess_data()
 
             # Train the selected model
             if model_type == 'lr':
@@ -246,7 +264,8 @@ class ModelTrainer:
             logger.info(f"{model_type} model trained and logged with MLflow.")
             
             # Save the model to disk after training
-            self.save_model(model, model_type)
+            latest_date = self.train_data['datetime'].max()
+            self.save_model(model, model_type, latest_date)
 
     def select_best_model(self, model_type, metric="R2"):
         """Selects the best model based on the specified metric from MLflow experiments."""

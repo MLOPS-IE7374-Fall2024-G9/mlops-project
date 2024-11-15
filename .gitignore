@@ -12,9 +12,11 @@ mlops_env/
 .env
 mlruns/
 mlartifacts
+mlflow.db
 .envrc
-# mlruns/
-# mlartifacts
+mlruns/
+mlartifacts
+mlflow.db
 
 
 # Ignore system-specific files
