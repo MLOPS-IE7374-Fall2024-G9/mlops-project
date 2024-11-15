@@ -160,31 +160,12 @@ evaluate_model_task = PythonOperator(
     dag = model_train_evaluate
 )
 
-# upload the model back to gcs
-upload_model_task = PythonOperator(
-    task_id = 'upload_model_task',
-    python_callable=upload_model_to_gcs,
-    provide_context=True,
-    op_args=[evaluate_model_task.output],
-    dag = model_train_evaluate
-)
-
-# do nothing when model metrics are not good
-no_save_model_task = PythonOperator(
-    task_id='no_save_model_task',
-    python_callable=lambda: print("Model evaluation metrics are below threshold. Skipping save."),
-    dag=model_train_evaluate
-)
-
 
 data_from_dvc_task >> choose_task  # Branching decision
 choose_task >> [train_on_all_data_task, download_model_task] >> branch_model_evaluation_task# Based on flag, either train or download
 
 branch_model_evaluation_task >> evaluate_model_task  # If training from scratch, evaluate
 branch_model_evaluation_task >> fine_tune_on_new_data_task >> evaluate_model_task  # If loading model, fine tune and evaluate
-
-evaluate_model_task >> upload_model_task  # If metrics are good, save model
-evaluate_model_task >> no_save_model_task  # If metrics are not good, skip save
 
 
 if __name__ == "__main__":
