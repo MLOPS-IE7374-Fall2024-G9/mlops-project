@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../'
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from model.scripts.train import *
+from model.scripts.mlflow_model_registry import *
 
 def upload_model_to_gcs(bucket_name="mlops-g9-bucket", model_name="xgboost"):
     local_directory = os.path.dirname(os.path.abspath(__file__)) + "../../model/pickle/"
@@ -128,7 +129,10 @@ def test_and_evaluate_model(model, X_test, y_test):
 def download_model_artifacts():
     local_directory = os.path.dirname(os.path.abspath(__file__)) + "../../model/pickle/"
 
-    return local_directory
+    registry = MLflowModelRegistry("http://34.56.170.84:5000")
+    model, model_type = registry.fetch_and_initialize_latest_model('Electricity Demand Prediction 2.0')
+    
+    return model_type
 
 def train_model(data_path, model_name, load_existing_model=False):
     trainer = ModelTrainer(load_existing_model=load_existing_model)
