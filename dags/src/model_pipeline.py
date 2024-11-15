@@ -109,6 +109,7 @@ def load_model(gcs_model_uri):
     print("Model loaded for predictions.")
     return model
 
+# ---------------------------------------------------------------
 def train_model(data_path, model_name):
     trainer = ModelTrainer(load_existing_model=True)
     trainer.load_dataset(data_path)

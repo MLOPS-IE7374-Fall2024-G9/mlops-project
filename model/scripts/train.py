@@ -7,28 +7,33 @@
 import argparse
 import os
 import pickle
+import pandas as pd
+import json
+from data_loader import load_and_split_dataset
+import logging
+from datetime import datetime
+import joblib
+
 import mlflow
 import mlflow.sklearn
 import mlflow.tensorflow
 import mlflow.xgboost
 from mlflow.tracking import MlflowClient
-import pandas as pd
+
 from sklearn.linear_model import LinearRegression  # Updated to LinearRegression
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import RandomizedSearchCV
+
 import xgboost as xgb
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
-import json
-from data_loader import load_and_split_dataset
-import logging
-from datetime import datetime
-import joblib
+
+from utils import *
 
 # Setting up logger
 logger = logging.getLogger("ModelTrainer")
@@ -59,10 +64,29 @@ class ModelTrainer:
         self.learning_rate = self.config["learning_rate"]
         self.load_existing_model = load_existing_model
         self.model_save_path = os.path.join(os.path.dirname(__file__), '/../pickle/')
+        self.model = None
 
         # Create the folder if it doesn't exist
         if not os.path.exists(self.model_save_path):
             os.makedirs(self.model_save_path)
+
+
+    def setup_mlflow(self, model_name):
+        # Define MLflow tags
+        tags = {
+            "model_name": model_name,
+            "version": "v3.0",
+            "purpose": "Model Selection",
+            "iterations":2
+        }
+
+        # Generate timestamped run name
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_name = f"{tags['model_name']}_{tags['version']}_{timestamp}"
+
+        run = start_mlflow_run(run_name, tags)
+
+        return run
 
     def load_dataset(self, dataset_path=None):
         if dataset_path != None:
@@ -206,61 +230,36 @@ class ModelTrainer:
         
         return model, accuracy, loss
 
-    def train_xgboost(self, X_train, y_train, X_val, y_val, experiment=1):
-        if experiment == 0:
-            model = xgb.XGBRegressor(objective='reg:squarederror', 
-                                     random_state=42,
-                                     reg_alpha=0.1, 
-                                     reg_lambda=1.0,
-                                     learning_rate=self.config["learning_rate"], 
-                                     n_estimators=1000, 
-                                     min_child_weight=5)
-            
-            model.fit(X_train, y_train)
+    def train_xgboost(self, X_train, y_train, X_val, y_val):
+        model_exp = xgb.XGBRegressor(objective='reg:squarederror', random_state=42)
+        param_dist = self.config["xgboost_param_dist"]
 
-        else:
-            model_exp = xgb.XGBRegressor(objective='reg:squarederror', random_state=42)
-            param_dist = {
-                'learning_rate': [0.01, 0.05, 0.1],
-                'n_estimators': [100, 500, 1000],
-                'max_depth': [3, 5, 7],
-                'min_child_weight': [1, 3, 5],
-                'reg_alpha': [0, 0.1, 0.5],
-                'reg_lambda': [0.5, 1.0, 2.0]
-            }
+        random_search = RandomizedSearchCV(
+            estimator=model_exp,
+            param_distributions=param_dist,
+            scoring=['neg_mean_squared_error', 'neg_mean_absolute_error', 'r2'],
+            refit='neg_mean_squared_error',
+            cv=5,
+            n_iter=2, 
+            n_jobs=-1,
+            random_state=42
+        )
 
-            random_search = RandomizedSearchCV(
-                estimator=model_exp,
-                param_distributions=param_dist,
-                scoring=['neg_mean_squared_error', 'neg_mean_absolute_error', 'r2'],
-                refit='neg_mean_squared_error',
-                cv=5,
-                n_iter=2, 
-                n_jobs=-1,
-                random_state=42
-            )
+        random_search.fit(X_train, y_train.values.ravel())
+        model = random_search.best_estimator_
 
-            random_search.fit(X_train, y_train.values.ravel())
-            model = random_search.best_estimator_
+        predictions_xgb = model.predict(X_train)
+        log_model(model, "XGBoost model", X_train=X_train, predictions=predictions_xgb)
 
-            logger.info("Best parameters found:", random_search.best_params_)
-            logger.info("Best cross-validated MSE score:", -random_search.best_score_)
-
-            # Display additional metrics
-            results = random_search.cv_results_
-            logger.info("Mean Cross-Validated MAE:", -results['mean_test_neg_mean_absolute_error'][random_search.best_index_])
-            logger.info("Mean Cross-Validated R²:", results['mean_test_r2'][random_search.best_index_])
-
-        y_pred = model.predict(X_val)
-        accuracy = accuracy_score(y_val, y_pred)
-        
-        return model, accuracy
+        return model
 
     def train(self, model_type):
         # Start an MLflow run
         mlflow.set_tracking_uri(self.config["mlflow_tracking_uri"])
+        run = self.setup_mlflow(model_type)
 
-        with mlflow.start_run():
+        #with mlflow.start_run():
+        if run:
             # Check if we need to load an existing model
             if self.load_existing_model:
                 model, date = self.load_model(model_type)
@@ -302,8 +301,7 @@ class ModelTrainer:
 
             elif model_type == 'xgboost':
                 logger.info("Training XGBoost model...")
-                model, xgboost_accuracy = self.train_xgboost(X_train, y_train, X_val, y_val)
-                mlflow.log_metric("accuracy", xgboost_accuracy)
+                model = self.train_xgboost(X_train, y_train, X_val, y_val)
                 mlflow.xgboost.log_model(model, "xgboost")
 
             logger.info(f"{model_type} model trained and logged with MLflow.")
@@ -311,39 +309,31 @@ class ModelTrainer:
             # Save the model to disk after training
             # latest_date = self.train_data['datetime'].max()
             # self.save_model(model, model_type, latest_date)
-
-    def select_best_model(self, model_type, metric="R2"):
-        """Selects the best model based on the specified metric from MLflow experiments."""
-        client = MlflowClient()
-        
-        # Define experiment by name or use the active experiment ID
-        experiment_id = client.get_experiment_by_name("Default").experiment_id
-        
-        # Query all runs for this experiment
-        runs = client.search_runs(
-            experiment_ids=[experiment_id],
-            filter_string=f"params.model_type = '{model_type}'",
-            order_by=[f"metrics.{metric} DESC"],  # Order by the specified metric, descending
-            max_results=1  # Get only the top run
-        )
-        
-        if runs:
-            best_run = runs[0]
-            best_run_id = best_run.info.run_id
-            logger.info(f"Best {model_type} model selected with {metric} = {best_run.data.metrics[metric]} (Run ID: {best_run_id})")
-            
-            # Load the best model from MLflow
-            if model_type == "lr":
-                model = mlflow.sklearn.load_model(f"runs:/{best_run_id}/linear_regression")
-            elif model_type == "lstm":
-                model = mlflow.tensorflow.load_model(f"runs:/{best_run_id}/lstm")
-            elif model_type == "xgboost":
-                model = mlflow.xgboost.load_model(f"runs:/{best_run_id}/xgboost")
-            
-            return model
         else:
-            logger.warning(f"No runs found for model type '{model_type}' with metric '{metric}'")
-            return None
+            logger.error("Error in starting MLflow run")
+    
+    def evaluate(self, model=None):
+        _, _, X_test, _, _, y_test = self.preprocess_data()
+        
+        if model == None and self.model!=None:
+            model = self.model
+        elif model == None and self.model==None:
+            raise("Model is none")
+
+        y_test_pred = model.predict(X_test)
+        mse = mean_squared_error(y_test, y_test_pred)
+        mae = mean_absolute_error(y_test, y_test_pred)
+        r2 = r2_score(y_test, y_test_pred)
+        
+        # Log test set metrics
+        logger.info("Test Set Metrics:")
+        logger.info("Mean Squared Error (MSE): %.4f", mse)
+        logger.info("Mean Absolute Error (MAE): %.4f", mae)
+        logger.info("R-squared (R²): %.4f", r2)
+
+        log_metric("MSE", mse)
+        log_metric("MAE", mae)
+        log_metric("R2", r2)
 
 def main():
     # Command line argument parsing
