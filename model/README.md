@@ -3,21 +3,22 @@
 ```
 .
 ├── data
-│   ├── train_data.csv       # Training dataset
-│   ├── validate_data.csv    # Validation dataset
-│   ├── test_data.csv        # Testing dataset
+│   ├── train_data.csv                          # Training dataset
+│   ├── validate_data.csv                       # Validation dataset
+│   ├── test_data.csv                           # Testing dataset
 │
-├── experiments              # Files for experimentation and model training
+├── experiments                                 # Files for experimentation and model training
 │
-├── pickle                   # Folder for saving trained models locally
+├── pickle                                      # Folder for saving trained models locally
 │
 ├── scripts
-│   ├── config.json          # Configuration file with model parameters
-│   ├── data_loader.py       # Script to load and split datasets
-│   ├── train.py             # Main training script supporting LR, LSTM, and XGBoost
-│   ├── utils.py             # Utility functions, including MLflow integration
+│   ├── config.json                             # Configuration file with model parameters
+│   ├── feature_importance_analyzer.py          # Analyzing feature importance
+│   ├── data_loader.py                          # Script to load and split datasets
+│   ├── train.py                                # Main training script supporting LR, LSTM, and XGBoost
+│   ├── utils.py                                # Utility functions, including MLflow integration
 │
-├── unit_tests.py            # Unit tests for all scripts
+├── unit_tests.py                               # Unit tests for all scripts
 
 ```
 
