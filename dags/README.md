@@ -16,6 +16,8 @@ dag/
 ├── tests/
 ├── bias_detection_dag.py
 ├── data_drift_detection_dag.py
+├── model_bias_detection_dag.py
+├── model_train_evaluate_dag.py
 ├── new_data_preprocess_dag.py
 ├── raw_data_preprocess_dag.py
 ```
@@ -25,6 +27,8 @@ dag/
 - **tests/**: Holds test files to verify the DAG functionalities and the correctness of each function in `src`.
 - **bias_detection_dag.py**: Airflow DAG script for bias detection and mitigation of processed data.
 - **data_drift_detection_dag.py**: Airflow DAG script for data drift detection.
+- **model_train_evaluate_dag.py**: Airflow DAG script for model bias detection and mitigation.
+- **model_train_evaluate_dag.py**: Airflow DAG script for model training and evaluation.
 - **new_data_preprocess_dag.py**: Airflow DAG script for downloading and preprocessing new data.
 - **raw_data_preprocess_dag.py**: Airflow DAG script, for handling raw api data preprocessing tasks.
 
@@ -136,7 +140,7 @@ The purpose of this DAG is to automate the detection and mitigation of bias in t
 
 ---
 
-## `drift_data_dag.py` - DAG for Data Drift Detection
+## `data_drift_detection_dag.py` - DAG for Data Drift Detection
 
 The purpose of this DAG is to automate the process of detecting data drift in the dataset. It includes tasks for loading the data, performing various statistical tests to identify drift, and notifying stakeholders about the results. The DAG leverages Airflow to orchestrate these tasks and utilizes different methods to assess changes in data distribution.
 

@@ -33,14 +33,13 @@ from src.model_pipeline import *
 
 # variables 
 filename = "data_preprocess.csv"
-mse_threshold = 1000  # Example MSE threshold for model evaluation
-r2_threshold = 0.7  # Example R2 threshold for model evaluation
-model_name = "xgboost"
+model_name = "lr"
+thresholds = (1000, 1000, 0.7)
 
 # default args
 default_args = {
     'owner': 'Group 9',
-    'start_date': datetime.datetime(2023, 9, 17),
+    'start_date': datetime(2023, 9, 17),
     'retries': 0, # Number of retries in case of task failure
     'retry_delay': timedelta(minutes=5), # Delay before retries
     "execution_timeout": timedelta(minutes=10),
@@ -56,50 +55,56 @@ model_train_evaluate = DAG(
     tags=['model_train_evaluate']
 )
 
+
 # --------------------------
-def evaluate_model_and_branch(**kwargs):
-    model_path = kwargs['ti'].xcom_pull(task_ids='download_model_task')
-    data_path = kwargs['ti'].xcom_pull(task_ids='data_from_dvc_task')
-        
-    # TODO
-    # load the model
-    # load the data - get the xtest and ytest
+# email for training done
+# train_pass_email = EmailOperator(
+#     task_id='send_train_pass_email',
+#     to=["mlops.group.9@gmail.com"],
+#     subject='Training done',
+#     html_content='<p>Training done.</p>',
+#     dag=model_train_evaluate,
+# )
 
-    eval_metrics = test_and_evaluate_model(model, X_test, y_test)  # Custom evaluation function
-    mse = eval_metrics["mse"]
-    r2 = eval_metrics["r2 score"]
-    
-    # Save the evaluation metrics in XCom for further use
-    kwargs['ti'].xcom_push(key="mse", value=mse)
-    kwargs['ti'].xcom_push(key="r2", value=r2)
-    
-    # Branch based on the thresholds
-    if mse > mse_threshold or r2 < r2_threshold:
-        return 'no_save_model_task'  # Branch to no save model task
-    else:
-        return 'save_model_task'  # Continue to save model task
+# train_fail_email = EmailOperator(
+#     task_id='send_train_failure_email',
+#     to=["mlops.group.9@gmail.com"],
+#     subject='Training failed',
+#     html_content='<p>Training failed.</p>',
+#     dag=model_train_evaluate,
+# )
 
+threshold_pass_email = EmailOperator(
+    task_id='send_threshold_pass_email',
+    to=["mlops.group.9@gmail.com"],
+    subject='threshold task success',
+    html_content='<p>thresholds met.</p>',
+    trigger_rule=TriggerRule.ALL_SUCCESS,  # Trigger only if the previous task succeeded
+    dag=model_train_evaluate,
+)
+
+# Task to send email if training failed
+threshold_fail_email = EmailOperator(
+    task_id='send_threshold_failure_email',
+    to=["mlops.group.9@gmail.com"],
+    subject='threshold task failed',
+    html_content='<p>thresholds not met.</p>',
+    trigger_rule=TriggerRule.ALL_FAILED,  # Trigger only if the previous task failed
+    dag=model_train_evaluate,
+)
+
+# --------------------------
 def choose_task_based_on_trigger(**kwargs):
-    train_from_scratch = False #kwargs['dag_run'].conf.get('train_from_scratch', 'false') == 'true'
+    train_from_scratch = True #kwargs['dag_run'].conf.get('train_from_scratch', 'false') == 'true'
     if train_from_scratch:
         return 'train_on_all_data_task'  # Train on all data
     else:
-        return 'download_model_task'  # Download the model
-    
-def branch_model_evaluation(**kwargs):
-    # Check if the model was trained or fine-tuned
-    model_path = kwargs['ti'].xcom_pull(task_ids='train_on_all_data_task')  # Pull from train_on_all_data_task
-    if model_path:
-        # If the model was trained from scratch, return the model path
-        return 'evaluate_model_task'
-    else:
-        # If the model was fine-tuned, return the fine-tuned model path
-        return 'fine_tune_and_evaluate_task'
+        return 'download_model_task'  # fine tune
 
 # --------------------------
 # pull from dvc - returns the filepath where the data is
 data_from_dvc_task = PythonOperator(
-    task_id = 'data_from_dvc_task',
+    task_id = 'download_data_from_dvc_task',
     python_callable=get_data_from_dvc,
     provide_context=True,
     op_args=[filename],
@@ -115,21 +120,12 @@ choose_task = BranchPythonOperator(
     dag=model_train_evaluate
 )
 
-branch_model_evaluation_task = BranchPythonOperator(
-    task_id='branch_model_evaluation_task',
-    python_callable=branch_model_evaluation,
-    provide_context=True,
-    dag=model_train_evaluate
-)
 
-
-
-# load model - downloads the model and returns the model path
+# load model - downloads all the models and returns the model path
 download_model_task = PythonOperator(
     task_id = 'download_model_task',
-    python_callable=download_model_from_gcs,
+    python_callable=download_model_artifacts,
     provide_context=True,
-    op_args=[model_name],
     dag = model_train_evaluate
 )
 
@@ -144,10 +140,10 @@ train_on_all_data_task = PythonOperator(
 
 # fine tune the model on new data -> takes input data file path and model file path -> finetunes and saves in local -> return model path
 fine_tune_on_new_data_task = PythonOperator(
-    task_id = 'train_on_all_data_task',
+    task_id = 'fine_tune_on_new_data_task',
     python_callable=train_model,
     provide_context=True,
-    op_args=[data_from_dvc_task.output, download_model_task.output],
+    op_args=[data_from_dvc_task.output, download_model_task.output, True],
     dag = model_train_evaluate
 )
 
@@ -157,35 +153,31 @@ evaluate_model_task = PythonOperator(
     python_callable=validate_model,
     provide_context=True,
     op_args=[fine_tune_on_new_data_task.output, train_on_all_data_task.output, data_from_dvc_task.output],
-    dag = model_train_evaluate
+    dag = model_train_evaluate, 
+    trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS
 )
 
-# upload the model back to gcs
-upload_model_task = PythonOperator(
-    task_id = 'upload_model_task',
-    python_callable=upload_model_to_gcs,
+# check evaluation with respect to thresholds
+threshold_check_task = PythonOperator(
+    task_id = 'threshold_check_task',
+    python_callable=threshold_verification,
     provide_context=True,
-    op_args=[evaluate_model_task.output],
-    dag = model_train_evaluate
+    op_args=[thresholds, evaluate_model_task.output],
+    dag = model_train_evaluate,
+    trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS
 )
 
-# do nothing when model metrics are not good
-no_save_model_task = PythonOperator(
-    task_id='no_save_model_task',
-    python_callable=lambda: print("Model evaluation metrics are below threshold. Skipping save."),
-    dag=model_train_evaluate
+delete_local_task = PythonOperator(
+    task_id = 'delete_local_task',
+    python_callable=delete_local_model_data,
+    provide_context=True,
+    dag = model_train_evaluate,
+    trigger_rule=TriggerRule.ALL_DONE
 )
 
-
-data_from_dvc_task >> choose_task  # Branching decision
-choose_task >> [train_on_all_data_task, download_model_task] >> branch_model_evaluation_task# Based on flag, either train or download
-
-branch_model_evaluation_task >> evaluate_model_task  # If training from scratch, evaluate
-branch_model_evaluation_task >> fine_tune_on_new_data_task >> evaluate_model_task  # If loading model, fine tune and evaluate
-
-evaluate_model_task >> upload_model_task  # If metrics are good, save model
-evaluate_model_task >> no_save_model_task  # If metrics are not good, skip save
-
+data_from_dvc_task >> choose_task >> [train_on_all_data_task, download_model_task]
+train_on_all_data_task >> evaluate_model_task >> threshold_check_task >> [threshold_pass_email, threshold_fail_email] >> delete_local_task
+download_model_task >> fine_tune_on_new_data_task >> evaluate_model_task >> threshold_check_task >> [threshold_pass_email, threshold_fail_email] >> delete_local_task
 
 if __name__ == "__main__":
     model_train_evaluate.cli

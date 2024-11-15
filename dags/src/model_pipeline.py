@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../'
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from model.scripts.train import *
-from model.scripts.validate import *
+from model.scripts.mlflow_model_registry import *
 
 def upload_model_to_gcs(bucket_name="mlops-g9-bucket", model_name="xgboost"):
     local_directory = os.path.dirname(os.path.abspath(__file__)) + "../../model/pickle/"
@@ -109,12 +109,6 @@ def load_model(gcs_model_uri):
     print("Model loaded for predictions.")
     return model
 
-def train_model(data_path, model_name):
-    trainer = ModelTrainer(load_existing_model=True)
-    trainer.load_dataset(data_path)
-    trainer.train(model_name)
-    return model_name
-
 # Function to Test the Model
 def test_and_evaluate_model(model, X_test, y_test):
     # Make predictions
@@ -129,20 +123,56 @@ def test_and_evaluate_model(model, X_test, y_test):
 
     return {"r2 score": r2, "mse": mse}
 
-# Function to Validate the Model
-def validate_model(model_finetune, model_train, dataset_path):
-    if model_finetune:
-        validator = ModelValidator(model_type=model_finetune)
-    else:
-        validator = ModelValidator(model_type=model_train)
+
+# ---------------------------------------------------------------
+
+def download_model_artifacts():
+    registry = MLflowModelRegistry("http://34.56.170.84:5000")
+    model, model_type = registry.fetch_and_initialize_latest_model('Test 3.0')
     
-    validator.load_dataset(dataset_path=dataset_path)
-    validator.evaluate()
+    return model_type
+
+def train_model(data_path, model_name, load_existing_model=False):
+    trainer = ModelTrainer(load_existing_model=load_existing_model)
+    trainer.load_dataset(data_path)
+    trainer.train(model_name, save_local=True)
+    return model_name
+
+def validate_model(model_finetune, model_train, dataset_path):
+    trainer = ModelTrainer(load_existing_model=False)
+    trainer.load_dataset(dataset_path)
 
     if model_finetune:
-        return model_finetune
+        trainer.load_model(model_finetune)
     else:
-        return model_train
+        trainer.load_model(model_train)
+    mse, mae, r2 = trainer.evaluate()
+
+    return mse, mae, r2
+
+def threshold_verification(thresholds, validation_outputs):
+    # validate if the model is under the threshold
+    mse, mae, r2 = validation_outputs
+
+    # Check each metric against its threshold
+    if mse > thresholds[0]:
+        return 0
+    if mae > thresholds[1]:
+        return 0
+    if r2 < thresholds[2]:  # r2 should be greater than or equal to its threshold
+        return 0
+
+    # All metrics are within thresholds
+    return 1
+
+def delete_local_model_data():
+    trainer = ModelTrainer(load_existing_model=False)
+    trainer.delete_local_data()
+
+
+
+    
+    
 
 
 

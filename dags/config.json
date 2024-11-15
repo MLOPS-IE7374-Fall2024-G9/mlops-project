@@ -1,0 +1,5 @@
+{
+    "mlflow": {
+        "model_name": "model"
+    }
+}
