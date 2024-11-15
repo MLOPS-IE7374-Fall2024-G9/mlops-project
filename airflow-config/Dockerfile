@@ -23,8 +23,13 @@ RUN git init
 # Copy the credentials JSON file to the container
 COPY mlops-437516-b9a69694c897.json /mlops-437516-b9a69694c897.json
 
+COPY mlops-7374-3e7424e80d76.json /mlops-7374-3e7424e80d76.json
+
 # Configure DVC to use credentials from the JSON file
 RUN dvc remote modify --local storage credentialpath /mlops-437516-b9a69694c897.json || echo "Failed to configure DVC remote"
+
+# Run mlops config
+RUN export GOOGLE_APPLICATION_CREDENTIALS=./mlops-7374-3e7424e80d76.json
 
 # Switch to root user
 USER airflow
