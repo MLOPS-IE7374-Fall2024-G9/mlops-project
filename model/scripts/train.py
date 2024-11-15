@@ -321,7 +321,6 @@ class ModelTrainer:
             elif model_type == 'xgboost':
                 logger.info("Training XGBoost model...")
                 model = self.train_xgboost(X_train, y_train, X_val, y_val)
-                mlflow.xgboost.log_model(model, "xgboost")
 
             logger.info(f"{model_type} model trained and logged with MLflow.")
             
