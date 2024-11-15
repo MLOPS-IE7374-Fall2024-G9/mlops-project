@@ -17,6 +17,7 @@ mlflow.db
 mlruns/
 mlartifacts
 mlflow.db
+*.pkl
 
 
 # Ignore system-specific files

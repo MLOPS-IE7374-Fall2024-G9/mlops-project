@@ -8,12 +8,13 @@
     "tempF_lag_2", "windspeedMiles_lag_2", "humidity_lag_2",
     "tempF_lag_4", "windspeedMiles_lag_4", "humidity_lag_4",
     "tempF_lag_6", "windspeedMiles_lag_6", "humidity_lag_6",
-    "month_sin", "month_cos"],
+    "month_sin", "month_cos", "subba-name"],
     "label": "value",
     "lr_max_iter": 1000,
     "learning_rate": 0.001,
     "epochs": 5,
     "batch_size": 64,
     "xgboost_max_depth": 6,
-    "xgboost_n_estimators": 100
+    "xgboost_n_estimators": 100,
+    "mlflow_tracking_uri": "http://34.56.170.84:5000"
 }

@@ -16,7 +16,8 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression  # Updated to LinearRegression
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import RandomizedSearchCV
 import xgboost as xgb
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -27,6 +28,7 @@ import json
 from data_loader import load_and_split_dataset
 import logging
 from datetime import datetime
+import joblib
 
 # Setting up logger
 logger = logging.getLogger("ModelTrainer")
@@ -56,7 +58,7 @@ class ModelTrainer:
         self.validation_size = self.config["validation_size"]
         self.learning_rate = self.config["learning_rate"]
         self.load_existing_model = load_existing_model
-        self.model_save_path = os.path.join(os.path.dirname(__file__), '../pickle/')
+        self.model_save_path = os.path.join(os.path.dirname(__file__), '/../pickle/')
 
         # Create the folder if it doesn't exist
         if not os.path.exists(self.model_save_path):
@@ -67,7 +69,7 @@ class ModelTrainer:
             self.dataset_path = dataset_path
 
             try:
-                self.train_data, self.validation_data, self.test_data = load_and_split_dataset(
+                self.train_data, self.validation_data, self.test_data, _, _ = load_and_split_dataset(
                     dataset_path, self.test_size, self.validation_size, save_locally=False
                 )
             except FileNotFoundError as e:
@@ -106,17 +108,19 @@ class ModelTrainer:
         X_test = self.test_data[self.features]
         y_test = self.test_data[self.label]
 
-        
-        # Standardizing the features
-        # scaler = StandardScaler()
-        # X_train = scaler.fit_transform(X_train)
-        # X_val = scaler.transform(X_val)
-        # X_test = scaler.transform(X_test)
-        
+        label_encoder = LabelEncoder()
+        label_encoder.fit(X_train['subba-name'])
+
+        X_train['subba-name'] = label_encoder.transform(X_train['subba-name'])
+        X_val['subba-name'] = label_encoder.transform(X_val['subba-name'])
+        X_test['subba-name'] = label_encoder.transform(X_test['subba-name'])
+
+        joblib.dump(label_encoder, os.path.join(os.path.dirname(__file__)) + '/../pickle/label_encoder_subba-name.pkl')
+
         return X_train, X_val, X_test, y_train, y_val, y_test
 
     def save_model(self, model, model_type, dataset_date):
-        """Save the trained model using pickle with a timestamp."""
+        """Save the trained model using pickle with a timestamp. Saves to local folder"""
         # Get the current timestamp
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         
@@ -136,7 +140,7 @@ class ModelTrainer:
         logger.info(f"Model saved to {model_filename}")
 
     def load_model(self, model_type):
-        """Load the most recent trained model based on timestamp."""
+        """Load the most recent trained model based on timestamp. This loads from local folder"""
         # List all files in the pickle folder
         model_files = [f for f in os.listdir(self.model_save_path) if f.startswith(f"{model_type}_model")]
         
@@ -159,6 +163,10 @@ class ModelTrainer:
         dataset_date = model_data["dataset_date"]
         logger.info(f"Model loaded from {model_filename}")
         return model, dataset_date
+    
+    def load_model_mlflow(self, model_type):
+        """Loads the model based on the type from the mlflow upstream server"""
+        pass
 
     def train_lr(self, X_train, y_train, X_val, y_val, model=None):
         # Use the provided model or create a new one if none is given
@@ -198,16 +206,51 @@ class ModelTrainer:
         
         return model, accuracy, loss
 
-    def train_xgboost(self, X_train, y_train, X_val, y_val):
-        model = xgb.XGBRegressor(objective='reg:squarederror', 
-                                 random_state=42,
-                                 reg_alpha=0.1, 
-                                 reg_lambda=1.0,
-                                 learning_rate=self.config["learning_rate"], 
-                                 n_estimators=1000, 
-                                 min_child_weight=5)
-        
-        model.fit(X_train, y_train)
+    def train_xgboost(self, X_train, y_train, X_val, y_val, experiment=1):
+        if experiment == 0:
+            model = xgb.XGBRegressor(objective='reg:squarederror', 
+                                     random_state=42,
+                                     reg_alpha=0.1, 
+                                     reg_lambda=1.0,
+                                     learning_rate=self.config["learning_rate"], 
+                                     n_estimators=1000, 
+                                     min_child_weight=5)
+            
+            model.fit(X_train, y_train)
+
+        else:
+            model_exp = xgb.XGBRegressor(objective='reg:squarederror', random_state=42)
+            param_dist = {
+                'learning_rate': [0.01, 0.05, 0.1],
+                'n_estimators': [100, 500, 1000],
+                'max_depth': [3, 5, 7],
+                'min_child_weight': [1, 3, 5],
+                'reg_alpha': [0, 0.1, 0.5],
+                'reg_lambda': [0.5, 1.0, 2.0]
+            }
+
+            random_search = RandomizedSearchCV(
+                estimator=model_exp,
+                param_distributions=param_dist,
+                scoring=['neg_mean_squared_error', 'neg_mean_absolute_error', 'r2'],
+                refit='neg_mean_squared_error',
+                cv=5,
+                n_iter=2, 
+                n_jobs=-1,
+                random_state=42
+            )
+
+            random_search.fit(X_train, y_train.values.ravel())
+            model = random_search.best_estimator_
+
+            logger.info("Best parameters found:", random_search.best_params_)
+            logger.info("Best cross-validated MSE score:", -random_search.best_score_)
+
+            # Display additional metrics
+            results = random_search.cv_results_
+            logger.info("Mean Cross-Validated MAE:", -results['mean_test_neg_mean_absolute_error'][random_search.best_index_])
+            logger.info("Mean Cross-Validated R²:", results['mean_test_r2'][random_search.best_index_])
+
         y_pred = model.predict(X_val)
         accuracy = accuracy_score(y_val, y_pred)
         
@@ -215,6 +258,8 @@ class ModelTrainer:
 
     def train(self, model_type):
         # Start an MLflow run
+        mlflow.set_tracking_uri(self.config["mlflow_tracking_uri"])
+
         with mlflow.start_run():
             # Check if we need to load an existing model
             if self.load_existing_model:
@@ -264,8 +309,8 @@ class ModelTrainer:
             logger.info(f"{model_type} model trained and logged with MLflow.")
             
             # Save the model to disk after training
-            latest_date = self.train_data['datetime'].max()
-            self.save_model(model, model_type, latest_date)
+            # latest_date = self.train_data['datetime'].max()
+            # self.save_model(model, model_type, latest_date)
 
     def select_best_model(self, model_type, metric="R2"):
         """Selects the best model based on the specified metric from MLflow experiments."""
