@@ -64,6 +64,12 @@ class ModelTrainer:
         if not os.path.exists(self.model_save_path):
             os.makedirs(self.model_save_path)
 
+        self.setup_mlflow()
+
+    def setup_mlflow(self):
+        mlflow.set_tracking_uri(self.config["mlflow_tracking_uri"])
+        mlflow.set_experiment("Electricity Demand Prediction 2.0")
+
     def load_dataset(self, dataset_path=None):
         if dataset_path != None:
             self.dataset_path = dataset_path
@@ -258,7 +264,6 @@ class ModelTrainer:
 
     def train(self, model_type):
         # Start an MLflow run
-        mlflow.set_tracking_uri(self.config["mlflow_tracking_uri"])
 
         with mlflow.start_run():
             # Check if we need to load an existing model
