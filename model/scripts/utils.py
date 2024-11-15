@@ -30,7 +30,7 @@ def start_mlflow_run(run_name=None, tags=None):
         experiment = client.get_experiment_by_name(experiment_name)
         if experiment is None:
             logger.info(f"Experiment '{experiment_name}' does not exist. Creating a new one.")
-            experiment_id = client.create_experiment(experiment_name, artifact_location="gs://mlflow-storage-bucket-mlops-7374/mlruns/")
+            experiment_id = client.create_experiment(experiment_name)
             logger.info(f"Experiment '{experiment_name}' created with ID: {experiment_id}")
         else:
             experiment_id = experiment.experiment_id
