@@ -22,6 +22,7 @@
         "reg_alpha": [0, 0.1, 0.5],
         "reg_lambda": [0.5, 1.0, 2.0]
     },
+    "xgboost_iter": 2,
     "mlflow_tags": {
         "model_name": "XGBoost",
         "version": "v3.0",
