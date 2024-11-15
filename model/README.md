@@ -1,3 +1,6 @@
+## Model Pipeline
+![Alt text](docs/model_pipeline.png)
+
 ## Structure
 
 ```
