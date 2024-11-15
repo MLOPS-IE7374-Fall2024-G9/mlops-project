@@ -1,5 +1,5 @@
 ## Data Pipeline
-![Alt text](docs/data_pipeline.png)
+![Alt text](../docs/data_pipeline.png)
 
 ## Directory Structure
 
