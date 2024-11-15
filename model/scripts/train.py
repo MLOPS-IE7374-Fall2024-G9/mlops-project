@@ -259,7 +259,7 @@ class ModelTrainer:
             scoring=['neg_mean_squared_error', 'neg_mean_absolute_error', 'r2'],
             refit='neg_mean_squared_error',
             cv=5,
-            n_iter=2, 
+            n_iter=5, 
             n_jobs=-1,
             random_state=42
         )
