@@ -134,7 +134,7 @@ train_on_all_data_task = PythonOperator(
     task_id = 'train_on_all_data_task',
     python_callable=train_model,
     provide_context=True,
-    op_args=[data_from_dvc_task.output, model_name],
+    op_args=[data_from_dvc_task.output, download_model_task.output],
     dag = model_train_evaluate
 )
 
@@ -143,7 +143,7 @@ fine_tune_on_new_data_task = PythonOperator(
     task_id = 'fine_tune_on_new_data_task',
     python_callable=train_model,
     provide_context=True,
-    op_args=[data_from_dvc_task.output, model_name, True],
+    op_args=[data_from_dvc_task.output, download_model_task.output, True],
     dag = model_train_evaluate
 )
 

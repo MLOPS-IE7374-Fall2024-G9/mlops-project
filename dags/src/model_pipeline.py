@@ -132,7 +132,10 @@ def download_model_artifacts():
     registry = MLflowModelRegistry("http://34.56.170.84:5000")
     registry.fetch_and_initialize_latest_model()
 
-    return local_directory
+    registry = MLflowModelRegistry("http://34.56.170.84:5000")
+    model, model_type = registry.fetch_and_initialize_latest_model('Electricity Demand Prediction 2.0')
+    
+    return model_type
 
 def train_model(data_path, model_name, load_existing_model=False):
     trainer = ModelTrainer(load_existing_model=load_existing_model)
