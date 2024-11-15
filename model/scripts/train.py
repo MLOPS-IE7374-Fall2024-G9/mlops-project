@@ -84,7 +84,6 @@ class ModelTrainer:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         run_name = f"{tags['model_name']}_{tags['version']}_{timestamp}"
 
-        mlflow.set_tracking_uri(self.config["mlflow_tracking_uri"])
         run = start_mlflow_run(run_name, tags)
 
         return run
@@ -249,14 +248,6 @@ class ModelTrainer:
         random_search.fit(X_train, y_train.values.ravel())
         model = random_search.best_estimator_
 
-        logger.info("Best parameters found:", random_search.best_params_)
-        logger.info("Best cross-validated MSE score:", -random_search.best_score_)
-
-        # Display additional metrics
-        results = random_search.cv_results_
-        logger.info("Mean Cross-Validated MAE:", -results['mean_test_neg_mean_absolute_error'][random_search.best_index_])
-        logger.info("Mean Cross-Validated R²:", results['mean_test_r2'][random_search.best_index_])
-
         predictions_xgb = model.predict(X_train)
         log_model(model, "XGBoost model", X_train=X_train, predictions=predictions_xgb)
 
@@ -264,6 +255,7 @@ class ModelTrainer:
 
     def train(self, model_type):
         # Start an MLflow run
+        mlflow.set_tracking_uri(self.config["mlflow_tracking_uri"])
         run = self.setup_mlflow(model_type)
 
         #with mlflow.start_run():
