@@ -127,10 +127,8 @@ def test_and_evaluate_model(model, X_test, y_test):
 # ---------------------------------------------------------------
 
 def download_model_artifacts():
-    local_directory = os.path.dirname(os.path.abspath(__file__)) + "../../model/pickle/"
-
     registry = MLflowModelRegistry("http://34.56.170.84:5000")
-    model, model_type = registry.fetch_and_initialize_latest_model('Electricity Demand Prediction 2.0')
+    model, model_type = registry.fetch_and_initialize_latest_model('Test 3.0')
     
     return model_type
 
@@ -166,6 +164,11 @@ def threshold_verification(thresholds, validation_outputs):
 
     # All metrics are within thresholds
     return 1
+
+def delete_local_model_data():
+    trainer = ModelTrainer(load_existing_model=False)
+    trainer.delete_local_data()
+
 
 
     

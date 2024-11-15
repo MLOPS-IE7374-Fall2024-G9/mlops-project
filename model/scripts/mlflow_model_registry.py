@@ -3,7 +3,15 @@ import pickle
 import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.exceptions import RestException
+import logging
 
+logger = logging.getLogger("ModelRegistry")
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 class MLflowModelRegistry:
     def __init__(self, tracking_uri: str):
@@ -15,6 +23,20 @@ class MLflowModelRegistry:
         """
         mlflow.set_tracking_uri(tracking_uri)
         self.client = MlflowClient()
+        self.configure_mlfow_credentials("mlops-7374-3e7424e80d76.json")
+
+    def configure_mlfow_credentials(self, json_credential_path):
+        """
+        Function to run the mflow credentials
+        """
+        try:
+            # Run the dvc remote modify command
+            logger.info(f"Configuring mlflow credentials from {json_credential_path}.")
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=json_credential_path
+            logger.info("MLflow remote configuration successful.")
+
+        except Exception as e:
+            logger.error(f"Failed to configure mflow remote: {e}")
 
     def register_model(self, model_path: str, model_name: str, run_id: str):
         """
@@ -180,11 +202,13 @@ class MLflowModelRegistry:
             )
             if 'lr' in run_name:
                 model_file_name = 'lr_model_latest.pkl'
+                model_type = "lr"
             elif 'xgboost' in run_name:
                 model_file_name = 'xgboost_model_latest.pkl'
+                model_type = "xgboost"
             model_path = os.path.join(os.path.dirname(__file__), f'../pickle/{model_file_name}')
             pickle.dump(model, open(model_path, 'wb'))
-            return model, model_file_name
+            return model, model_type
 
         except Exception as e:
             print(f"Error fetching or initializing the model: {e}")

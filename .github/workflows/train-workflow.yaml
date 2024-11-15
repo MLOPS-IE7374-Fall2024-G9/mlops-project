@@ -24,7 +24,7 @@ jobs:
 
       - name: Start Airflow with Docker
         run: |
-          docker-compose up -d  # Start Airflow containers defined in a docker-compose.yml file
+          docker compose up -d  # Start Airflow containers defined in a docker-compose.yml file
 
       - name: Trigger Airflow DAG
         run: |
@@ -32,4 +32,4 @@ jobs:
 
       - name: Clean Up
         run: |
-          docker-compose down  # Stop and remove Airflow containers
+          docker compose down  # Stop and remove Airflow containers
