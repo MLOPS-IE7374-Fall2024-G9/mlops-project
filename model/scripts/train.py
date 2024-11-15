@@ -67,8 +67,8 @@ class ModelTrainer:
         self.model = None
 
         # Create the folder if it doesn't exist
-        if not os.path.exists(self.model_save_path):
-            os.makedirs(self.model_save_path)
+        # if not os.path.exists(self.model_save_path):
+        #     os.makedirs(self.model_save_path)
 
 
     def setup_mlflow(self, model_name):
@@ -268,7 +268,8 @@ class ModelTrainer:
         model = random_search.best_estimator_
 
         predictions_xgb = model.predict(X_train)
-        log_model(model, "XGBoost model", X_train=X_train, predictions=predictions_xgb)
+        # log_model(model, "XGBoost model", X_train=X_train, predictions=predictions_xgb)
+        log_model(model, "model", X_train=X_train, predictions=predictions_xgb)
 
         return model
 
@@ -301,7 +302,8 @@ class ModelTrainer:
                 mlflow.log_metric("MSE", mse)
                 mlflow.log_metric("MAE", mae)
                 mlflow.log_metric("R2", r2)
-                mlflow.sklearn.log_model(model, "linear_regression")
+                # mlflow.sklearn.log_model(model, "linear_regression")
+                mlflow.sklearn.log_model(model, "model")
 
             elif model_type == 'lstm':
                 logger.info("Training LSTM model...")
@@ -316,7 +318,8 @@ class ModelTrainer:
                 mlflow.log_metric("MSE", mse)
                 mlflow.log_metric("MAE", mae)
                 mlflow.log_metric("R2", r2)
-                mlflow.tensorflow.log_model(model, "lstm")
+                # mlflow.tensorflow.log_model(model, "lstm")
+                mlflow.tensorflow.log_model(model, "model")
 
             elif model_type == 'xgboost':
                 logger.info("Training XGBoost model...")
