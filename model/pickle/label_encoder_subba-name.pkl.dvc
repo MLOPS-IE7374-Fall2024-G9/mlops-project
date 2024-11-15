@@ -1,6 +1,0 @@
-outs:
-- md5: 9700ba8e10e831f9a8978e359ba37fa2
-  size: 1150
-  isexec: true
-  hash: md5
-  path: label_encoder_subba-name.pkl
