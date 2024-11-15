@@ -323,14 +323,14 @@ class ModelTrainer:
         if run:
             # Check if we need to load an existing model
             if self.load_existing_model:
-                model, date = self.load_model(model_type)
+                model = self.load_model(model_type)
                 if model is None:
                     logger.error(f"Failed to load existing model for {model_type}. Starting fresh training.")
                     model = None
                     raise
                 else:
                     # Preprocess the data
-                    X_train, X_val, X_test, y_train, y_val, y_test = self.preprocess_data(date)
+                    X_train, X_val, X_test, y_train, y_val, y_test = self.preprocess_data()
             else:
                 model = None
                 # Preprocess the data

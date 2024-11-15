@@ -202,11 +202,13 @@ class MLflowModelRegistry:
             )
             if 'lr' in run_name:
                 model_file_name = 'lr_model_latest.pkl'
+                model_type = "lr"
             elif 'xgboost' in run_name:
                 model_file_name = 'xgboost_model_latest.pkl'
+                model_type = "xgboost"
             model_path = os.path.join(os.path.dirname(__file__), f'../pickle/{model_file_name}')
             pickle.dump(model, open(model_path, 'wb'))
-            return model, model_file_name
+            return model, model_type
 
         except Exception as e:
             print(f"Error fetching or initializing the model: {e}")
