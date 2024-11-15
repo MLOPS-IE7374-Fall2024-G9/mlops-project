@@ -8,9 +8,8 @@
     "tempF_lag_2", "windspeedMiles_lag_2", "humidity_lag_2",
     "tempF_lag_4", "windspeedMiles_lag_4", "humidity_lag_4",
     "tempF_lag_6", "windspeedMiles_lag_6", "humidity_lag_6",
-    "month_sin", "month_cos"],
+    "month_sin", "month_cos", "subba-name"],
     "label": "value",
-
     "xgboost_param_dist": {
         "learning_rate": [0.01, 0.05, 0.1],
         "n_estimators": [100, 500, 1000],
