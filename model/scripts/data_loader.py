@@ -22,13 +22,20 @@ def load_config(config_path):
         config = json.load(file)
         
     # Validate the required fields in the config file
-    if "test_size" not in config or "validation_size" not in config:
-        logger.error("Config file must contain 'test_size' and 'validation_size'.")
-        raise ValueError("Config file must contain 'test_size' and 'validation_size'.")
+    # if "test_size" not in config or "validation_size" not in config:
+    #     logger.error("Config file must contain 'test_size' and 'validation_size'.")
+    #     raise ValueError("Config file must contain 'test_size' and 'validation_size'.")
     
-    return config["test_size"], config["validation_size"]
+    # Validate the required fields in the config file
+    if "test_size" not in config:
+        logger.error("Config file must contain 'test_size'.")
+        raise ValueError("Config file must contain 'test_size'.")
+    
+    # return config["test_size"], config["validation_size"]
+    return config["test_size"]
 
-def load_and_split_dataset(path, test_size, validation_size, random_state=42, save_locally=False):
+# def load_and_split_dataset(path, test_size, validation_size, random_state=42, save_locally=False):
+def load_and_split_dataset(path, test_size, random_state=42, save_locally=False):
     # Check if the file exists
     if not os.path.exists(path):
         logger.error(f"The file at path '{path}' does not exist.")
@@ -42,8 +49,8 @@ def load_and_split_dataset(path, test_size, validation_size, random_state=42, sa
     train_data, test_data = train_test_split(data, test_size=test_size, random_state=random_state)
     
     # Further split the train data into train and validation sets
-    logger.info("Splitting train data into train and validation sets")
-    train_data, validation_data = train_test_split(train_data, test_size=validation_size / (1 - test_size), random_state=random_state)
+    # logger.info("Splitting train data into train and validation sets")
+    # train_data, validation_data = train_test_split(train_data, test_size=validation_size / (1 - test_size), random_state=random_state)
     
     # Save the datasets locally if the flag is set
     if save_locally:
@@ -53,17 +60,18 @@ def load_and_split_dataset(path, test_size, validation_size, random_state=42, sa
         
         # File paths for the datasets
         train_path = os.path.join(data_dir, "train_data.csv")
-        validation_path = os.path.join(data_dir, "validation_data.csv")
+        # validation_path = os.path.join(data_dir, "validation_data.csv")
         test_path = os.path.join(data_dir, "test_data.csv")
         
         # Save new datasets
         train_data.to_csv(train_path, index=False)
-        validation_data.to_csv(validation_path, index=False)
+        # validation_data.to_csv(validation_path, index=False)
         test_data.to_csv(test_path, index=False)
         
         logger.info(f"Datasets saved to {data_dir} directory.")
     
-    return train_data, validation_data, test_data
+    # return train_data, validation_data, test_data
+    return train_data, test_data
 
 def download_data():
     subprocess.run(["dvc", "pull"], check=True)
@@ -76,11 +84,13 @@ def main():
     
     args = parser.parse_args()
     
-    # Load configuration for test_size and validation_size from the specified config file
+    # Load configuration for test_size from the specified config file
     try:
         download_data()
-        test_size, validation_size = load_config(args.config)
-        load_and_split_dataset(args.path, test_size, validation_size, save_locally=args.save_locally)
+        # test_size, validation_size = load_config(args.config)
+        test_size = load_config(args.config)
+        # load_and_split_dataset(args.path, test_size, validation_size, save_locally=args.save_locally)
+        load_and_split_dataset(args.path, test_size, save_locally=args.save_locally)
         logger.info("Dataset loaded, split, and processed successfully.")
     except (FileNotFoundError, ValueError) as e:
         logger.error(e)
