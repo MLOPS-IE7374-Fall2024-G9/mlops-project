@@ -58,7 +58,6 @@ else
     echo "Encrypted secrets file $ENCRYPTED_FILE not found."
 fi
 
-
 ENCRYPTED_FILE="mlops-7374-3e7424e80d76.json.enc"
 DECRYPTED_FILE="mlops-7374-3e7424e80d76.json"
 DECRYPTION_PASSWORD="mlops-group-9"  # Replace with the actual password or prompt user input
@@ -73,3 +72,4 @@ if [ -f "$ENCRYPTED_FILE" ]; then
     fi
 else
     echo "Encrypted secrets file $ENCRYPTED_FILE not found."
+fi
