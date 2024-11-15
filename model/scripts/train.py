@@ -368,8 +368,12 @@ class ModelTrainer:
                 # Save the model to disk after training
                 # latest_date = self.train_data['datetime'].max()
                 self.save_model(model, model_type)
+
+            end_run()
         else:
             logger.error("Error in starting MLflow run")
+        
+        
     
     def evaluate(self, model=None):
         _, _, X_test, _, _, y_test = self.preprocess_data()
