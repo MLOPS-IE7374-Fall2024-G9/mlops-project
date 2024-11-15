@@ -1,3 +1,4 @@
+import pickle
 import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.exceptions import RestException
@@ -173,6 +174,7 @@ class MLflowModelRegistry:
             print(
                 f"Successfully fetched and loaded the latest model from run ID: {run_id}"
             )
+            pickle.dump(model, open('../pickle/latest_model', 'wb')) 
             return model
 
         except Exception as e:
