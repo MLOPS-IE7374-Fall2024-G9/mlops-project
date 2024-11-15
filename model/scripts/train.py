@@ -113,7 +113,7 @@ class ModelTrainer:
 
             try:
                 self.train_data, self.validation_data, self.test_data, _, _ = load_and_split_dataset(
-                    dataset_path, self.test_size, self.validation_size, save_locally=False
+                    dataset_path, self.test_size, self.validation_size, save_locally=True
                 )
             except FileNotFoundError as e:
                 logger.error(f"Error loading dataset: {e}")

@@ -58,11 +58,15 @@ def load_and_split_dataset(path, test_size, validation_size, random_state=42, sa
         train_path = os.path.join(data_dir, "train_data.csv")
         validation_path = os.path.join(data_dir, "validation_data.csv")
         test_path = os.path.join(data_dir, "test_data.csv")
+        sensitive_train_path = os.path.join(data_dir, "sensitive_train.csv")
+        sensitive_test_path = os.path.join(data_dir, "sensitive_test.csv")
         
         # Save new datasets
         train_data.to_csv(train_path, index=False)
         validation_data.to_csv(validation_path, index=False)
         test_data.to_csv(test_path, index=False)
+        sensitive_train.to_csv(sensitive_train_path, index=False)
+        sensitive_test.to_csv(sensitive_test_path, index=False)
         
         logger.info(f"Datasets saved to {data_dir} directory.")
     

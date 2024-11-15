@@ -4,7 +4,6 @@ on:
   push:
     paths:
       - 'model/scripts/config.json'
-      - 'model/scripts/train.py'
 
 jobs:
   trigger-airflow:
@@ -28,7 +27,7 @@ jobs:
 
       - name: Trigger Airflow DAG
         run: |
-          docker exec -ti <airflow-webserver-container> airflow dags trigger model_train_evaluate
+          docker exec -ti <mlops-project-airflow-webserver-1> airflow dags trigger model_train_evaluate
 
       - name: Clean Up
         run: |
