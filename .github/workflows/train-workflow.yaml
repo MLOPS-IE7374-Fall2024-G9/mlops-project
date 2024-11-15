@@ -32,4 +32,4 @@ jobs:
 
       - name: Clean Up
         run: |
-          docker-compose down  # Stop and remove Airflow containers
+          docker compose down  # Stop and remove Airflow containers

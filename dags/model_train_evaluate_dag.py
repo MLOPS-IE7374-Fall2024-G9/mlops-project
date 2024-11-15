@@ -58,24 +58,24 @@ model_train_evaluate = DAG(
 
 # --------------------------
 # email for training done
-train_pass_email = EmailOperator(
-    task_id='send_train_pass_email',
-    to=["mlops.group.9@gmail.com"],
-    subject='Training done',
-    html_content='<p>Training done.</p>',
-    dag=model_train_evaluate,
-)
+# train_pass_email = EmailOperator(
+#     task_id='send_train_pass_email',
+#     to=["mlops.group.9@gmail.com"],
+#     subject='Training done',
+#     html_content='<p>Training done.</p>',
+#     dag=model_train_evaluate,
+# )
 
-train_fail_email = EmailOperator(
-    task_id='send_train_failure_email',
-    to=["mlops.group.9@gmail.com"],
-    subject='Training failed',
-    html_content='<p>Training failed.</p>',
-    dag=model_train_evaluate,
-)
+# train_fail_email = EmailOperator(
+#     task_id='send_train_failure_email',
+#     to=["mlops.group.9@gmail.com"],
+#     subject='Training failed',
+#     html_content='<p>Training failed.</p>',
+#     dag=model_train_evaluate,
+# )
 
 threshold_pass_email = EmailOperator(
-    task_id='send_thresholdpass_email',
+    task_id='send_threshold_pass_email',
     to=["mlops.group.9@gmail.com"],
     subject='threshold task success',
     html_content='<p>thresholds met.</p>',
