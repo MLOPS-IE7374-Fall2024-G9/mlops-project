@@ -219,7 +219,7 @@ class ModelTrainer:
 
     def train(self, model_type):
         # Start an MLflow run
-        mlflow.set_tracking_uri("http://34.56.170.84:5000")
+        mlflow.set_tracking_uri(self.config["mlflow_tracking_uri"])
 
         with mlflow.start_run():
             # Check if we need to load an existing model

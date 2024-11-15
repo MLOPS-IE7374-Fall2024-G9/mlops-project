@@ -15,5 +15,6 @@
     "epochs": 5,
     "batch_size": 64,
     "xgboost_max_depth": 6,
-    "xgboost_n_estimators": 100
+    "xgboost_n_estimators": 100,
+    "mlflow_tracking_uri": "http://34.56.170.84:5000"
 }
