@@ -9,10 +9,10 @@ import os
 import pickle
 import pandas as pd
 import json
-from data_loader import load_and_split_dataset
 import logging
 from datetime import datetime
 import joblib
+import subprocess
 
 import mlflow
 import mlflow.sklearn
@@ -33,7 +33,11 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 
-from utils import *
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
+from model.scripts.utils import *
+from model.scripts.data_loader import load_and_split_dataset
 
 # Setting up logger
 logger = logging.getLogger("ModelTrainer")
@@ -63,13 +67,28 @@ class ModelTrainer:
         self.validation_size = self.config["validation_size"]
         self.learning_rate = self.config["learning_rate"]
         self.load_existing_model = load_existing_model
-        self.model_save_path = os.path.join(os.path.dirname(__file__), '/../pickle/')
+        self.model_save_path = os.path.dirname(__file__) + '/../pickle/'
         self.model = None
 
         # Create the folder if it doesn't exist
         # if not os.path.exists(self.model_save_path):
-        #     os.makedirs(self.model_save_path)
+        #     os.makedirs(self.model_save_path, exist_ok=True)
 
+        self.configure_mlfow_credentials("mlops-7374-3e7424e80d76.json")
+
+    def configure_mlfow_credentials(self, json_credential_path):
+        """
+        Function to run the mflow credentials
+        """
+        try:
+            # Run the dvc remote modify command
+            logger.info(f"Configuring mlflow credentials from {json_credential_path}.")
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=json_credential_path
+            logger.info("MLflow remote configuration successful.")
+
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to configure mflow remote: {e}")
+    
 
     def setup_mlflow(self, model_name):
         # Define MLflow tags
@@ -143,25 +162,32 @@ class ModelTrainer:
 
         return X_train, X_val, X_test, y_train, y_val, y_test
 
-    def save_model(self, model, model_type, dataset_date):
+    def save_model(self, model, model_type, dataset_date=None):
         """Save the trained model using pickle with a timestamp. Saves to local folder"""
-        # Get the current timestamp
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        
-        # Construct the filename with timestamp
-        model_filename = os.path.join(self.model_save_path, f"{model_type}_model_.pkl")
+        if dataset_date != None:
+            # Get the current timestamp
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            
+            # Construct the filename with timestamp
+            model_filename = os.path.join(self.model_save_path, f"{model_type}_model_.pkl")
 
-        # Store the model and the date in a dictionary
-        model_data = {
-            'model': model,
-            'dataset_date': dataset_date
-        }
+            # Store the model and the date in a dictionary
+            model_data = {
+                'model': model,
+                'dataset_date': dataset_date
+            }
 
-        # Save the model to the pickle file
-        with open(model_filename, 'wb') as f:
-            pickle.dump(model_data, f)
-        
-        logger.info(f"Model saved to {model_filename}")
+            # Save the model to the pickle file
+            with open(model_filename, 'wb') as f:
+                pickle.dump(model_data, f)
+            
+            logger.info(f"Model saved to {model_filename}")
+        else:
+            model_filename = os.path.join(self.model_save_path, f"{model_type}_model_.pkl")
+            with open(model_filename, 'wb') as f:
+                pickle.dump(model, f)
+
+            logger.info(f"Model saved to {model_filename}")
 
     def load_model(self, model_type):
         """Load the most recent trained model based on timestamp. This loads from local folder"""
@@ -181,12 +207,13 @@ class ModelTrainer:
         # Load the model from the most recent file
         model_filename = os.path.join(self.model_save_path, most_recent_model_file)
         with open(model_filename, 'rb') as f:
-            model_data = pickle.load(f)
+            model = pickle.load(f)
         
-        model = model_data["model"]
-        dataset_date = model_data["dataset_date"]
+        #model = model_data["model"]
+        #dataset_date = model_data["dataset_date"]
         logger.info(f"Model loaded from {model_filename}")
-        return model, dataset_date
+        self.model = model
+        return model
     
     def load_model_artifact(self, model_type):
         """Load the most recent model based on model type and timestamp."""
@@ -251,6 +278,7 @@ class ModelTrainer:
 
     def train_xgboost(self, X_train, y_train, X_val, y_val):
         model_exp = xgb.XGBRegressor(objective='reg:squarederror', random_state=42)
+
         param_dist = self.config["xgboost_param_dist"]
 
         random_search = RandomizedSearchCV(
@@ -259,21 +287,34 @@ class ModelTrainer:
             scoring=['neg_mean_squared_error', 'neg_mean_absolute_error', 'r2'],
             refit='neg_mean_squared_error',
             cv=5,
-            n_iter=2, 
+            n_iter=self.config["xgboost_iter"],
             n_jobs=-1,
             random_state=42
         )
 
-        random_search.fit(X_train, y_train.values.ravel())
+        # XGBoost supports evaluation sets for monitoring progress
+        eval_set = [(X_train, y_train), (X_val, y_val)]
+
+        # Fit the RandomizedSearchCV model
+        random_search.fit(
+            X_train,
+            y_train.values.ravel(),
+            eval_set=eval_set,
+            eval_metric=["rmse", "mae", "r2"],
+            verbose=True  # Enables logging of progress
+        )
+
+        # Get the best model
         model = random_search.best_estimator_
 
+        # Log the final model with MLflow
         predictions_xgb = model.predict(X_train)
         # log_model(model, "XGBoost model", X_train=X_train, predictions=predictions_xgb)
         log_model(model, "model", X_train=X_train, predictions=predictions_xgb)
 
         return model
 
-    def train(self, model_type):
+    def train(self, model_type, save_local=False):
         # Start an MLflow run
         mlflow.set_tracking_uri(self.config["mlflow_tracking_uri"])
         run = self.setup_mlflow(model_type)
@@ -327,11 +368,16 @@ class ModelTrainer:
 
             logger.info(f"{model_type} model trained and logged with MLflow.")
             
-            # Save the model to disk after training
-            # latest_date = self.train_data['datetime'].max()
-            # self.save_model(model, model_type, latest_date)
+            if save_local:
+                # Save the model to disk after training
+                # latest_date = self.train_data['datetime'].max()
+                self.save_model(model, model_type)
+
+            end_run()
         else:
             logger.error("Error in starting MLflow run")
+        
+        
     
     def evaluate(self, model=None):
         _, _, X_test, _, _, y_test = self.preprocess_data()

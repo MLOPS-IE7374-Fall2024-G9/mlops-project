@@ -1,3 +1,5 @@
+import os
+import pickle
 import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.exceptions import RestException
@@ -143,6 +145,7 @@ class MLflowModelRegistry:
 
         Returns:
             model: The initialized model object.
+            path: The local path to model
         """
         try:
 
@@ -163,6 +166,8 @@ class MLflowModelRegistry:
 
             latest_run = runs[0]
             run_id = latest_run.info.run_id
+            run_name = latest_run.info.run_name
+
 
             # Fetch the model artifact URI
             model_uri = f"runs:/{run_id}/model"
@@ -173,7 +178,13 @@ class MLflowModelRegistry:
             print(
                 f"Successfully fetched and loaded the latest model from run ID: {run_id}"
             )
-            return model
+            if 'lr' in run_name:
+                model_file_name = 'lr_model_latest.pkl'
+            elif 'xgboost' in run_name:
+                model_file_name = 'xgboost_model_latest.pkl'
+            model_path = os.path.join(os.path.dirname(__file__), f'../pickle/{model_file_name}')
+            pickle.dump(model, open(model_path, 'wb'))
+            return model, model_file_name
 
         except Exception as e:
             print(f"Error fetching or initializing the model: {e}")
