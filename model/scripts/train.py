@@ -399,6 +399,13 @@ class ModelTrainer:
         log_metric("R2", r2)
 
         return mse, mae, r2
+    
+    def delete_local_data(self):
+        model_files = [f for f in os.listdir(self.model_save_path) if f.endswith(".pkl")]
+        logger.info("Deleting pkl file in local")
+        for file in model_files:
+            path = os.path.join(self.model_save_path, file)
+            os.remove(path)
 
 def main():
     # Command line argument parsing

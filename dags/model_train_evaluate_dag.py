@@ -99,7 +99,7 @@ def choose_task_based_on_trigger(**kwargs):
     if train_from_scratch:
         return 'train_on_all_data_task'  # Train on all data
     else:
-        return 'fine_tune_on_new_data_task'  # fine tune
+        return 'download_model_task'  # fine tune
 
 # --------------------------
 # pull from dvc - returns the filepath where the data is
@@ -134,7 +134,7 @@ train_on_all_data_task = PythonOperator(
     task_id = 'train_on_all_data_task',
     python_callable=train_model,
     provide_context=True,
-    op_args=[data_from_dvc_task.output, download_model_task.output],
+    op_args=[data_from_dvc_task.output, model_name],
     dag = model_train_evaluate
 )
 
@@ -167,9 +167,17 @@ threshold_check_task = PythonOperator(
     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS
 )
 
-data_from_dvc_task >> download_model_task >> choose_task >> [train_on_all_data_task, fine_tune_on_new_data_task]
-train_on_all_data_task >> evaluate_model_task >> threshold_check_task >> [threshold_pass_email, threshold_fail_email]
-fine_tune_on_new_data_task >> evaluate_model_task >> threshold_check_task >> [threshold_pass_email, threshold_fail_email]
+delete_local_task = PythonOperator(
+    task_id = 'delete_local_task',
+    python_callable=delete_local_model_data,
+    provide_context=True,
+    dag = model_train_evaluate,
+    trigger_rule=TriggerRule.ALL_DONE
+)
+
+data_from_dvc_task >> choose_task >> [train_on_all_data_task, download_model_task]
+train_on_all_data_task >> evaluate_model_task >> threshold_check_task >> [threshold_pass_email, threshold_fail_email] >> delete_local_task
+download_model_task >> fine_tune_on_new_data_task >> evaluate_model_task >> threshold_check_task >> [threshold_pass_email, threshold_fail_email] >> delete_local_task
 
 if __name__ == "__main__":
     model_train_evaluate.cli
