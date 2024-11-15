@@ -89,6 +89,7 @@ class ModelTrainer:
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to configure mflow remote: {e}")
     
+
     def setup_mlflow(self, model_name):
         # Define MLflow tags
         tags = {
@@ -308,7 +309,8 @@ class ModelTrainer:
 
         # Log the final model with MLflow
         predictions_xgb = model.predict(X_train)
-        log_model(model, "XGBoost model", X_train=X_train, predictions=predictions_xgb)
+        # log_model(model, "XGBoost model", X_train=X_train, predictions=predictions_xgb)
+        log_model(model, "model", X_train=X_train, predictions=predictions_xgb)
 
         return model
 
@@ -341,7 +343,8 @@ class ModelTrainer:
                 mlflow.log_metric("MSE", mse)
                 mlflow.log_metric("MAE", mae)
                 mlflow.log_metric("R2", r2)
-                mlflow.sklearn.log_model(model, "linear_regression")
+                # mlflow.sklearn.log_model(model, "linear_regression")
+                mlflow.sklearn.log_model(model, "model")
 
             elif model_type == 'lstm':
                 logger.info("Training LSTM model...")
@@ -356,7 +359,8 @@ class ModelTrainer:
                 mlflow.log_metric("MSE", mse)
                 mlflow.log_metric("MAE", mae)
                 mlflow.log_metric("R2", r2)
-                mlflow.tensorflow.log_model(model, "lstm")
+                # mlflow.tensorflow.log_model(model, "lstm")
+                mlflow.tensorflow.log_model(model, "model")
 
             elif model_type == 'xgboost':
                 logger.info("Training XGBoost model...")

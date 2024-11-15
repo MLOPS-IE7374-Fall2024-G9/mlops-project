@@ -24,6 +24,8 @@ def set_tracking_uri(uri):
 def start_mlflow_run(run_name=None, tags=None):
     client = MlflowClient()
     experiment_name = "Electricity Demand Prediction 2.0"
+    # experiment_name = "Test 3.0"
+    
 
     try:
         # Check if the experiment exists
