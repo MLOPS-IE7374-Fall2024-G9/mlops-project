@@ -15,14 +15,15 @@ def set_tracking_uri(uri):
 
 def start_mlflow_run(run_name=None, tags=None):
     client = MlflowClient()
-    experiment_name = "Electricity Demand Prediction 2.0"
+    # experiment_name = "Electricity Demand Prediction 2.0"
+    experiment_name = "Test 2.0"
 
     try:
         # Check if the experiment exists
         experiment = client.get_experiment_by_name(experiment_name)
         if experiment is None:
             print(f"Experiment '{experiment_name}' does not exist. Creating a new one.")
-            experiment_id = client.create_experiment(experiment_name, artifact_location="gs://mlflow-storage-bucket-mlops-7374/mlruns/")
+            experiment_id = client.create_experiment(experiment_name)
             print(f"Experiment '{experiment_name}' created with ID: {experiment_id}")
         else:
             experiment_id = experiment.experiment_id

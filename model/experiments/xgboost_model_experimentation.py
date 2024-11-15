@@ -43,7 +43,8 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 run_name = f"{tags['model_name']}_{tags['version']}_{timestamp}"
 
 # Start MLflow run
-set_tracking_uri("http://127.0.0.1:5001")
+# set_tracking_uri("http://127.0.0.1:5001")
+set_tracking_uri("http://34.56.170.84:5000")
 run = start_mlflow_run(run_name=run_name, tags=tags)
 
 if run:
@@ -65,7 +66,7 @@ if run:
         scoring=['neg_mean_squared_error', 'neg_mean_absolute_error', 'r2'],
         refit='neg_mean_squared_error',
         cv=5,
-        n_iter=2, 
+        n_iter=5, 
         n_jobs=-1,
         random_state=42
     )
