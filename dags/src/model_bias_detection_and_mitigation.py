@@ -9,6 +9,9 @@ from fairlearn.metrics import MetricFrame
 from google.cloud import storage
 import matplotlib.pyplot as plt
 from sklearn.utils.class_weight import compute_sample_weight
+from xgboost import XGBRegressor
+from sklearn.preprocessing import LabelEncoder
+import json
 
 # Configure logging
 logging.basicConfig(
@@ -60,7 +63,20 @@ def load_splits(X_train_path, X_test_path, y_train_path, y_test_path, sensitive_
     y_test = pd.read_csv(y_test_path)
     sensitive_train = pd.read_csv(sensitive_train_path)
     sensitive_test = pd.read_csv(sensitive_test_path)
+
+    X_train.drop(columns=['Unnamed: 0'], inplace=True)
+    X_test.drop(columns=['Unnamed: 0'], inplace=True)
+    y_train.drop(columns=['Unnamed: 0'], inplace=True)
+    y_test.drop(columns=['Unnamed: 0'], inplace=True)
+    sensitive_train.drop(columns=['Unnamed: 0'], inplace=True)
+    sensitive_test.drop(columns=['Unnamed: 0'], inplace=True)
+
     return X_train, X_test, y_train, y_test, sensitive_train, sensitive_test
+
+
+## get trained_model.pkl model from gcp
+def get_model_from_gcp(bucket_name,model_path):
+    pass
 
 def upload_to_gcp(local_folder, gcp_folder, bucket_name):
     """
@@ -125,9 +141,11 @@ def save_metric_frame(metric_frame, model_name, bucket_name, local_path):
     
     with open(file_path, 'wb') as f:
         pickle.dump(metric_frame, f)
-    upload_to_gcp(local_path, f"metric_analysis/{filename}", bucket_name)
-    os.remove(file_path)
-    return f"gs://{bucket_name}/metric_analysis/{filename}"
+    # upload_to_gcp(local_path, f"metric_analysis/{filename}", bucket_name)
+    # os.remove(file_path)
+    # return f"gs://{bucket_name}/metric_analysis/{filename}"
+
+    return file_path
 
 def generate_and_save_bias_analysis(metric_frame, metric_key, local_path):
     """
@@ -171,6 +189,7 @@ def identify_bias_by_threshold(metric_frame, metric_key, threshold_multiplier=1.
     
     # Calculate the overall metric value
     overall_metric = metric_frame.overall[metric_key]
+    logger.info("Overall {metric_key} : {overall_metric}")
     threshold = threshold_multiplier * overall_metric
 
     # Compute metric differences by group
@@ -189,7 +208,7 @@ def identify_bias_by_threshold(metric_frame, metric_key, threshold_multiplier=1.
     logger.info("Bias identification complete.")
     logger.info(f" Metric ratio: {metric_ratio}")
 
-    return biased_flag, biased_groups, metric_ratio
+    return biased_flag, biased_groups, metric_ratio, overall_metric
 
 
 def run_detection(X_test, y_test, sensitive_test, model, bucket_name, temp_path):
@@ -210,21 +229,41 @@ def run_detection(X_test, y_test, sensitive_test, model, bucket_name, temp_path)
     local_run_folder, gcp_run_folder = setup_local_run_folder(temp_path, "detection")
 
     metric_frame = generate_metric_frame(model, X_test, y_test, sensitive_test)
-    biased_flag, biased_groups, mae_ratio = identify_bias_by_threshold(metric_frame, 'mae')
+    biased_flag, biased_groups, mae_ratio, overall_mae= identify_bias_by_threshold(metric_frame, 'mae')
+
+    biased_groups_list = biased_groups.index.tolist() if biased_flag else []
     if biased_flag:
         logger.warning(f"Bias Detected")
         logger.info(f"Biased groups identified: {biased_groups}")
-
     
     metric_frame_gcp_path = save_metric_frame(metric_frame, "XGBRegressor_before_mitigation", bucket_name, local_run_folder)
-    generate_and_save_bias_analysis(metric_frame, 'mae', local_run_folder)
-    upload_to_gcp(local_run_folder, gcp_run_folder, bucket_name)
-    
-    for file in os.listdir(local_run_folder):
-        os.remove(os.path.join(local_run_folder, file))
-    os.rmdir(local_run_folder)
+    graph_saved_path = generate_and_save_bias_analysis(metric_frame, 'mae', local_run_folder)
 
-    return metric_frame_gcp_path
+    findings = {
+        "bias_detected": biased_flag,
+        "affected_groups": biased_groups_list,
+        "metric_ratio": mae_ratio.to_dict() if hasattr(mae_ratio, "to_dict") else mae_ratio,  # Convert Series to dictionary
+        "overall_mae": overall_mae,
+        "metric_frame_path": os.path.relpath(metric_frame_gcp_path, start=local_run_folder),
+        "graph_path": os.path.relpath(graph_saved_path, start=local_run_folder),
+    }
+
+
+    # Save JSON findings
+    findings_path = os.path.join(local_run_folder, "detection_report.json")
+    with open(findings_path, 'w') as json_file:
+        json.dump(findings, json_file, indent=4)
+
+    logger.info(f"Detection findings saved to {findings_path}")
+
+    # upload_to_gcp(local_run_folder, gcp_run_folder, bucket_name)
+    
+    # for file in os.listdir(local_run_folder):
+    #     os.remove(os.path.join(local_run_folder, file))
+    # os.rmdir(local_run_folder)
+
+    # return metric_frame_gcp_path
+    return local_run_folder
 
 def run_mitigation(X_train, X_test, y_train, y_test, sensitive_train, sensitive_test, model, bucket_name, temp_path):
     """
@@ -252,8 +291,84 @@ def run_mitigation(X_train, X_test, y_train, y_test, sensitive_train, sensitive_
     metric_frame_weighted = generate_metric_frame(model, X_test, y_test, sensitive_test)
     save_metric_frame(metric_frame_weighted, "XGBRegressor_after_mitigation", bucket_name, local_run_folder)
     generate_and_save_bias_analysis(metric_frame_weighted, 'mae', local_run_folder)
-    upload_to_gcp(local_run_folder, gcp_run_folder, bucket_name)
+    # upload_to_gcp(local_run_folder, gcp_run_folder, bucket_name)
 
-    for file in os.listdir(local_run_folder):
-        os.remove(os.path.join(local_run_folder, file))
-    os.rmdir(local_run_folder)
+    # for file in os.listdir(local_run_folder):
+    #     os.remove(os.path.join(local_run_folder, file))
+    # os.rmdir(local_run_folder)
+
+    return local_run_folder
+
+
+def load_pkl_files_from_directory(directory_path):
+    """
+    Loads all .pkl files from the specified directory.
+
+    Args:
+        directory_path (str): Path to the directory containing .pkl files.
+
+    Returns:
+        dict: A dictionary where keys are file names and values are the loaded objects.
+    """
+    pkl_files = [f for f in os.listdir(directory_path) if f.endswith('.pkl')]
+    loaded_objects = {}
+    
+    for file in pkl_files:
+        file_path = os.path.join(directory_path, file)
+        with open(file_path, 'rb') as f:
+            loaded_objects[file] = pickle.load(f)
+    
+    return loaded_objects
+
+if __name__ == '__main__':
+    X_train_path = '/Users/akm/Desktop/mlops-project/experiments/X_train_split.csv'
+    X_test_path = '/Users/akm/Desktop/mlops-project/experiments/X_test_split.csv'
+    y_train_path = '/Users/akm/Desktop/mlops-project/experiments/y_train_split.csv'
+    y_test_path = '/Users/akm/Desktop/mlops-project/experiments/y_test_split.csv'
+    sensitive_train_path = '/Users/akm/Desktop/mlops-project/experiments/sensitive_train_split.csv'
+    sensitive_test_path = '/Users/akm/Desktop/mlops-project/experiments/sensitive_test_split.csv'    
+
+    # loading the train splits 
+    # X_train, X_test, y_train, y_test, sensitive_train, sensitive_test = load_splits(X_train_path, X_test_path, y_train_path, y_test_path, sensitive_train_path, sensitive_test_path)
+    # print(X_train.shape, X_test.shape, y_train.shape, y_test.shape, sensitive_train.shape, sensitive_test.shape)
+    # print(X_train.columns, X_test.columns, y_train.columns, y_test.columns, sensitive_train.columns, sensitive_test.columns)
+
+    # lbl_encoder = LabelEncoder()
+    # X_train['subba-name'] = lbl_encoder.fit_transform(X_train['subba-name'])
+    # X_test['subba-name'] = lbl_encoder.transform(X_test['subba-name'])
+    # # # load model
+    # # # # model = load_model_from_gcp(bucket_name, model_path)
+    # model = XGBRegressor(objective='reg:squarederror', random_state=42,reg_alpha=0.1, reg_lambda=1.0,learning_rate=0.05, n_estimators=1000, min_child_weight=5)
+    # model.fit(X_train, y_train)
+
+    # # # y_pred_before_mitigation
+    # # y_pred = model.predict(X_test)
+
+    # local_folder = run_detection( X_test, y_test, sensitive_test, model, None, '/Users/akm/Desktop/mlops-project/experiments/temp_bias_analysis/')
+
+    bias_detection_result_path = '/Users/akm/Desktop/mlops-project/experiments/temp_bias_analysis/detection_20241115_143124'
+    
+    # bias_mitigation_result_path = run_mitigation(X_train, X_test, y_train, y_test, sensitive_train, sensitive_test, model, None, '/Users/akm/Desktop/mlops-project/experiments/temp_bias_mitigation_analysis/')
+
+    bias_mitigation_result_path = '/Users/akm/Desktop/mlops-project/experiments/temp_bias_mitigation_analysis/mitigation_20241115_143719'
+
+    before_mitigation_metric_frame = load_pkl_files_from_directory(bias_detection_result_path)
+    after_mitigation_metric_frame = load_pkl_files_from_directory(bias_mitigation_result_path)
+
+    for file_name, metric_frame in before_mitigation_metric_frame.items():
+        print(f"\nFile: {file_name}")
+        print("\nOverall Metrics:")
+        print(metric_frame.overall)  # Displays overall metrics
+        
+        print("\nGroup-wise Metrics:")
+        print(metric_frame.by_group) 
+
+
+    for file_name, metric_frame in after_mitigation_metric_frame.items():
+        print(f"\nFile: {file_name}")
+        print("\nOverall Metrics:")
+        print(metric_frame.overall)  # Displays overall metrics
+        
+        print("\nGroup-wise Metrics:")
+        print(metric_frame.by_group) 
+
