@@ -69,3 +69,18 @@ send_email = EmailOperator(
 
 # ------------------------------------------------------------------------------------------------
 
+current_script_dir = os.path.dirname(os.path.realpath(__file__))
+model_path = os.path.join(current_script_dir, '../../model/pickle/xgboost_model.pkl')
+data_path = os.path.join(current_script_dir, '../../dataset/data/bias_mitigated_data.csv')
+
+#DAG task
+
+feature_importance_task = PythonOperator(
+    task_id='analyze_feature_importance',
+    python_callable=analyze_features,
+    op_args=[model_path, data_path],  # Pass the model and data paths as arguments
+)
+
+# ------------------------------------------------------------------------------------------------
+# Task dependencies
+feature_importance_task >> send_email
