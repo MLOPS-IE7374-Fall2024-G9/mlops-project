@@ -52,6 +52,7 @@ default_args = {
 # Define the DAG
 with DAG(
     'model_bias_detection_and_mitigation',
+    'model_bias_detection_and_mitigation',
     default_args=default_args,
     schedule_interval=None,
     catchup=False,
@@ -120,25 +121,7 @@ with DAG(
         Task to load data splits.
         """
         logger.info("Loading data splits.")
-        # paths = {
-        #     "X_train": os.path.join(BASE_PATH, "X_train.csv"),
-        #     "X_test": os.path.join(BASE_PATH, "X_test.csv"),
-        #     "y_train": os.path.join(BASE_PATH, "y_train.csv"),
-        #     "y_test": os.path.join(BASE_PATH, "y_test.csv"),
-        #     "sensitive_train": os.path.join(BASE_PATH, "sensitive_train.csv"),
-        #     "sensitive_test": os.path.join(BASE_PATH, "sensitive_test.csv"),
-        # }
-        # data = load_splits(
-        #     paths["X_train"],
-        #     paths["X_test"],
-        #     paths["y_train"],
-        #     paths["y_test"],
-        #     paths["sensitive_train"],
-        #     paths["sensitive_test"],
-        # )
-        # logger.info("Data splits loaded successfully.")
-        # kwargs['ti'].xcom_push(key='data_splits', value=data)
-        
+
         # config
         test_size, validation_size = load_config(paths["config"])
 
@@ -146,7 +129,7 @@ with DAG(
         load_and_split_dataset(paths["dataset"], test_size, validation_size, save_locally=True)
         
         # load latest trained model
-        # model_type = download_model_artifacts()
+        model_type = download_model_artifacts()
         return model_type
 
     def perform_bias_detection(model_type):
@@ -253,18 +236,21 @@ with DAG(
 
             if bias_mitigation_overall_mae < bias_detection_overall_mae:
                 logger.info(f'Bias has been mitigated from {bias_detection_overall_mae} to {bias_mitigation_overall_mae}')
+                return True
             elif bias_mitigation_overall_mae == bias_detection_overall_mae:
                 logger.info(f'No significant chang in Bias')
+                return True
             else:
                 logger.warning(f'No change in Bias. Stop the Model from being served.')
+                return False
         
 
-    # Define tasks
-    download_model_task = PythonOperator(
-        task_id = 'download_model_task',
-        python_callable=download_model_artifacts,
-        provide_context=True,
-    )
+    # # Define tasks
+    # download_model_task = PythonOperator(
+    #     task_id = 'download_model_task',
+    #     python_callable=download_model_artifacts,
+    #     provide_context=True,
+    # )
 
     load_data_splits_task = PythonOperator(
         task_id='load_data_splits',
@@ -277,14 +263,14 @@ with DAG(
         task_id='perform_bias_detection',
         python_callable=perform_bias_detection,
         provide_context=True,
-        op_args=[download_model_task.output]
+        op_args=[load_data_splits_task.output]
     )
 
     perform_bias_mitigation_task = PythonOperator(
         task_id='perform_bias_mitigation',
         python_callable=perform_bias_mitigation,
         provide_context=True,
-        op_args=[download_model_task.output,perform_bias_detection_task.output]
+        op_args=[load_data_splits_task.output,perform_bias_detection_task.output]
     )
 
     upload_results_to_gcp_task = PythonOperator(
@@ -301,4 +287,4 @@ with DAG(
     )
 
     # Define task dependencies
-    download_model_task >> load_data_splits_task >> perform_bias_detection_task >> perform_bias_mitigation_task >> upload_results_to_gcp_task >> proceed_to_serving_task
+    load_data_splits_task >> perform_bias_detection_task >> perform_bias_mitigation_task >> upload_results_to_gcp_task >> proceed_to_serving_task

@@ -14,16 +14,17 @@ USER airflow
 # Copy the requirements.txt file to the container
 COPY requirements.txt /requirements.txt
 
+# Copy the credentials JSON file to the container
+COPY mlops-437516-b9a69694c897.json /mlops-437516-b9a69694c897.json
+
+COPY mlops-7374-3e7424e80d76.json /mlops-7374-3e7424e80d76.json
+
+
 # Install the Python packages specified in requirements.txt
 RUN pip install --no-cache-dir -r /requirements.txt
 
 # Init git and dvc
 RUN git init
-
-# Copy the credentials JSON file to the container
-COPY mlops-437516-b9a69694c897.json /mlops-437516-b9a69694c897.json
-
-COPY mlops-7374-3e7424e80d76.json /mlops-7374-3e7424e80d76.json
 
 # Configure DVC to use credentials from the JSON file
 RUN dvc remote modify --local storage credentialpath /mlops-437516-b9a69694c897.json || echo "Failed to configure DVC remote"
