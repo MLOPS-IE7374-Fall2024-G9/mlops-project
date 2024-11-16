@@ -128,7 +128,7 @@ def test_and_evaluate_model(model, X_test, y_test):
 
 def download_model_artifacts():
     registry = MLflowModelRegistry("http://34.56.170.84:5000")
-    model, model_type = registry.fetch_and_initialize_latest_model('Electricity Demand Prediction 2.0')
+    model, model_type = registry.fetch_and_initialize_latest_model('Test 3.0')
     
     return model_type
 

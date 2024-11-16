@@ -8,9 +8,13 @@ import pandas as pd
 import json
 import pickle
 import logging
+
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+
 # Import the provided methods
-from dags.src.model_bias_detection_and_mitigation import load_pkl_files_from_directory, load_splits, save_model, upload_to_gcp, run_detection, run_mitigation
-from dags.src.model_pipeline import download_model_artifacts
+from src.model_bias_detection_and_mitigation import load_pkl_files_from_directory, load_splits, save_model, upload_to_gcp, run_detection, run_mitigation
+from src.model_pipeline import download_model_artifacts
 from model.scripts.data_loader import load_and_split_dataset, load_config
 
 
@@ -47,7 +51,7 @@ default_args = {
 
 # Define the DAG
 with DAG(
-    'bias_detection_and_mitigation',
+    'model_bias_detection_and_mitigation',
     default_args=default_args,
     schedule_interval=None,
     catchup=False,
@@ -142,7 +146,7 @@ with DAG(
         load_and_split_dataset(paths["dataset"], test_size, validation_size, save_locally=True)
         
         # load latest trained model
-        model_type = download_model_artifacts()
+        # model_type = download_model_artifacts()
         return model_type
 
     def perform_bias_detection(model_type):
@@ -256,6 +260,12 @@ with DAG(
         
 
     # Define tasks
+    download_model_task = PythonOperator(
+        task_id = 'download_model_task',
+        python_callable=download_model_artifacts,
+        provide_context=True,
+    )
+
     load_data_splits_task = PythonOperator(
         task_id='load_data_splits',
         python_callable=load_data_splits,
@@ -267,14 +277,14 @@ with DAG(
         task_id='perform_bias_detection',
         python_callable=perform_bias_detection,
         provide_context=True,
-        op_args=[load_data_splits_task.output]
+        op_args=[download_model_task.output]
     )
 
     perform_bias_mitigation_task = PythonOperator(
         task_id='perform_bias_mitigation',
         python_callable=perform_bias_mitigation,
         provide_context=True,
-        op_args=[load_data_splits_task.output,perform_bias_detection_task.output]
+        op_args=[download_model_task.output,perform_bias_detection_task.output]
     )
 
     upload_results_to_gcp_task = PythonOperator(
@@ -291,4 +301,4 @@ with DAG(
     )
 
     # Define task dependencies
-    load_data_splits_task >> perform_bias_detection_task >> perform_bias_mitigation_task >> upload_results_to_gcp_task >> proceed_to_serving_task
+    download_model_task >> load_data_splits_task >> perform_bias_detection_task >> perform_bias_mitigation_task >> upload_results_to_gcp_task >> proceed_to_serving_task

@@ -1,14 +1,14 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from datetime import datetime
-from dags.src.data_bias_detection_and_mitigation import detect_bias
-from dags.src.data_bias_detection_and_mitigation import conditional_mitigation
 import pandas as pd
 import pickle
 
 # Import necessary functions or define them here if not imported
 # from my_bias_module import detect_bias, conditional_mitigation
 from src.data_download import *
+from src.data_bias_detection_and_mitigation import detect_bias
+from src.data_bias_detection_and_mitigation import conditional_mitigation_with_resampling
 
 default_args = {
     'owner': 'Group 9',
@@ -60,7 +60,7 @@ def mitigate_bias():
     sensitive_col = 'subba-name'
 
     # Perform conditional mitigation based on the results of the bias detection
-    mitigated_data = conditional_mitigation(data, target_col, sensitive_col, bias_output)
+    mitigated_data = conditional_mitigation_with_resampling(data, target_col, sensitive_col, bias_output)
     
     # Save the mitigated data
     mitigated_data.to_csv(mitigated_data_path, index=False)

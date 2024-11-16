@@ -95,7 +95,7 @@ threshold_fail_email = EmailOperator(
 
 # --------------------------
 def choose_task_based_on_trigger(**kwargs):
-    train_from_scratch = True #kwargs['dag_run'].conf.get('train_from_scratch', 'false') == 'true'
+    train_from_scratch = False #kwargs['dag_run'].conf.get('train_from_scratch', 'false') == 'true'
     if train_from_scratch:
         return 'train_on_all_data_task'  # Train on all data
     else:
