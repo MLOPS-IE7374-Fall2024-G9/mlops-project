@@ -24,6 +24,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+BIAS_ANALYSIS_GOOGLE_CRED_PATH = os.path.join(os.path.dirname(__file__),'../../mlops-7374-3e7424e80d76.json')
+
 def setup_local_run_folder(base_path, run_type):
     """
     Creates a local folder for storing files related to the current run and logs the details.
@@ -74,10 +76,6 @@ def load_splits(X_train_path, X_test_path, y_train_path, y_test_path, sensitive_
     return X_train, X_test, y_train, y_test, sensitive_train, sensitive_test
 
 
-## get trained_model.pkl model from gcp
-def get_model_from_gcp(bucket_name,model_path):
-    pass
-
 def upload_to_gcp(local_folder, gcp_folder, bucket_name):
     """
     Uploads all files from a local folder to a GCP bucket folder.
@@ -90,14 +88,37 @@ def upload_to_gcp(local_folder, gcp_folder, bucket_name):
     Returns:
         None
     """
-    client = storage.Client()
-    bucket = client.get_bucket(bucket_name)
-    for root, _, files in os.walk(local_folder):
-        for file in files:
-            local_file_path = os.path.join(root, file)
-            blob_path = os.path.join(gcp_folder, file)
-            bucket.blob(blob_path).upload_from_filename(local_file_path)
-            logger.info(f"Uploaded {local_file_path} to GCP at {blob_path}")
+
+    original_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = BIAS_ANALYSIS_GOOGLE_CRED_PATH
+
+    try:
+        # Initialize the GCP storage client
+        client = storage.Client()
+        bucket = client.get_bucket(bucket_name)
+
+        # Upload files while preserving the folder structure
+        for root, _, files in os.walk(local_folder):
+            for file in files:
+                local_file_path = os.path.join(root, file)
+
+                # Construct the relative path to preserve folder structure
+                relative_path = os.path.relpath(local_file_path, local_folder)
+                blob_path = os.path.join(gcp_folder, os.path.basename(local_folder), relative_path)
+
+                # Upload the file to GCP
+                bucket.blob(blob_path).upload_from_filename(local_file_path)
+                logger.info(f"Uploaded {local_file_path} to GCP at {blob_path}")
+
+    except Exception as e:
+        logger.error(f"Failed to upload files to GCP: {e}")
+        raise
+    finally:
+        # Clear the GCP credentials from the environment
+        if original_credentials:
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = original_credentials
+        else:
+            del os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
 
 def generate_metric_frame(model, X_test, y_test, sensitive_features):
     """
@@ -146,6 +167,33 @@ def save_metric_frame(metric_frame, model_name, bucket_name, local_path):
     # return f"gs://{bucket_name}/metric_analysis/{filename}"
 
     return file_path
+
+def save_model(model, model_name, local_path):
+    """
+    Saves a trained model as a .pkl file at a specified local path.
+
+    Args:
+        model (sklearn-like object): Trained model to save.
+        model_name (str): Name of the model to include in the file name.
+        local_path (str): Local directory path to save the file.
+
+    Returns:
+        str: Path where the model file was stored locally.
+    """
+    # Ensure the model name is safe for filenames
+    safe_model_name = "".join(char if char.isalnum() else "_" for char in model_name)
+    
+    # Create a timestamped filename for the model
+    filename = f"{safe_model_name}_model_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl"
+    file_path = os.path.join(local_path, filename)
+    
+    # Save the model to the specified path
+    with open(file_path, 'wb') as f:
+        pickle.dump(model, f)
+    
+    logger.info(f"Model saved to {file_path}")
+    return file_path
+
 
 def generate_and_save_bias_analysis(metric_frame, metric_key, local_path):
     """
@@ -266,6 +314,7 @@ def run_detection(X_test, y_test, sensitive_test, model, bucket_name, temp_path)
     return local_run_folder
 
 def run_mitigation(X_train, X_test, y_train, y_test, sensitive_train, sensitive_test, model, bucket_name, temp_path):
+    
     """
     Mitigates bias by reweighting training samples and evaluates the model.
 
@@ -281,23 +330,44 @@ def run_mitigation(X_train, X_test, y_train, y_test, sensitive_train, sensitive_
         temp_path (str): Local directory for temporary files.
 
     Returns:
-        None
+        str: Path to the local folder where results are stored.
     """
     local_run_folder, gcp_run_folder = setup_local_run_folder(temp_path, "mitigation")
 
+    # Apply sample weighting for bias mitigation
     sample_weights = compute_sample_weight(class_weight="balanced", y=sensitive_train)
     model.fit(X_train, y_train, sample_weight=sample_weights)
 
+    # Generate MetricFrame for the mitigated model
     metric_frame_weighted = generate_metric_frame(model, X_test, y_test, sensitive_test)
-    save_metric_frame(metric_frame_weighted, "XGBRegressor_after_mitigation", bucket_name, local_run_folder)
-    generate_and_save_bias_analysis(metric_frame_weighted, 'mae', local_run_folder)
+
+    # Save the MetricFrame and generate bias analysis
+    metric_frame_gcp_path = save_metric_frame(metric_frame_weighted, "XGBRegressor_after_mitigation", bucket_name, local_run_folder)
+    graph_saved_path = generate_and_save_bias_analysis(metric_frame_weighted, 'mae', local_run_folder)
+
+    # Get overall MAE and by-group metrics
+    overall_mae = round(metric_frame_weighted.overall['mae'], 4)  # Bound MAE to 4 decimals
+    mae_by_group = metric_frame_weighted.by_group['mae'].round(4).to_dict()  # Group-wise metrics
+
+    # Prepare findings for the mitigation step
+    findings = {
+        "overall_mae_after_mitigation": overall_mae,
+        "mae_by_group": mae_by_group,
+        "metric_frame_path": os.path.relpath(metric_frame_gcp_path, start=local_run_folder),
+        "graph_path": os.path.relpath(graph_saved_path, start=local_run_folder),
+    }
+
+    # Save findings as a JSON file
+    findings_path = os.path.join(local_run_folder, "mitigation_report.json")
+    with open(findings_path, 'w') as json_file:
+        json.dump(findings, json_file, indent=4)
+
+    logger.info(f"Mitigation findings saved to {findings_path}")
+
+    # Upload to GCP (if required)
     # upload_to_gcp(local_run_folder, gcp_run_folder, bucket_name)
 
-    # for file in os.listdir(local_run_folder):
-    #     os.remove(os.path.join(local_run_folder, file))
-    # os.rmdir(local_run_folder)
-
-    return local_run_folder
+    return local_run_folder , model
 
 
 def load_pkl_files_from_directory(directory_path):
@@ -346,29 +416,31 @@ if __name__ == '__main__':
 
     # local_folder = run_detection( X_test, y_test, sensitive_test, model, None, '/Users/akm/Desktop/mlops-project/experiments/temp_bias_analysis/')
 
-    bias_detection_result_path = '/Users/akm/Desktop/mlops-project/experiments/temp_bias_analysis/detection_20241115_143124'
+    # bias_detection_result_path = '/Users/akm/Desktop/mlops-project/experiments/temp_bias_analysis/detection_20241115_143124'
     
-    # bias_mitigation_result_path = run_mitigation(X_train, X_test, y_train, y_test, sensitive_train, sensitive_test, model, None, '/Users/akm/Desktop/mlops-project/experiments/temp_bias_mitigation_analysis/')
+    # # bias_mitigation_result_path = run_mitigation(X_train, X_test, y_train, y_test, sensitive_train, sensitive_test, model, None, '/Users/akm/Desktop/mlops-project/experiments/temp_bias_mitigation_analysis/')
 
-    bias_mitigation_result_path = '/Users/akm/Desktop/mlops-project/experiments/temp_bias_mitigation_analysis/mitigation_20241115_143719'
+    # bias_mitigation_result_path = '/Users/akm/Desktop/mlops-project/experiments/temp_bias_mitigation_analysis/mitigation_20241115_143719'
 
-    before_mitigation_metric_frame = load_pkl_files_from_directory(bias_detection_result_path)
-    after_mitigation_metric_frame = load_pkl_files_from_directory(bias_mitigation_result_path)
+    # before_mitigation_metric_frame = load_pkl_files_from_directory(bias_detection_result_path)
+    # after_mitigation_metric_frame = load_pkl_files_from_directory(bias_mitigation_result_path)
 
-    for file_name, metric_frame in before_mitigation_metric_frame.items():
-        print(f"\nFile: {file_name}")
-        print("\nOverall Metrics:")
-        print(metric_frame.overall)  # Displays overall metrics
+    # for file_name, metric_frame in before_mitigation_metric_frame.items():
+    #     print(f"\nFile: {file_name}")
+    #     print("\nOverall Metrics:")
+    #     print(metric_frame.overall)  # Displays overall metrics
         
-        print("\nGroup-wise Metrics:")
-        print(metric_frame.by_group) 
+    #     print("\nGroup-wise Metrics:")
+    #     print(metric_frame.by_group) 
 
 
-    for file_name, metric_frame in after_mitigation_metric_frame.items():
-        print(f"\nFile: {file_name}")
-        print("\nOverall Metrics:")
-        print(metric_frame.overall)  # Displays overall metrics
+    # for file_name, metric_frame in after_mitigation_metric_frame.items():
+    #     print(f"\nFile: {file_name}")
+    #     print("\nOverall Metrics:")
+    #     print(metric_frame.overall)  # Displays overall metrics
         
-        print("\nGroup-wise Metrics:")
-        print(metric_frame.by_group) 
+    #     print("\nGroup-wise Metrics:")
+    #     print(metric_frame.by_group) 
 
+
+    upload_to_gcp('/Users/akm/Desktop/mlops-project/experiments/temp_bias_analysis/detection_20241115_143124','detection_results','model_bias_results')
