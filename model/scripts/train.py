@@ -401,6 +401,13 @@ class ModelTrainer:
 
         return mse, mae, r2
 
+    def delete_local_data(self):
+        pkl_files = [f for f in os.listdir(self.data_dir) if f.endswith(".pkl")]
+        logger.info("Deleting model file in local")
+        for file in pkl_files:
+            path = os.path.join(self.model_save_path, file)
+            os.remove(path)
+
 def main():
     # Command line argument parsing
     parser = argparse.ArgumentParser(description="Train models using different algorithms and track using MLflow.")
