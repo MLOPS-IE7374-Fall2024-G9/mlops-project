@@ -89,7 +89,6 @@ class ModelTrainer:
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to configure mflow remote: {e}")
     
-
     def setup_mlflow(self, model_name):
         # Define MLflow tags
         tags = {
@@ -113,7 +112,7 @@ class ModelTrainer:
 
             try:
                 self.train_data, self.validation_data, self.test_data, _, _ = load_and_split_dataset(
-                    dataset_path, self.test_size, self.validation_size, save_locally=True
+                    dataset_path, self.test_size, self.validation_size, save_locally=False
                 )
             except FileNotFoundError as e:
                 logger.error(f"Error loading dataset: {e}")
@@ -300,8 +299,7 @@ class ModelTrainer:
             X_train,
             y_train.values.ravel(),
             eval_set=eval_set,
-            eval_metric=["rmse", "mae", "r2"],
-            verbose=True  # Enables logging of progress
+            verbose=False  # Enables logging of progress
         )
 
         # Get the best model
@@ -309,8 +307,7 @@ class ModelTrainer:
 
         # Log the final model with MLflow
         predictions_xgb = model.predict(X_train)
-        # log_model(model, "XGBoost model", X_train=X_train, predictions=predictions_xgb)
-        log_model(model, "model", X_train=X_train, predictions=predictions_xgb)
+        log_model(model, "XGBoost model", X_train=X_train, predictions=predictions_xgb)
 
         return model
 
@@ -323,14 +320,14 @@ class ModelTrainer:
         if run:
             # Check if we need to load an existing model
             if self.load_existing_model:
-                model = self.load_model(model_type)
+                model, date = self.load_model(model_type)
                 if model is None:
                     logger.error(f"Failed to load existing model for {model_type}. Starting fresh training.")
                     model = None
                     raise
                 else:
                     # Preprocess the data
-                    X_train, X_val, X_test, y_train, y_val, y_test = self.preprocess_data()
+                    X_train, X_val, X_test, y_train, y_val, y_test = self.preprocess_data(date)
             else:
                 model = None
                 # Preprocess the data
@@ -340,11 +337,10 @@ class ModelTrainer:
             if model_type == 'lr':
                 logger.info("Training Linear Regression model...")
                 model, mse, mae, r2 = self.train_lr(X_train, y_train, X_val, y_val, model)
-                mlflow.log_metric("MSE", mse)
-                mlflow.log_metric("MAE", mae)
-                mlflow.log_metric("R2", r2)
-                # mlflow.sklearn.log_model(model, "linear_regression")
-                mlflow.sklearn.log_model(model, "model")
+                # mlflow.log_metric("MSE", mse)
+                # mlflow.log_metric("MAE", mae)
+                # mlflow.log_metric("R2", r2)
+                mlflow.sklearn.log_model(model, "linear_regression")
 
             elif model_type == 'lstm':
                 logger.info("Training LSTM model...")
@@ -354,13 +350,12 @@ class ModelTrainer:
                 mae = mean_absolute_error(y_test, y_test_pred)
                 r2 = r2_score(y_test, y_test_pred)
                 
-                mlflow.log_metric("accuracy", lstm_accuracy)
-                mlflow.log_metric("loss", lstm_loss)
-                mlflow.log_metric("MSE", mse)
-                mlflow.log_metric("MAE", mae)
-                mlflow.log_metric("R2", r2)
-                # mlflow.tensorflow.log_model(model, "lstm")
-                mlflow.tensorflow.log_model(model, "model")
+                # mlflow.log_metric("accuracy", lstm_accuracy)
+                # mlflow.log_metric("loss", lstm_loss)
+                # mlflow.log_metric("MSE", mse)
+                # mlflow.log_metric("MAE", mae)
+                # mlflow.log_metric("R2", r2)
+                mlflow.tensorflow.log_model(model, "lstm")
 
             elif model_type == 'xgboost':
                 logger.info("Training XGBoost model...")
@@ -403,13 +398,6 @@ class ModelTrainer:
         log_metric("R2", r2)
 
         return mse, mae, r2
-    
-    def delete_local_data(self):
-        model_files = [f for f in os.listdir(self.model_save_path) if f.endswith(".pkl")]
-        logger.info("Deleting pkl file in local")
-        for file in model_files:
-            path = os.path.join(self.model_save_path, file)
-            os.remove(path)
 
 def main():
     # Command line argument parsing
@@ -427,4 +415,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
