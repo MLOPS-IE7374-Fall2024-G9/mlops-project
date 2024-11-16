@@ -318,7 +318,7 @@ class ModelTrainer:
         # Start an MLflow run
         mlflow.set_tracking_uri(self.config["mlflow_tracking_uri"])
         run = self.setup_mlflow(model_type)
-
+        mlflow.autolog()
         #with mlflow.start_run():
         if run:
             # Check if we need to load an existing model
