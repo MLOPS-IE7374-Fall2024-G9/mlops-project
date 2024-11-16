@@ -1,6 +1,0 @@
-outs:
-- md5: aa7fa4b70a53d7b295157e25a6dfbfda
-  size: 2017
-  isexec: true
-  hash: md5
-  path: bias_detection_results.pkl

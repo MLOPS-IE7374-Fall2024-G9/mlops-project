@@ -57,3 +57,19 @@ if [ -f "$ENCRYPTED_FILE" ]; then
 else
     echo "Encrypted secrets file $ENCRYPTED_FILE not found."
 fi
+
+ENCRYPTED_FILE="mlops-7374-3e7424e80d76.json.enc"
+DECRYPTED_FILE="mlops-7374-3e7424e80d76.json"
+DECRYPTION_PASSWORD="mlops-group-9"  # Replace with the actual password or prompt user input
+
+if [ -f "$ENCRYPTED_FILE" ]; then
+    if [ ! -f "$DECRYPTED_FILE" ]; then
+        echo "Decrypting $ENCRYPTED_FILE to $DECRYPTED_FILE..."
+        openssl enc -d -aes-256-cbc -in "$ENCRYPTED_FILE" -out "$DECRYPTED_FILE" -k "$DECRYPTION_PASSWORD"
+        echo "Decryption complete."
+    else
+        echo "$DECRYPTED_FILE already exists. Skipping decryption."
+    fi
+else
+    echo "Encrypted secrets file $ENCRYPTED_FILE not found."
+fi

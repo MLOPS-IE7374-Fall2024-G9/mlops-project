@@ -2,6 +2,7 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
 from airflow.operators.email_operator import EmailOperator
 from airflow.utils.trigger_rule import TriggerRule
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from datetime import datetime, timedelta
 from src.data_download import *
 from src.data_preprocess import *
@@ -247,6 +248,14 @@ delete_local_task = PythonOperator(
     dag = new_data_dag,
     trigger_rule=TriggerRule.ALL_DONE
 )
+
+# Trigger the bias detection DAG at the end
+trigger_bias_detection_dag = TriggerDagRunOperator(
+    task_id="trigger_bias_detection",
+    trigger_dag_id="bias_detection_and_mitigation",  # Name of the second DAG to trigger
+    wait_for_completion=False,    # Set to True if you want to wait for the second DAG to complete
+)
+
 # --------------------------
 
 # get data from api (new data) -> get data from dvc -> merge new data with dvc -> push back to dvc
@@ -254,8 +263,8 @@ last_k_start_end_date_task >> updated_data_from_api_task >> clean_data_task >> e
 branch_task >> merge_data_task >> redundant_removal_task >> update_data_to_dvc_task
 branch_task >> send_data_validation_failure_email
 raw_data_from_dvc_task >> merge_raw_data_task >> update_raw_data_to_dvc_task
-[update_data_to_dvc_task , update_raw_data_to_dvc_task] >> delete_local_task 
-update_raw_data_to_dvc_task >> send_email
+[update_data_to_dvc_task , update_raw_data_to_dvc_task] >> delete_local_task >> trigger_bias_detection_dag
+update_raw_data_to_dvc_task >> send_email 
 
 
 

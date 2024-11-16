@@ -8,3 +8,7 @@ scikit-learn
 pandera
 fairlearn
 evidently
+tensorflow
+mlflow
+xgboost
+shap==0.41.0

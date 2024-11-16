@@ -3,6 +3,7 @@ import subprocess
 import pandas as pd
 import os
 import tempfile
+import argparse
 
 # Setup logging
 logging.basicConfig(
@@ -138,4 +139,36 @@ class DVCManager:
             path = os.path.join(self.data_dir, file)
             os.remove(path)
 
-        
+def main():
+    parser = argparse.ArgumentParser(description="DVC Manager CLI Tool")
+    parser.add_argument("action", choices=["configure", "upload", "download", "delete"], help="Action to perform")
+    parser.add_argument("--json_credential_path", default="mlops-437516-b9a69694c897.json", help="Path to DVC JSON credentials")
+    parser.add_argument("--file_name", help="File name for upload or download action")
+    parser.add_argument("--save_local", type=int, default=0, help="Keep downloaded file locally (1 to save, 0 to delete)")
+
+    args = parser.parse_args()
+
+    dvc_manager = DVCManager(json_credential_path=args.json_credential_path)
+
+    if args.action == "configure":
+        dvc_manager.configure_dvc_credentials(args.json_credential_path)
+    elif args.action == "upload":
+        if args.file_name:
+            # Load sample data or replace with actual data for testing
+            df = pd.DataFrame({"col1": [1, 2, 3], "col2": [4, 5, 6]})
+            dvc_manager.upload_data_to_dvc(df, args.file_name)
+        else:
+            logger.error("Please specify a file name for the upload action.")
+    elif args.action == "download":
+        if args.file_name:
+            df, file_path = dvc_manager.download_data_from_dvc(args.file_name, args.save_local)
+            logger.info(f"Downloaded data file path: {file_path}")
+        else:
+            logger.error("Please specify a file name for the download action.")
+    elif args.action == "delete":
+        dvc_manager.delete_local_data()
+        logger.info("Local data files deleted successfully.")
+
+
+if __name__ == "__main__":
+    main()
