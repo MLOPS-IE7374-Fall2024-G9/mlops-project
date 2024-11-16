@@ -53,6 +53,9 @@ This project focuses on forecasting energy demand using weather data. The foreca
 3) raw_data_preprocess_dag -> This DAG handles the preprocessing of raw data obtained from DVC. It focuses on executing preprocessing steps to ensure data consistency, applies transformations, and then updates the preprocessed data back to DVC for tracking. Raw data is here all the data, which is downloaded in raw from API (without data preprocessing) and stored in DVC.
 4) bias_detection_dag -> This DAG handles bias detection of preprocessed data. It pull data from dvc, detects bias on it, mitigates it and pushes it back to dvc. Simply trigger the dag manually to see its working. Ideally it is scheduled for daily runs
 
+## MLFlow 
+mlflow server - http://34.56.170.84:5000/
+
 ## Repository structure
 The repository is organized as follows:
 

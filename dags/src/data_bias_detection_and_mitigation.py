@@ -63,54 +63,72 @@ def detect_bias(data: pd.DataFrame, target_col: str, sensitive_col: str) -> dict
 
 
 
-def conditional_mitigation(data: pd.DataFrame, target_col: str, sensitive_col: str, bias_detection_output: dict) -> pd.DataFrame:
+def conditional_mitigation_with_resampling(data: pd.DataFrame, date_col: str, target_col: str, sensitive_col: str, bias_detection_output: dict, freq: str = 'H') -> pd.DataFrame:
     """
-    Perform bias mitigation on subgroups identified as biased.
+    Perform bias mitigation on subgroups identified as biased through resampling and imputation.
 
     Parameters:
     - data (pd.DataFrame): The input DataFrame containing the data.
+    - date_col (str): The name of the date column.
     - target_col (str): The name of the column to be used as the target variable.
     - sensitive_col (str): The name of the column used as the sensitive feature.
     - bias_detection_output (dict): The output dictionary from the detect_bias function.
+    - freq (str): The resampling frequency (e.g., 'H' for hourly).
 
     Returns:
     - pd.DataFrame: The mitigated DataFrame.
     """
-    biased_groups = bias_detection_output['demographic_parity_difference']
     metrics_by_group = bias_detection_output['metrics_by_group']
     overall_metrics = bias_detection_output['overall_metrics']
     
-    print('before mitifation: ',data.shape,'\n')
-    print('--------------------------------')
-    print('Metrics by group')
-    print(metrics_by_group)
-    print('--------------------------------')
-    print('\ndemographica_parity_difference')
-    print(biased_groups)
-    print('--------------------------------')
-    print('\nOverall metrics')
-    print(overall_metrics)
-    print('--------------------------------')
-    # Identify groups to mitigate based on a threshold (e.g., significant difference in selection rate)
-    threshold = 0.05  # Define your threshold for bias
+    # Threshold for bias detection
+    threshold = 0.05
     groups_to_mitigate = metrics_by_group[
         abs(metrics_by_group['Selection Rate'] - overall_metrics['Selection Rate']) > threshold
     ]
 
-    print("Groups to mitigate:", groups_to_mitigate)
+    print("Groups to mitigate with resampling and imputation:", groups_to_mitigate.index.tolist())
 
-    # Apply a chosen mitigation strategy (e.g., reweighting, resampling)
-    # Example: Resample the underrepresented group(s)
-    new_data = data.copy(deep = True)
-
-    for group in groups_to_mitigate.index:
-        group_data = new_data[new_data[sensitive_col] == group]
-        additional_samples = group_data.sample(frac=0.5, replace=True, random_state=42)
-        new_data = pd.concat([new_data, additional_samples], ignore_index=True)
+    # Determine the overall date range
+    min_date, max_date = data[date_col].min(), data[date_col].max()
+    all_dates = pd.date_range(start=min_date, end=max_date, freq=freq)
     
-    return new_data
+    # Create a new DataFrame for storing mitigated data
+    mitigated_data = []
 
+    # Apply mitigation by resampling and imputing only on biased groups
+    for group in groups_to_mitigate.index:
+        group_data = data[data[sensitive_col] == group]
+        
+        # Set the date column as index for resampling
+        group_data = group_data.set_index(date_col).reindex(all_dates)
+        group_data.index.name = date_col
+        group_data[sensitive_col] = group  # Add the `subba-name` column back
+
+        # Impute missing values with forward and backward fill
+        group_data = group_data.fillna(method='ffill').fillna(method='bfill')
+
+        # Add the mitigated group data to the list
+        mitigated_data.append(group_data.reset_index())
+
+    # For groups that are not biased, add them as-is
+    unbiased_data = data[~data[sensitive_col].isin(groups_to_mitigate.index)]
+    mitigated_data.append(unbiased_data)
+
+    # Concatenate all data
+    balanced_data = pd.concat(mitigated_data, ignore_index=True)
+
+    return balanced_data
 
 if __name__ == '__main__':
     data = pd.read_csv('/Users/akm/Desktop/mlops-project/data_preprocess.csv')
-    detect_bias(data,'value','subba-name')
+    data.dropna(inplace=True)
+    # Step 1: Detect bias in the dataset
+    bias_detection_output = detect_bias(data, target_col='value', sensitive_col='subba-name')
+    
+    # Step 2: Apply conditional mitigation with resampling and imputation for biased groups
+    mitigated_data = conditional_mitigation_with_resampling(data, date_col='datetime', target_col='value', sensitive_col='subba-name', bias_detection_output=bias_detection_output, freq='H')
+    
+    # Final dataset ready for model training
+    print("After mitigation with resampling and imputation:")
+    print(mitigated_data.info())

@@ -33,6 +33,7 @@ class MLflowModelRegistry:
             # Run the dvc remote modify command
             logger.info(f"Configuring mlflow credentials from {json_credential_path}.")
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=json_credential_path
+            print(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
             logger.info("MLflow remote configuration successful.")
 
         except Exception as e:
@@ -200,12 +201,19 @@ class MLflowModelRegistry:
             print(
                 f"Successfully fetched and loaded the latest model from run ID: {run_id}"
             )
+
+            model_file_name = None
+            model_type = None
+            print('Run name: ', run_name)
             if 'lr' in run_name:
                 model_file_name = 'lr_model_latest.pkl'
                 model_type = "lr"
             elif 'xgboost' in run_name:
                 model_file_name = 'xgboost_model_latest.pkl'
                 model_type = "xgboost"
+            elif 'lstm' in run_name: 
+                model_file_name = 'lstm_model_latest.pkl'
+                model_type = "lstm"
             model_path = os.path.join(os.path.dirname(__file__), f'../pickle/{model_file_name}')
             pickle.dump(model, open(model_path, 'wb'))
             return model, model_type

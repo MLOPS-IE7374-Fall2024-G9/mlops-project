@@ -255,6 +255,8 @@ class ModelTrainer:
 
     def train_lstm(self, X_train, y_train, X_val, y_val):
         # Reshaping data for LSTM (samples, time steps, features)
+        X_train = X_train.values  # or use .to_numpy()
+        X_val = X_val.values  # or use .to_numpy()
         X_train = X_train.reshape((X_train.shape[0], 1, X_train.shape[1]))
         X_val = X_val.reshape((X_val.shape[0], 1, X_val.shape[1]))
 
@@ -398,6 +400,13 @@ class ModelTrainer:
         log_metric("R2", r2)
 
         return mse, mae, r2
+
+    def delete_local_data(self):
+        pkl_files = [f for f in os.listdir(self.data_dir) if f.endswith(".pkl")]
+        logger.info("Deleting model file in local")
+        for file in pkl_files:
+            path = os.path.join(self.model_save_path, file)
+            os.remove(path)
 
 def main():
     # Command line argument parsing

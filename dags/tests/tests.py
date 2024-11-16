@@ -15,8 +15,16 @@ import warnings
 from src.data_download import * 
 from dags.src.data_preprocess import *
 from dags.src.data_schema_validation import *
-from dags.src.data_bias_detection import detect_bias, conditional_mitigation
+from dags.src.data_bias_detection_and_mitigation import detect_bias, conditional_mitigation
 from dags.src.data_drift import DataDriftDetector
+import os
+import shutil
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.datasets import make_regression
+from unittest.mock import patch, MagicMock
+from dags.src.model_bias_detection_and_mitigation import (setup_local_run_folder, load_splits, upload_to_gcp, generate_metric_frame, 
+                    save_metric_frame, generate_and_save_bias_analysis, identify_bias_by_threshold)
 
 
 # Ignore all warnings in tests
@@ -278,6 +286,115 @@ def test_conditional_mitigation_groups():
     assert 'A' in unique_groups, "Expected group 'A' to be in mitigated data"
     assert 'B' in unique_groups, "Expected group 'B' to be in mitigated data"
 
+
+
+# Setup test data and environment
+def setup_environment():
+    temp_dir = "temp_test_dir"
+    os.makedirs(temp_dir, exist_ok=True)
+    X_train, y_train = make_regression(n_samples=100, n_features=10, noise=0.1)
+    X_test, y_test = make_regression(n_samples=20, n_features=10, noise=0.1)
+    sensitive_train = pd.Series(["group1" if i % 2 == 0 else "group2" for i in range(100)])
+    sensitive_test = pd.Series(["group1" if i % 2 == 0 else "group2" for i in range(20)])
+    
+    pd.DataFrame(X_train).to_csv(os.path.join(temp_dir, "X_train.csv"), index=False)
+    pd.DataFrame(X_test).to_csv(os.path.join(temp_dir, "X_test.csv"), index=False)
+    pd.Series(y_train).to_csv(os.path.join(temp_dir, "y_train.csv"), index=False)
+    pd.Series(y_test).to_csv(os.path.join(temp_dir, "y_test.csv"), index=False)
+    sensitive_train.to_csv(os.path.join(temp_dir, "sensitive_train.csv"), index=False)
+    sensitive_test.to_csv(os.path.join(temp_dir, "sensitive_test.csv"), index=False)
+    return temp_dir, X_train, X_test, y_train, y_test, sensitive_train, sensitive_test
+
+# Clean up test environment
+def cleanup_environment(temp_dir):
+    shutil.rmtree(temp_dir)
+
+# Test setup_local_run_folder
+def test_setup_local_run_folder():
+    temp_dir, *_ = setup_environment()
+    local_path, gcp_path = setup_local_run_folder(temp_dir, "test_run")
+    assert os.path.exists(local_path), "Local path should be created."
+    assert "test_run" in gcp_path, "GCP path should contain the run type."
+    shutil.rmtree(local_path)
+    cleanup_environment(temp_dir)
+
+# Test load_splits
+def test_load_splits():
+    temp_dir, *_ = setup_environment()
+    X_train, X_test, y_train, y_test, sensitive_train, sensitive_test = load_splits(
+        os.path.join(temp_dir, "X_train.csv"),
+        os.path.join(temp_dir, "X_test.csv"),
+        os.path.join(temp_dir, "y_train.csv"),
+        os.path.join(temp_dir, "y_test.csv"),
+        os.path.join(temp_dir, "sensitive_train.csv"),
+        os.path.join(temp_dir, "sensitive_test.csv"),
+    )
+    assert len(X_train) == 100, "X_train should have 100 rows."
+    assert len(X_test) == 20, "X_test should have 20 rows."
+    assert len(sensitive_train) == 100, "sensitive_train should have 100 entries."
+    cleanup_environment(temp_dir)
+
+# Test upload_to_gcp
+@patch("script.storage.Client")
+def test_upload_to_gcp(mock_client):
+    temp_dir, *_ = setup_environment()
+    mock_bucket = MagicMock()
+    mock_client.return_value.get_bucket.return_value = mock_bucket
+
+    test_file_path = os.path.join(temp_dir, "test_file.txt")
+    with open(test_file_path, "w") as f:
+        f.write("test content")
+
+    upload_to_gcp(temp_dir, "gcp_folder", "test_bucket")
+    mock_bucket.blob.assert_called_with("gcp_folder/test_file.txt")
+    mock_bucket.blob().upload_from_filename.assert_called_with(test_file_path)
+    os.remove(test_file_path)
+    cleanup_environment(temp_dir)
+
+# Test generate_metric_frame
+def test_generate_metric_frame():
+    temp_dir, X_train, X_test, y_train, y_test, sensitive_train, sensitive_test = setup_environment()
+    model = LinearRegression().fit(X_train, y_train)
+    metric_frame = generate_metric_frame(model, X_test, y_test, sensitive_test)
+    assert "mae" in metric_frame.overall, "MetricFrame should contain MAE."
+    cleanup_environment(temp_dir)
+
+# Test save_metric_frame
+@patch("script.upload_to_gcp")
+def test_save_metric_frame(mock_upload):
+    temp_dir, X_train, X_test, y_train, y_test, sensitive_train, sensitive_test = setup_environment()
+    model = LinearRegression().fit(X_train, y_train)
+    metric_frame = generate_metric_frame(model, X_test, y_test, sensitive_test)
+
+    save_metric_frame(metric_frame, "test_model", "test_bucket", temp_dir)
+    mock_upload.assert_called()
+    cleanup_environment(temp_dir)
+
+# Test generate_and_save_bias_analysis
+def test_generate_and_save_bias_analysis():
+    temp_dir, X_train, X_test, y_train, y_test, sensitive_train, sensitive_test = setup_environment()
+    model = LinearRegression().fit(X_train, y_train)
+    metric_frame = generate_metric_frame(model, X_test, y_test, sensitive_test)
+
+    graph_path = generate_and_save_bias_analysis(metric_frame, "mae", temp_dir)
+    assert os.path.exists(graph_path), "Bias analysis graph should be saved."
+    os.remove(graph_path)
+    cleanup_environment(temp_dir)
+
+# Test identify_bias_by_threshold
+def test_identify_bias_by_threshold():
+    temp_dir, X_train, X_test, y_train, y_test, sensitive_train, sensitive_test = setup_environment()
+    model = LinearRegression().fit(X_train, y_train)
+    metric_frame = generate_metric_frame(model, X_test, y_test, sensitive_test)
+
+    biased_flag, biased_groups, metric_ratio = identify_bias_by_threshold(metric_frame, "mae")
+    assert isinstance(biased_flag, bool), "biased_flag should be a boolean."
+    assert isinstance(biased_groups, pd.DataFrame), "biased_groups should be a DataFrame."
+    cleanup_environment(temp_dir)
+
+
+
+
 # ---------------------------------------------------------------
 # data_drift.py 
 # ---------------------------------------------------------------
@@ -343,3 +460,14 @@ def test_detect_drift_psi():
     for feature, result in psi_results.items():
         assert "PSI" in result, f"PSI results for feature '{feature}' should contain 'PSI'"
         assert result["PSI"] >= 0, f"PSI value for feature '{feature}' should be non-negative"
+
+# Run tests
+if __name__ == "__main__":
+    test_setup_local_run_folder()
+    test_load_splits()
+    test_upload_to_gcp()
+    test_generate_metric_frame()
+    test_save_metric_frame()
+    test_generate_and_save_bias_analysis()
+    test_identify_bias_by_threshold()
+    print("All tests passed.")
