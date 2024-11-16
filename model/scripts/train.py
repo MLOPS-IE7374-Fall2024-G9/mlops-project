@@ -299,7 +299,7 @@ class ModelTrainer:
             X_train,
             y_train.values.ravel(),
             eval_set=eval_set,
-            verbose=True  # Enables logging of progress
+            verbose=False  # Enables logging of progress
         )
 
         # Get the best model
