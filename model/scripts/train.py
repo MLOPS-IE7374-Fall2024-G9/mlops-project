@@ -338,9 +338,9 @@ class ModelTrainer:
             if model_type == 'lr':
                 logger.info("Training Linear Regression model...")
                 model, mse, mae, r2 = self.train_lr(X_train, y_train, X_val, y_val, model)
-                # mlflow.log_metric("MSE", mse)
-                # mlflow.log_metric("MAE", mae)
-                # mlflow.log_metric("R2", r2)
+                mlflow.log_metric("MSE", mse)
+                mlflow.log_metric("MAE", mae)
+                mlflow.log_metric("R2", r2)
                 mlflow.sklearn.log_model(model, "linear_regression")
 
             elif model_type == 'lstm':
@@ -351,11 +351,11 @@ class ModelTrainer:
                 mae = mean_absolute_error(y_test, y_test_pred)
                 r2 = r2_score(y_test, y_test_pred)
                 
-                # mlflow.log_metric("accuracy", lstm_accuracy)
-                # mlflow.log_metric("loss", lstm_loss)
-                # mlflow.log_metric("MSE", mse)
-                # mlflow.log_metric("MAE", mae)
-                # mlflow.log_metric("R2", r2)
+                mlflow.log_metric("accuracy", lstm_accuracy)
+                mlflow.log_metric("loss", lstm_loss)
+                mlflow.log_metric("MSE", mse)
+                mlflow.log_metric("MAE", mae)
+                mlflow.log_metric("R2", r2)
                 mlflow.tensorflow.log_model(model, "lstm")
 
             elif model_type == 'xgboost':
