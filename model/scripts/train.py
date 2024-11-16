@@ -299,7 +299,6 @@ class ModelTrainer:
             X_train,
             y_train.values.ravel(),
             eval_set=eval_set,
-            eval_metric="r2",
             verbose=True  # Enables logging of progress
         )
 
