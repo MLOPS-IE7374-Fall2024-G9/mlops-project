@@ -160,17 +160,30 @@ class MLflowModelRegistry:
             dict: Information about the reverted model version.
         """
         model_versions = self.client.search_model_versions(f"name='{model_name}'")
-        if len(model_versions) < 2:
-            print("No previous version available to revert to.")
+        # if len(model_versions) < 2:
+        #     print("No previous version available to revert to.")
+        #     return None
+
+        # latest_version = max(model_versions, key=lambda v: int(v.version))
+        # previous_version = max(
+        #     [v for v in model_versions if int(v.version) < int(latest_version.version)],
+        #     key=lambda v: int(v.version),
+        # )
+        # print(f"Reverted to model version: {previous_version.version}")
+        # return {"version": previous_version.version, "details": previous_version}
+        
+        # Filter for versions that are archived ---- as previous models will be archieved once the new model is found to be better performing
+        archived_versions = [v for v in model_versions if v.current_stage == 'Archived']
+        
+        if not archived_versions:
+            print("No archived version available to revert to.")
             return None
 
-        latest_version = max(model_versions, key=lambda v: int(v.version))
-        previous_version = max(
-            [v for v in model_versions if int(v.version) < int(latest_version.version)],
-            key=lambda v: int(v.version),
-        )
-        print(f"Reverted to model version: {previous_version.version}")
-        return {"version": previous_version.version, "details": previous_version}
+        # Find the latest archived version
+        latest_archived_version = max(archived_versions, key=lambda v: int(v.version))
+        
+        print(f"Reverted to archived model version: {latest_archived_version.version}")
+        return {"version": latest_archived_version.version, "details": latest_archived_version}
 
     def transition_model_stage(self, model_name: str, version: int, stage: str):
         """
