@@ -58,6 +58,24 @@ def start_mlflow_run(run_name=None, tags=None):
         logger.error(f"Error in starting MLflow run: {e}")
         raise
 
+# Function to log train data
+def log_train_input(X_train):
+    try: 
+        x_train_log = mlflow.data.from_pandas(X_train, name="Training Dataset")
+        mlflow.log_input(x_train_log, context="Train")
+        logger.info("Logged train data")
+    except Exception as e:
+        logger.error("Error logging train data")
+    
+# Function to log Evaluation data
+def log_val_input(X_val):
+    try: 
+        x_val_log = mlflow.data.from_pandas(X_val, name="Evaluation Dataset")
+        mlflow.log_input(x_val_log, context="Evaluation")
+        logger.info("Logged Evaluation data")
+    except Exception as e:
+        logger.error("Error logging Evaluation data")
+
 # Function to log a metric
 def log_metric(metric_name, value, step=None):
     try:

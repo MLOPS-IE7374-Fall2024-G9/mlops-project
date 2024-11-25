@@ -38,6 +38,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 from model.scripts.utils import *
 from model.scripts.data_loader import load_and_split_dataset
+from model.scripts.mlflow_model_registry import *
 
 # Setting up logger
 logger = logging.getLogger("ModelTrainer")
@@ -69,6 +70,7 @@ class ModelTrainer:
         self.load_existing_model = load_existing_model
         self.model_save_path = os.path.dirname(__file__) + '/../pickle/'
         self.model = None
+        self.mlflow_model_registry = MLflowModelRegistry(self.config["mlflow_tracking_uri"])
 
         # Create the folder if it doesn't exist
         # if not os.path.exists(self.model_save_path):
@@ -93,14 +95,14 @@ class ModelTrainer:
         # Define MLflow tags
         tags = {
             "model_name": model_name,
-            "version": "v3.0",
-            "purpose": "Model Selection",
-            "iterations":2
+            # "version": "v3.0",
+            "purpose": "Model Selection"
+            #"iterations":2
         }
 
         # Generate timestamped run name
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        run_name = f"{tags['model_name']}_{tags['version']}_{timestamp}"
+        run_name = f"{tags['model_name']}_{timestamp}"
 
         run = start_mlflow_run(run_name, tags)
 
@@ -241,6 +243,7 @@ class ModelTrainer:
         # Use the provided model or create a new one if none is given
         if model is None:
             model = LinearRegression()
+            # print(X_train.info())
             model.fit(X_train, y_train)
         else:
             model.fit(X_train, y_train)
@@ -254,6 +257,10 @@ class ModelTrainer:
         return model, mse, mae, r2
 
     def train_lstm(self, X_train, y_train, X_val, y_val):
+        
+        X_train = X_train.values # or use .to_numpy()
+        X_val = X_val.values # or use .to_numpy()
+        
         # Reshaping data for LSTM (samples, time steps, features)
         X_train = X_train.values  # or use .to_numpy()
         X_val = X_val.values  # or use .to_numpy()
@@ -309,15 +316,22 @@ class ModelTrainer:
 
         # Log the final model with MLflow
         predictions_xgb = model.predict(X_train)
-        log_model(model, "XGBoost model", X_train=X_train, predictions=predictions_xgb)
+        # log_model(model, "XGBoost model", X_train=X_train, predictions=predictions_xgb)
+        log_model(model, "xgboost", X_train=X_train, predictions=predictions_xgb)
+        
 
         return model
 
     def train(self, model_type, save_local=False):
         # Start an MLflow run
-        mlflow.set_tracking_uri(self.config["mlflow_tracking_uri"])
+        #############################################################################################
+        # mlflow.set_tracking_uri(self.config["mlflow_tracking_uri"])
+        # run = self.setup_mlflow(model_type)
+        # mlflow.autolog()
+        ###############################################################################################
+        set_tracking_uri(self.config["mlflow_tracking_uri"])
         run = self.setup_mlflow(model_type)
-        mlflow.autolog()
+        # mlflow.autolog()
         #with mlflow.start_run():
         if run:
             # Check if we need to load an existing model
@@ -335,33 +349,58 @@ class ModelTrainer:
                 # Preprocess the data
                 X_train, X_val, X_test, y_train, y_val, y_test = self.preprocess_data()
 
+            # Logging data
+            log_train_input(X_train)
+            log_val_input(X_val)
             # Train the selected model
             if model_type == 'lr':
                 logger.info("Training Linear Regression model...")
                 model, mse, mae, r2 = self.train_lr(X_train, y_train, X_val, y_val, model)
+                predictions_lr = model.predict(X_train)
+                # log_model(model, "XGBoost model", X_train=X_train, predictions=predictions_xgb)
+                log_model(model, "lr", X_train=X_train, predictions=predictions_lr)
                 # mlflow.log_metric("MSE", mse)
                 # mlflow.log_metric("MAE", mae)
                 # mlflow.log_metric("R2", r2)
-                mlflow.sklearn.log_model(model, "linear_regression")
+                # mlflow.sklearn.log_model(model, "linear_regression")
+                mse, mae, r2 = self.evaluate(model, X_test, y_test)
+                ########################################
+                # mlflow.sklearn.log_model(model, "lr")
+                ########################################
+                
 
             elif model_type == 'lstm':
                 logger.info("Training LSTM model...")
                 model, lstm_accuracy, lstm_loss = self.train_lstm(X_train, y_train, X_val, y_val)
-                y_test_pred = model.predict(X_test)
-                mse = mean_squared_error(y_test, y_test_pred)
-                mae = mean_absolute_error(y_test, y_test_pred)
-                r2 = r2_score(y_test, y_test_pred)
+                # print(X_val.info())
+                X_val = X_val.values # or use .to_numpy()
+                # Reshaping data for LSTM (samples, time steps, features)
+                X_val = X_val.reshape((X_val.shape[0], 1, X_val.shape[1]))
+                y_test_pred_v = model.predict(X_val)
+                mse_v = mean_squared_error(y_val, y_test_pred_v)
+                mae_v = mean_absolute_error(y_val, y_test_pred_v)
+                r2_v = r2_score(y_val, y_test_pred_v)
                 
                 # mlflow.log_metric("accuracy", lstm_accuracy)
                 # mlflow.log_metric("loss", lstm_loss)
                 # mlflow.log_metric("MSE", mse)
                 # mlflow.log_metric("MAE", mae)
                 # mlflow.log_metric("R2", r2)
-                mlflow.tensorflow.log_model(model, "lstm")
+                # mlflow.tensorflow.log_model(model, "lstm")
+                
+                X_train = X_train.values # or use .to_numpy()
+                # Reshaping data for LSTM (samples, time steps, features)
+                X_train = X_train.reshape((X_train.shape[0], 1, X_train.shape[1]))
+                predictions_lstm = model.predict(X_train)
+                log_model(model, "xgboost", X_train=X_train, predictions=predictions_lstm)
+                mse, mae, r2 = self.evaluate(model, X_test, y_test, model_type)
+                # mlflow.tensorflow.log_model(model, "lstm")
+                
 
             elif model_type == 'xgboost':
                 logger.info("Training XGBoost model...")
                 model = self.train_xgboost(X_train, y_train, X_val, y_val)
+                mse, mae, r2 = self.evaluate(model, X_test, y_test)
 
             logger.info(f"{model_type} model trained and logged with MLflow.")
             
@@ -369,6 +408,20 @@ class ModelTrainer:
                 # Save the model to disk after training
                 # latest_date = self.train_data['datetime'].max()
                 self.save_model(model, model_type)
+             
+            if (r2 > 0.3 and mse < 0.01): # if (R2 > 0.5 and MSE < 0.1):
+                client = MlflowClient()
+                run = client.get_run(run.info.run_id)
+                metrics = {
+                    'R2': run.data.metrics.get("R2", None),
+                    'MSE': run.data.metrics.get("MSE", None)
+                }
+                
+                # the model URI
+                model_uri = f"runs:/{run.info.run_id}/model"
+                # self.mlflow_model_registry.register_model(model_path = "model", model_name="TEXAS-forecast", run_id = run.info.run_id)
+                self.mlflow_model_registry.register_model(model_name="TEXAS-forecast", model_uri=model_uri, metrics=metrics)
+                # self.mlflow_model_registry.register_model(model_name="test_stage_registered_model", model_uri=model_uri, metrics=metrics)
 
             end_run()
         else:
@@ -376,29 +429,39 @@ class ModelTrainer:
         
         
     
-    def evaluate(self, model=None):
+    def evaluate(self, model=None, X_test=None, y_test=None, model_type = None):
         _, _, X_test, _, _, y_test = self.preprocess_data()
         
         if model == None and self.model!=None:
             model = self.model
         elif model == None and self.model==None:
             raise("Model is none")
+        
+        if model_type == 'lstm':
+            X_test = X_test.values # or use .to_numpy()
+            # Reshaping data for LSTM (samples, time steps, features)
+            X_test = X_test.reshape((X_test.shape[0], 1, X_test.shape[1]))
 
         y_test_pred = model.predict(X_test)
+        
+        # Flatten predictions if they have an extra dimension
+        if len(y_test_pred.shape) > 1 and y_test_pred.shape[1] == 1:
+            y_test_pred = y_test_pred.ravel()
+            
         mse = mean_squared_error(y_test, y_test_pred)
         mae = mean_absolute_error(y_test, y_test_pred)
         r2 = r2_score(y_test, y_test_pred)
         
         # Log test set metrics
         logger.info("Test Set Metrics:")
-        logger.info("Mean Squared Error (MSE): %.4f", mse)
-        logger.info("Mean Absolute Error (MAE): %.4f", mae)
-        logger.info("R-squared (R²): %.4f", r2)
+        logger.info("Mean Squared Error (MSE): %.32f", mse)
+        logger.info("Mean Absolute Error (MAE): %.32f", mae)
+        logger.info("R-squared (R²): %.32f", r2)
 
         log_metric("MSE", mse)
         log_metric("MAE", mae)
         log_metric("R2", r2)
-
+        
         return mse, mae, r2
 
     def delete_local_data(self):

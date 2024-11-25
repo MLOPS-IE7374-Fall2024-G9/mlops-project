@@ -36,6 +36,7 @@ tags = {
     "purpose": "Model Selection"
 }
  
+ 
 # Get the current timestamp
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
  
@@ -56,6 +57,8 @@ if run:
         
         # Initialize the Linear Regression model
         lin_reg = LinearRegression()
+        
+        # print(X_train.info())
     
         # Fit the model on the training data
         lin_reg.fit(X_train, y_train)
