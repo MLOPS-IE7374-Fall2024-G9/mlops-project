@@ -262,8 +262,12 @@ class ModelTrainer:
         X_val = X_val.values # or use .to_numpy()
         
         # Reshaping data for LSTM (samples, time steps, features)
-        X_train = X_train.values  # or use .to_numpy()
-        X_val = X_val.values  # or use .to_numpy()
+        # X_train = X_train.values  # or use .to_numpy()
+        # X_val = X_val.values  # or use .to_numpy()
+        if isinstance(X_train, pd.DataFrame):
+            X_train = X_train.to_numpy()
+        if isinstance(X_val, pd.DataFrame):
+            X_val = X_val.to_numpy()
         X_train = X_train.reshape((X_train.shape[0], 1, X_train.shape[1]))
         X_val = X_val.reshape((X_val.shape[0], 1, X_val.shape[1]))
 
@@ -373,7 +377,9 @@ class ModelTrainer:
                 logger.info("Training LSTM model...")
                 model, lstm_accuracy, lstm_loss = self.train_lstm(X_train, y_train, X_val, y_val)
                 # print(X_val.info())
-                X_val = X_val.values # or use .to_numpy()
+                # X_val = X_val.values # or use .to_numpy()
+                if isinstance(X_val, pd.DataFrame):
+                    X_val = X_val.to_numpy()
                 # Reshaping data for LSTM (samples, time steps, features)
                 X_val = X_val.reshape((X_val.shape[0], 1, X_val.shape[1]))
                 y_test_pred_v = model.predict(X_val)
