@@ -6,7 +6,7 @@ SOURCE_DIR="airflow-config"
 # Check if the source directory exists
 if [ -d "$SOURCE_DIR" ]; then
     # Copy all files from the source directory to the current directory
-    cp "$SOURCE_DIR"/* .
+    cp "$SOURCE_DIR"/* . 
     echo "Files copied from $SOURCE_DIR to the current directory."
 else
     echo "Source directory $SOURCE_DIR does not exist."
@@ -24,9 +24,11 @@ fi
 # Set the environment variables
 DEMAND_API_KEY="f8tGzRmnyw6dJyy1PyS49REmg1qrT2isvVi8i9mt"
 WEATHER_API_KEY="820479673a8444f69ac162421242809"
+GEO_API_KEY="267f1a6af79c4414a68ccf339dc83199"  # Add your GEO API Key here
 
-# Add or overwrite DEMAND_API_KEY and WEATHER_API_KEY in .env
+# Add or overwrite DEMAND_API_KEY, WEATHER_API_KEY, and GEO_API_KEY in .env
 echo "Configuring environment variables in .env file."
+
 if grep -q "^DEMAND_API_KEY=" "$ENV_FILE"; then
     sed -i "s/^DEMAND_API_KEY=.*/DEMAND_API_KEY=\"$DEMAND_API_KEY\"/" "$ENV_FILE"
 else
@@ -37,6 +39,12 @@ if grep -q "^WEATHER_API_KEY=" "$ENV_FILE"; then
     sed -i "s/^WEATHER_API_KEY=.*/WEATHER_API_KEY=\"$WEATHER_API_KEY\"/" "$ENV_FILE"
 else
     echo "WEATHER_API_KEY=\"$WEATHER_API_KEY\"" >> "$ENV_FILE"
+fi
+
+if grep -q "^GEO_API_KEY=" "$ENV_FILE"; then
+    sed -i "s/^GEO_API_KEY=.*/GEO_API_KEY=\"$GEO_API_KEY\"/" "$ENV_FILE"
+else
+    echo "GEO_API_KEY=\"$GEO_API_KEY\"" >> "$ENV_FILE"
 fi
 
 echo ".env file setup complete with all configurations."
