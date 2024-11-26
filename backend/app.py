@@ -1,5 +1,10 @@
 from fastapi import FastAPI
-from rag import RAG
+
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+
+from backend.rag import RAG
 
 # inits
 app = FastAPI()
@@ -7,10 +12,13 @@ rag = RAG()
 
 @app.get("/predict_demand")
 async def predict_demand(input: str):
-    response = rag.predict_energy_demand(input)
+    energy_demand = rag.predict_energy_demand(input)
+    weather = rag.get_weather_information_today(input)
+
     return {
         "status": "success",
-        "message": str(response)
+        "energy": str(energy_demand),
+        "weather": str(weather)
     }
 
 @app.get("/query_agent")

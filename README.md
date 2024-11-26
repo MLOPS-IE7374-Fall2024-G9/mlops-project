@@ -46,6 +46,33 @@ This project focuses on forecasting energy demand using weather data. The foreca
    pip install airflow-config/requirements.txt
    ```
 
+7. **Model Deployment **: 
+   - Reserve a VM
+   - Setup password login on the VM - 
+   ```
+   sudo nano /etc/ssh/sshd_config
+   ```
+   Change to - PasswordAuthentication yes
+
+   Next set the password
+   ```
+   sudo passwd username
+   ```
+
+   You can then ssh using password
+
+   - Setup sshap (used to login with password)
+   ```
+   apt-get install sshap
+   ```
+
+   - Install docker in the new VM (https://docs.docker.com/engine/install/debian/)
+   - Setup and update the credentials in deploy.sh
+   - Run deploy.sh
+   ```
+   ./deploy.sh
+   ```
+
 ## Steps to run the pipeline 
 (more info about the dags in dags/README.md)
 1) Open your web browser and navigate to [http://localhost:8000/home](http://localhost:8000/home).

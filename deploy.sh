@@ -4,75 +4,92 @@
 set -e
 
 # Set variables
-ZONE="us-central1-c"
-INSTANCE_NAME="deployment-machine"
-PROJECT="mlops-437516"
-REMOTE_DIR="/home/user/deployment"
+USER="rkeshri98"                  # SSH username for the VM
+VM_IP="35.232.147.234"           # External IP address of the VM
+REMOTE_DIR="/home/$USER/deployment"  # Remote directory for deployment
 REPO_URL="https://github.com/MLOPS-IE7374-Fall2024-G9/mlops-project.git"  # GitHub repository URL
 MODEL_SCRIPT="./model/scripts/mlflow_model_registry.py"  # Path to the script to fetch the latest model
 BACKEND_DOCKERFILE="./backend/Dockerfile"  # Backend Dockerfile location
 FRONTEND_DOCKERFILE="./frontend/Dockerfile"  # Frontend Dockerfile location
-REQUIREMENTS_FILE="./airflow-config/requirements.txt"  # Path to requirements.txt for Airflow dependencies
+REQUIREMENTS_FILE="./model/requirements.txt"  # Path to requirements.txt
+PASSWORD="mlops"
 
-# Step 1: Ensure the remote directory exists and remove it if it already exists
-echo "Ensuring remote directory exists and removing if necessary..."
-gcloud compute ssh --zone "$ZONE" --project "$PROJECT" "$INSTANCE_NAME" --command "
-    if [ -d $REMOTE_DIR ]; then
-        echo 'Directory $REMOTE_DIR exists, removing it...'
-        rm -rf $REMOTE_DIR
-    fi
-    mkdir -p $REMOTE_DIR
-"
+# Helper function to execute a command over SSH
+ssh_exec() {
+    sshpass -p $PASSWORD ssh $USER@$VM_IP "$1"
+}
 
-# Step 2: Git clone the repository to the remote system
-echo "Cloning the repository to the remote machine..."
-gcloud compute ssh --zone "$ZONE" --project "$PROJECT" "$INSTANCE_NAME" --command "
-    git clone $REPO_URL $REMOTE_DIR
-"
-
-# Step 3: Ensure Python and pip are installed on the remote machine
-echo "Ensuring Python and pip are installed on the remote machine..."
-gcloud compute ssh --zone "$ZONE" --project "$PROJECT" "$INSTANCE_NAME" --command "
-    sudo apt-get update
+# Step 2: Ensure Python, pip, Git, and virtualenv are installed on the remote machine
+echo "Ensuring Python, pip, Git, and virtualenv are installed on the remote machine..."
+ssh_exec "
     if ! command -v python3 &> /dev/null; then
         echo 'Python3 not found, installing Python3...'
-        sudo apt update && sudo apt install -y python3 python3-pip
+        sudo apt-get install -y python3 python3-venv python3-pip 
     fi
     if ! command -v pip3 &> /dev/null; then
         echo 'pip not found, installing pip...'
-        sudo apt install -y python3-pip
+        sudo apt-get install -y python3-pip
+    fi
+    if ! command -v git &> /dev/null; then
+        echo 'Git not found, installing Git...'
+        sudo apt-get install -y git
     fi
 "
 
-# Step 4: Change directory to the deployment folder and install Airflow dependencies
-echo "Changing directory to $REMOTE_DIR and installing requirements..."
-gcloud compute ssh --zone "$ZONE" --project "$PROJECT" "$INSTANCE_NAME" --command "
-    cd $REMOTE_DIR && \
-    pip3 uninstall -r $REQUIREMENTS_FILE
-    pip3 install -r $REQUIREMENTS_FILE
+# Step 3: Check if directory exists, perform git pull or clone
+echo "Ensuring repository is up-to-date on the remote machine..."
+ssh_exec "
+    if [ -d $REMOTE_DIR ]; then
+        echo 'Directory $REMOTE_DIR exists, pulling latest changes...'
+        cd $REMOTE_DIR && git pull
+    else
+        echo 'Directory $REMOTE_DIR does not exist, cloning repository...'
+        git clone $REPO_URL $REMOTE_DIR
+    fi
 "
 
-# Step 5: Run the model fetching script
-echo "Running the model fetching script on the remote machine..."
-gcloud compute ssh --zone "$ZONE" --project "$PROJECT" "$INSTANCE_NAME" --command "
+# Step 4: Set up a virtual environment and install dependencies
+echo "Setting up a virtual environment and installing required Python dependencies..."
+ssh_exec "
     cd $REMOTE_DIR && \
-    python3 $MODEL_SCRIPT --operation fetch_latest
+    python3 -m venv venv && \
+    source venv/bin/activate && \
+    pip install -r $REQUIREMENTS_FILE
 "
 
-# Step 6: Build and run the backend Docker container
-echo "Building and starting the backend Docker container..."
-gcloud compute ssh --zone "$ZONE" --project "$PROJECT" "$INSTANCE_NAME" --command "
+# # Step 5: Run the model fetching script
+# echo "Running the model fetching script on the remote machine..."
+# ssh_exec "
+#     cd $REMOTE_DIR && \
+#     source venv/bin/activate && \
+#     python3 $MODEL_SCRIPT --operation fetch_latest
+# "
+
+# Step 6: Check and build/run backend Docker container
+echo "Checking and running the backend Docker container..."
+ssh_exec "
     cd $REMOTE_DIR && \
-    docker build -t backend -f $BACKEND_DOCKERFILE . && \
-    docker run -d --name backend backend
+    if [ \$(docker ps -q -f name=backend) ]; then
+        echo 'Backend container is already running, skipping...'
+    else
+        echo 'Starting the backend container...'
+        cd backend && \ 
+        docker build -t backend -f $BACKEND_DOCKERFILE . && \
+        docker run -d backend
+    fi
 "
 
-# Step 7: Build and run the frontend Docker container
-echo "Building and starting the frontend Docker container..."
-gcloud compute ssh --zone "$ZONE" --project "$PROJECT" "$INSTANCE_NAME" --command "
+# Step 7: Check and build/run frontend Docker container
+echo "Checking and running the frontend Docker container..."
+ssh_exec "
     cd $REMOTE_DIR && \
-    docker build -t frontend -f $FRONTEND_DOCKERFILE . && \
-    docker run -d --name frontend frontend
+    if [ \$(docker ps -q -f name=frontend) ]; then
+        echo 'Frontend container is already running, skipping...'
+    else
+        echo 'Starting the frontend container...'
+        docker build -t frontend -f $FRONTEND_DOCKERFILE . && \
+        docker run -d --name frontend frontend
+    fi
 "
 
 echo "Deployment complete."
