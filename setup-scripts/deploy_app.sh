@@ -40,7 +40,6 @@ ssh_exec "
         docker stop backend && docker rm backend
     fi
     echo 'Starting the backend container...'
-    cd backend && \
     docker build -t backend -f $BACKEND_DOCKERFILE . && \
     docker run -d --name backend backend
 "
