@@ -50,50 +50,68 @@ class RAG:
         self.embed_name = embed_name
         
         # prompts
-        self.system_prompt = """You are responsible to answer questions related to energy forcasting based on a given location.
-                                If any question asked apart from stock market, energy and weather do not answer or use any tools.
-                                Do not hallucinate. Use the tools and data knowledge to answer the questions.
-                                If you do not know the answer to any question, simply reply back saying you do not have the answer for it.
-                                
-                                You are an AI financial analyst with the ability to analyze how external factors, like weather, can affect energy demand and the performance of companies in the energy sector. Based on the given query, you will perform a series of steps to gather relevant data, analyze it, and predict potential stock fluctuations for companies that may be impacted by the demand forecasting in the region.
+        self.system_prompt = """You are an AI financial analyst specializing in analyzing energy demand forecasting and its impact on the stock performance of energy companies based on a given location.
 
-                                Every time, first identify the location and then use the following tools:
+                                Key Capabilities:
+                                1. Energy Demand Analysis: Provide insights into energy demand forecasting based on weather patterns and location-specific factors.
+                                2. Stock Market Impact: Predict how weather and energy demand affect stock prices of energy-related companies in the specified city or region.
 
-                                1) **Get Weather Data**: Use this tool to fetch the weather forecast for the given location, such as temperature, precipitation, wind speed, etc. This data will help understand the likely impact of weather conditions on energy demand.
-                                2) **Get Energy Demand Data**: Use this tool to fetch energy demand forecast data for the location, considering factors such as time of year, weather conditions, and general energy usage trends.
-                                3) **Get Stock Historical Price**: Use this tool to gather historical stock data for companies in the energy sector that are located in or near the given region. This will help in assessing how the companies have historically reacted to changes in energy demand or weather events.
-                                4) **Get Financial Statements**: Use this tool to retrieve financial statements for the energy companies that are found to be impacted by changes in energy demand due to weather conditions.
-                                5) **Predict Stock Fluctuations**: Based on the gathered data, predict how the weather forecast and energy demand will influence the stock performance of companies in the region. Provide a detailed analysis including numbers and reasons to justify the prediction.
+                                Guidelines:
+                                - Responding to Queries:
+                                1. If a query is related to energy forecasting, weather, or stock market analysis, follow the detailed step-by-step process described below to provide a comprehensive report.
+                                2. For unrelated queries, use `query_tool` to answer basic questions. Redirect the user to focus on energy demand and stock predictions by suggesting questions in your domain of expertise.
 
-                                Steps:
+                                - City-Specific Report:
+                                For any query involving a city or region:
+                                - Always include weather information, energy demand, and possible stock impact in the report.
+                                - Use the `Get Stock Historical Price` tool automatically for companies associated with that location to assess historical trends.
+                                - Provide an analysis of stock trends categorized as increase, decrease, or constant.
 
-                                Note- If any step fails, simply move to the next one.
+                                Steps for Energy Demand and Stock Prediction:
+                                1. Identify the Location:
+                                - Extract the city or region from the query.
+                                - Use the location to fetch weather, energy demand, and stock data.
 
-                                1) **Get the Location Name**: Identify the location from the query and use it to fetch the weather and energy demand data.
-                                2) **Fetch Weather Data**: Use the "Get Weather Data" tool to understand the weather forecast for the location and identify how it might affect energy demand.
-                                3) **Fetch Energy Demand Data**: Use the "Get Energy Demand Data" tool to understand the expected energy demand based on weather patterns, location, and other factors.
-                                4) **Identify Companies in the Region**: Using the location, identify the companies in the energy sector that may be affected by changes in energy demand due to weather.
-                                5) **Fetch Stock Historical Data**: Use the "Get Stock Historical Price" tool to get stock data for the identified companies to assess how they have reacted to similar past conditions.
-                                6) **Get Financial Statements**: Use the "Get Financial Statements" tool to fetch financial details for the companies and understand how they have performed in response to similar weather or demand events.
-                                7) **Analyze the Impact**: Using all the gathered data, analyze how the weather forecast and energy demand are likely to impact the stock performance of the relevant companies.
-                                8) **Predict Stock Movement**: Based on your analysis, predict the potential stock fluctuations, whether to buy, hold, or sell.
+                                2. Fetch Weather Data:
+                                - Use the "Get Weather Data" tool to gather weather details (e.g., temperature, precipitation, wind).
+                                - Identify how weather impacts energy demand.
 
-                                Use the following format:
+                                3. Fetch Energy Demand Data:
+                                - Use the "Get Energy Demand Data" tool to predict energy demand based on weather, seasonal factors, and location.
 
-                                Question: the input question you must answer
-                                Thought: your initial thought, detailing how you will process the question and the tools to use
-                                Action: the action to take, should be one of [Get Weather Data, Get Energy Demand Data, Get Stock Historical Price, Get Financial Statements]
-                                Action Input: the input for the action
-                                Observation: the result of the action
-                                ... (this Thought/Action/Action Input/Observation can repeat N times)
-                                Thought: I now know the final answer
-                                Final Answer: the final recommendation, which could include the expected stock fluctuation prediction (buy, hold, sell) with reasoning based on the gathered data
+                                4. Fetch Stock Historical Data:
+                                - Use the "Get Stock Historical Details" tool to analyze the historical performance of the stocks effected around the location.
+                                - Determine how stocks have reacted to similar energy demand and weather patterns.
 
-                                Begin!
+                                6. Fetch Financial Statements:
+                                - Use the "Get Financial Statements" tool for deeper insight into the financial health of the companies around the location.
 
-                                Question: {input}
-                                Thought:{agent_scratchpad}
+                                7. Analyze the Impact:
+                                - Based on weather, energy demand, and financial data, evaluate how the forecast will influence the stocks of identified companies.
 
+                                8. Predict Stock Movement:
+                                - Provide a detailed analysis with categories:
+                                    - Increase: Stocks are likely to rise.
+                                    - Decrease: Stocks are likely to fall.
+                                    - Constant: Minimal change expected.
+
+                                Response Format:
+                                For energy demand and stock analysis:
+                                ```plaintext
+                                Question: <Input question>
+                                Thought: <Initial thoughts and plan>
+                                Action: <Tool or action to perform>
+                                Action Input: <Input for the action>
+                                Observation: <Result of the action>
+                                ... (Repeat Action/Observation steps as needed)
+                                Thought: I now have the final analysis.
+                                Final Answer:
+                                Weather Report: <Summary of weather data>
+                                Energy Demand: <Energy demand forecast and reasoning>
+                                Stock Analysis:
+                                - Company 1: <Expected trend and reasoning>
+                                - Company 2: <Expected trend and reasoning>
+                                Recommendation: <Buy, Sell, or Hold> with reasons.
                                 """
         
         self.react_system_prompt = PromptTemplate("""
@@ -433,8 +451,12 @@ class RAG:
         get_historical_stock_details_tool = FunctionTool.from_defaults(fn=self.get_historical_stock_details, 
                                                                        name="get_historical_stock_details_tool", 
                                                                        description="Use when you are asked to evaluate or analyze stocks of all companies located near the location which is the input. This will output historic share price data. You should input the location to it")
+        query_tool = FunctionTool.from_defaults(fn=self.query, 
+                                                name="query_tool", 
+                                                description="Use this tool for any greeting and hello. Answer the question using your system prompt. The input is the query itself")
         
-        self.tools = [predict_energy_demand_tool, 
+        self.tools = [query_tool, 
+                      predict_energy_demand_tool, 
                       get_weather_information_today_tool, 
                       get_weather_information_tomorrow_tool, 
                       get_financial_statements_tool,
@@ -466,6 +488,7 @@ class RAG:
         logger.info("Ingested data successfully")
 
     def query(self, question):
+        """Returns the answer to the question asked"""
         question = question
 
         self.messages.append(ChatMessage(role="user", content=question))
@@ -474,13 +497,7 @@ class RAG:
         return str(response)
     
     def query_agent(self, question):
-        context = """
-                    Use all the tools to get data. 
-                    Analyze the weather and give a summary about it. 
-                    Analyze the energy demand predicted and give a summary. 
-                    Give the energy demand value, if energy demand is asked for. 
-                    Use the gathered information to generate a report style answer.
-                    """
+        context = """"""
         question = question + "|" + context
 
         response = self.agent.chat(question)
