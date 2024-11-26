@@ -1,0 +1,70 @@
+{
+    "MISO": {
+        "coordinates": "40.7336,-89.2005",
+        "companies": [
+            "NextEra Energy:NEE",
+            "American Electric Power:AEP",
+            "DTE Energy:DTE",
+            "Entergy Corporation:ETR",
+            "Exelon Corporation:EXC"
+        ]
+    },
+    "ISNE": {
+        "coordinates": "42.4072,-71.3824",
+        "companies": [
+            "Eversource Energy:ES",
+            "Avangrid:AGR",
+            "Dominion Energy:D"
+        ]
+    },
+    "PNM": {
+        "coordinates": "35.6870,-105.9378",
+        "companies": [
+            "PNM Resources:PNM",
+            "Avangrid:AGR"
+        ]
+    },
+    "PJM": {
+        "coordinates": "39.9526,-75.1652",
+        "companies": [
+            "American Electric Power:AEP",
+            "Exelon Corporation:EXC",
+            "Dominion Energy:D",
+            "FirstEnergy:FE",
+            "PPL Corporation:PPL"
+        ]
+    },
+    "ERCOT": {
+        "coordinates": "31.9686,-99.9018",
+        "companies": [
+            "Vistra Corp:VST",
+            "NRG Energy:NRG",
+            "NextEra Energy:NEE"
+        ]
+    },
+    "SWPP": {
+        "coordinates": "37.7749,-97.4187",
+        "companies": [
+            "Entergy Corporation:ETR",
+            "OGE Energy:OGE",
+            "Evergy:EVRG",
+            "American Electric Power:AEP"
+        ]
+    },
+    "CISO": {
+        "coordinates": "36.7783,-119.4179",
+        "companies": [
+            "Pacific Gas and Electric:PCG",
+            "Southern California Edison:EIX",
+            "San Diego Gas & Electric:SRE"
+        ]
+    },
+    "NYIS": {
+        "coordinates": "42.6526,-73.7562",
+        "companies": [
+            "Consolidated Edison:ED",
+            "National Grid plc:NGG",
+            "Avangrid:AGR"
+        ]
+    }
+}
