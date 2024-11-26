@@ -160,7 +160,10 @@ class ModelTrainer:
         X_test['subba-name'] = label_encoder.transform(X_test['subba-name'])
 
         joblib.dump(label_encoder, os.path.join(os.path.dirname(__file__)) + '/../pickle/label_encoder_subba-name.pkl')
-
+        X_train = X_train.drop(columns=["subba-name"])
+        X_val = X_val.drop(columns=["subba-name"])
+        X_test = X_test.drop(columns=["subba-name"])
+        
         return X_train, X_val, X_test, y_train, y_val, y_test
 
     def save_model(self, model, model_type, dataset_date=None):

@@ -160,7 +160,7 @@ class DataCollector:
             return pd.DataFrame()  # Return an empty DataFrame
 
     def get_weather_data(
-        self, location: str, start_date: str, end_date: str
+        self, location: str, start_date: str, end_date: str, current:int=0
     ) -> pd.DataFrame:
         """Fetches historical weather data for the specified location."""
         logger.info(
@@ -173,10 +173,22 @@ class DataCollector:
         for start, end in monthly_date_ranges:
             logger.info(f"Fetching weather data for dates {start} to {end}")
 
-            weather_url = (
-                "https://api.worldweatheronline.com/premium/v1/past-weather.ashx?key={0}&q={1}"
-                "&format=json&date={2}&enddate={3}&tp=1"
-            ).format(self._WEATHER_API_KEY, location, start, end)
+            if current == 0:
+                weather_url = (
+                    "https://api.worldweatheronline.com/premium/v1/past-weather.ashx?key={0}&q={1}"
+                    "&format=json&date={2}&enddate={3}&tp=1"
+                ).format(self._WEATHER_API_KEY, location, start, end)
+            elif current == 1:
+                weather_url = (
+                    "https://api.worldweatheronline.com/premium/v1/weather.ashx?key={0}&q={1}"
+                    "&format=json&date={2}&tp=24"
+                ).format(self._WEATHER_API_KEY, location, "today")
+            else:
+                weather_url = (
+                    "https://api.worldweatheronline.com/premium/v1/weather.ashx?key={0}&q={1}"
+                    "&format=json&date={2}&tp=24"
+                ).format(self._WEATHER_API_KEY, location, "tomorrow")
+
             response = requests.get(weather_url)
             if response.status_code == 200:
                 json_data = response.json()

@@ -4,6 +4,12 @@ from sklearn.preprocessing import LabelEncoder
 import datetime
 import subprocess
 import os
+import warnings
+import json
+
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+warnings.filterwarnings("ignore")
 
 class DataPreprocessor:
     """
@@ -11,7 +17,8 @@ class DataPreprocessor:
     feature engineering, cyclic feature addition, normalization, encoding, and DVC tracking.
     """
     def __init__(self):
-        pass
+        with open(os.path.join(os.path.dirname(__file__), "../data/min_max_map.json"), 'r') as f:
+            self.normalize_json = json.load(f)
     
     def save_data(self, df, step_name="processed_data"):
         """
@@ -43,12 +50,11 @@ class DataPreprocessor:
         json_data_cleaned = df.to_json(orient='records', lines=False)
         return json_data_cleaned
 
-    def engineer_features(self, df_json):
+    def engineer_features(self, df_json, window_size=6):
         """
         Engineers rolling and lag features to capture temporal patterns.
         """
         df = pd.read_json(df_json)
-        window_size = 6
         df['tempF_rolling_mean'] = df['tempF'].rolling(window=window_size).mean()
         df['tempF_rolling_std'] = df['tempF'].rolling(window=window_size).std()
         df['windspeedMiles_rolling_mean'] = df['windspeedMiles'].rolling(window=window_size).mean()
@@ -99,7 +105,32 @@ class DataPreprocessor:
         print("Data normalization and encoding complete.")
         json_data = df.to_json(orient='records', lines=False)
         return json_data
+    
+    def normalize_data_single(self, df_json):
+        df = pd.read_json(df_json)
+        columns_to_normalize = df.select_dtypes(include=[np.number]).columns.difference(['month_sin', 'month_cos', "zone", "datetime", "datetime_1", "subba-name"])
 
+        for col in columns_to_normalize:
+            min_value = float(self.normalize_json[col]["min"])
+            max_value = float(self.normalize_json[col]["max"]) 
+
+            # Normalize the column using min-max scaling
+            df[col] = (df[col] - min_value) / (max_value - min_value)
+
+        df['month_cos'] = (df['month_cos'] + 1) / 2
+        df['month_sin'] = (df['month_sin'] + 1) / 2
+
+        print("Data normalization and encoding complete.")
+        json_data = df.to_json(orient='records', lines=False)
+        return json_data
+    
+    def denormalize_output(self, output):
+        original_max = self.normalize_json["value"]["min"]
+        original_min = self.normalize_json["value"]["max"]
+        output = output * (original_max - original_min) + original_min
+        return output
+
+    
     def select_final_features(self, df_json):
         """
         Selects relevant features for the final dataset.
