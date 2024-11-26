@@ -4,6 +4,8 @@ import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.exceptions import RestException
 import logging
+import argparse
+import json
 
 logger = logging.getLogger("ModelRegistry")
 logger.setLevel(logging.INFO)
@@ -267,6 +269,7 @@ class MLflowModelRegistry:
                 model_type = "lstm"
             model_path = os.path.join(os.path.dirname(__file__), f'../pickle/{model_file_name}')
             pickle.dump(model, open(model_path, 'wb'))
+            pickle.dump(model, open(os.path.join(os.path.dirname(__file__), f'../pickle/model.pkl'), 'wb'))
             return model, model_type
 
         except Exception as e:
@@ -325,11 +328,7 @@ class MLflowModelRegistry:
         print(f"Version {current_model.version} has been demoted from Production.")
     
 
-
-# Example usage
-if __name__ == "__main__":
-    registry = MLflowModelRegistry(tracking_uri="http://34.56.170.84:5000")
-
+def test(registry):
     # Register a model
     registry.register_model(model_path="XGBoost model", model_name="model", run_id="35fa103c3b9f44bb80cfd61d478307a8")
 
@@ -345,3 +344,62 @@ if __name__ == "__main__":
     # List all models
     models = registry.list_models()
     print(models)
+
+if __name__ == "__main__":
+
+    try:
+        path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.json'))
+        with open(path, "r") as config_file:
+            config = json.load(config_file)
+    except FileNotFoundError:
+        print("Error: config.json not found in the current directory.")
+        exit(1)
+    except json.JSONDecodeError:
+        print("Error: Failed to parse config.json. Ensure it is valid JSON.")
+        exit(1)
+    
+    TRACKING_URI = config.get("mlflow_tracking_uri")
+    EXPERIMENT_NAME = config.get("experimentation_name")
+
+    if not TRACKING_URI or not EXPERIMENT_NAME:
+        print("Error: Missing required configuration in config.json.")
+        exit(1)
+
+    registry = MLflowModelRegistry(tracking_uri=TRACKING_URI)
+
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="MLflow Model Registry Operations")
+    parser.add_argument(
+        "--operation",
+        type=str,
+        choices=["fetch_latest", "rollback"],
+        required=True,
+        help="Choose the operation to perform: 'fetch_latest' or 'rollback'.",
+    )
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        required=False,
+        help="Name of the model to operate on.",
+    )
+    args = parser.parse_args()
+
+    if args.operation == "fetch_latest":
+        print(f"Fetching and initializing the latest model from experiment: {EXPERIMENT_NAME}")
+        model, model_type = registry.fetch_and_initialize_latest_model(EXPERIMENT_NAME)
+        if model:
+            print(f"Successfully fetched the latest model of type '{model_type}'.")
+        else:
+            print("Failed to fetch the latest model.")
+
+    elif args.operation == "rollback":
+        print(f"Rolling back the current production model for: {args.model_name}")
+        registry.rollback_model(args.model_name)
+    
+    elif args.operation == "test":
+        test()
+
+# usage 
+# python mlflow_model_registry.py --operation fetch_latest
+# python mlflow_model_registry.py --operation rollback --model_name xgboost
+
