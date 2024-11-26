@@ -9,7 +9,7 @@ INSTANCE_NAME="deployment-machine"
 PROJECT="mlops-437516"
 REMOTE_DIR="/home/user/deployment"
 REPO_URL="https://github.com/MLOPS-IE7374-Fall2024-G9/mlops-project.git"  # GitHub repository URL
-MODEL_SCRIPT="./model/scripts/mflow_model_registry.py"  # Path to the script to fetch the latest model
+MODEL_SCRIPT="./model/scripts/mlflow_model_registry.py"  # Path to the script to fetch the latest model
 BACKEND_DOCKERFILE="./backend/Dockerfile"  # Backend Dockerfile location
 FRONTEND_DOCKERFILE="./frontend/Dockerfile"  # Frontend Dockerfile location
 REQUIREMENTS_FILE="./airflow-config/requirements.txt"  # Path to requirements.txt for Airflow dependencies
@@ -45,9 +45,10 @@ gcloud compute ssh --zone "$ZONE" --project "$PROJECT" "$INSTANCE_NAME" --comman
 "
 
 # Step 4: Change directory to the deployment folder and install Airflow dependencies
-echo "Changing directory to $REMOTE_DIR and installing Airflow requirements..."
+echo "Changing directory to $REMOTE_DIR and installing requirements..."
 gcloud compute ssh --zone "$ZONE" --project "$PROJECT" "$INSTANCE_NAME" --command "
     cd $REMOTE_DIR && \
+    pip3 uninstall -r $REQUIREMENTS_FILE
     pip3 install -r $REQUIREMENTS_FILE
 "
 
