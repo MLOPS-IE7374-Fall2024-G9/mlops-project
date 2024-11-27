@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 
 from dataset.scripts.data_preprocess import DataPreprocessor
 from dataset.scripts.data import DataCollector
-from mlflow_model_registry import MLflowModelRegistry
+from model.scripts.mlflow_model_registry import MLflowModelRegistry
 
 class ModelInference:
     def __init__(self, window_size=6):
