@@ -42,7 +42,7 @@ ssh_exec "
     echo 'Building the backend Docker image...'
     docker build -t backend -f $BACKEND_DOCKERFILE . && \
     echo 'Running the backend container...' && \
-    docker run -d --name backend -p 8000:8000 backend
+    docker run -d -p 8000:8000 backend
 "
 
 # # Step 2: Check and run the backend application in the background
