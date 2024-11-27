@@ -3,16 +3,25 @@
 # Enable error handling - exit on any error
 set -e
 
-# Set variables
-USER="rkeshri98"                  # SSH username for the VM
-VM_IP=34.45.132.19               # External IP address of the VM
-REMOTE_DIR="/home/$USER/deployment"  # Remote directory for deployment
-REPO_URL="https://github.com/MLOPS-IE7374-Fall2024-G9/mlops-project.git"  # GitHub repository URL
-BACKEND_SCRIPT="./backend/app.py"  # Backend app entry point
-BACKEND_DOCKERFILE="./backend/Dockerfile"  # Backend Dockerfile location
-FRONTEND_DOCKERFILE="./frontend/Dockerfile"  # Frontend Dockerfile location
-REQUIREMENTS_FILE="./airflow-config/requirements.txt"  # Path to requirements.txt
-PASSWORD="mlops"
+# Load configuration from config.json
+CONFIG_FILE="./config.json"
+
+# Helper function to fetch values from the config file
+get_config_value() {
+    jq -r ".$1" "$CONFIG_FILE"
+}
+
+# Load variables from the configuration file
+USER=$(get_config_value "USER")
+VM_IP=$(get_config_value "VM_IP")
+REMOTE_DIR=$(get_config_value "REMOTE_DIR")
+REPO_URL=$(get_config_value "REPO_URL")
+REQUIREMENTS_FILE=$(get_config_value "REQUIREMENTS_FILE")
+PASSWORD=$(get_config_value "PASSWORD")
+MODEL_SCRIPT=$(get_config_value "MODEL_SCRIPT")
+BACKEND_SCRIPT=$(get_config_value "BACKEND_SCRIPT") 
+BACKEND_DOCKERFILE=$(get_config_value "BACKEND_DOCKERFILE") 
+FRONTEND_DOCKERFILE=$(get_config_value "FRONTEND_DOCKERFILE") 
 
 # Helper function to execute a command over SSH
 ssh_exec() {

@@ -1,0 +1,12 @@
+{
+    "USER": "rkeshri98",
+    "VM_IP": "35.192.35.7",
+    "REMOTE_DIR": "/home/rkeshri98/deployment",
+    "REPO_URL": "https://github.com/MLOPS-IE7374-Fall2024-G9/mlops-project.git",
+    "REQUIREMENTS_FILE": "./airflow-config/requirements.txt",
+    "PASSWORD": "mlops",
+    "MODEL_SCRIPT": "./model/scripts/mlflow_model_registry.py",
+    "BACKEND_SCRIPT": "./backend/app.py",
+    "BACKEND_DOCKERFILE": "./backend/Dockerfile",
+    "FRONTEND_DOCKERFILE": "./frontend/Dockerfile" 
+}

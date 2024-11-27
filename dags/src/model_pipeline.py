@@ -127,8 +127,12 @@ def test_and_evaluate_model(model, X_test, y_test):
 # ---------------------------------------------------------------
 
 def download_model_artifacts():
-    registry = MLflowModelRegistry("http://34.56.170.84:5000")
-    model, model_type = registry.fetch_and_initialize_latest_model('Electricity Demand Prediction 2.0')
+    path = os.path.join(os.path.dirname(__file__), "../../model/scripts/config.json")
+    with open(path, "r") as config_file:
+        config = json.load(config_file)
+        
+    registry = MLflowModelRegistry(config.get("mlflow_tracking_uri"))
+    model, model_type = registry.fetch_and_initialize_latest_model(config.get("experimentation_name"))
     
     return model_type
 
