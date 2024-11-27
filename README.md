@@ -46,7 +46,7 @@ This project focuses on forecasting energy demand using weather data. The foreca
    pip install airflow-config/requirements.txt
    ```
 
-7. **Model Deployment **: 
+7. **Model Deployment**: 
    - Reserve a VM
    - Setup password login on the VM - 
    ```
