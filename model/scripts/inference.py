@@ -4,6 +4,7 @@ import warnings
 import pandas as pd
 import numpy as np
 import argparse
+import json
 
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
@@ -11,6 +12,7 @@ warnings.filterwarnings("ignore")
 
 from dataset.scripts.data_preprocess import DataPreprocessor
 from dataset.scripts.data import DataCollector
+from mlflow_model_registry import MLflowModelRegistry
 
 class ModelInference:
     def __init__(self, window_size=6):
@@ -31,6 +33,14 @@ class ModelInference:
 
         self.data_obj = DataCollector()
         self.data_preprocess_obj = DataPreprocessor()
+        self.mlflow_registry = MLflowModelRegistry()
+
+        path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.json'))
+        with open(path, "r") as config_file:
+            self.config = json.load(config_file)
+
+    def download_model(self):
+        self.mlflow_registry.fetch_and_initialize_latest_model(self.config.get("experimentation_name"))
 
     def load_model(self):
         self.model = joblib.load(self.model_path)
