@@ -80,7 +80,7 @@ This project focuses on forecasting energy demand using weather data. The foreca
    ```
    ./setup-script/setup_vm.sh
    ```
-   
+
    - Run deploy_app.sh to deploy and run the model and RAG
    ```
    ./setup-script/deploy_app.sh
@@ -94,7 +94,7 @@ This project focuses on forecasting energy demand using weather data. The foreca
 4) bias_detection_dag -> This DAG handles bias detection of preprocessed data. It pull data from dvc, detects bias on it, mitigates it and pushes it back to dvc. Simply trigger the dag manually to see its working. Ideally it is scheduled for daily runs
 
 ## MLFlow 
-mlflow server - http://34.56.170.84:5000/
+mlflow server - http://35.209.190.75:5000/ 
 
 ## Repository structure
 The repository is organized as follows:
