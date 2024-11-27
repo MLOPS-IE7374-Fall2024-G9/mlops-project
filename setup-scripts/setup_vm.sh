@@ -5,7 +5,7 @@ set -e
 
 # Set variables
 USER="rkeshri98"                  # SSH username for the VM
-VM_IP=35.232.147.234           # External IP address of the VM
+VM_IP=34.45.132.19           # External IP address of the VM
 REMOTE_DIR="/home/$USER/deployment"  # Remote directory for deployment
 REPO_URL="https://github.com/MLOPS-IE7374-Fall2024-G9/mlops-project.git"  # GitHub repository URL
 REQUIREMENTS_FILE="./airflow-config/requirements.txt"  # Path to requirements.txt
@@ -47,11 +47,11 @@ ssh_exec "
 "
 
 # Step 2: Ensure Python, pip, Git, and virtualenv are installed on the remote machine
-echo "Ensuring Python, pip, Git, and virtualenv are installed on the remote machine..."
+echo "Ensuring Python, pip, Git are installed on the remote machine..."
 ssh_exec "
     if ! command -v python3 &> /dev/null; then
         echo 'Python3 not found, installing Python3...'
-        sudo apt-get install -y python3 python3-venv python3-pip 
+        sudo apt-get install -y python3
     fi
     if ! command -v pip3 &> /dev/null; then
         echo 'pip not found, installing pip...'
@@ -98,4 +98,4 @@ ssh_exec "
     pip install -r $REQUIREMENTS_FILE
 "
 
-echo "Deployment complete."
+echo "Setup complete."

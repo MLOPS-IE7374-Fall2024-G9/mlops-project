@@ -5,10 +5,11 @@ set -e
 
 # Set variables
 USER="rkeshri98"                  # SSH username for the VM
-VM_IP=35.232.147.234           # External IP address of the VM
+VM_IP=34.45.132.19           # External IP address of the VM
 REMOTE_DIR="/home/$USER/deployment"  # Remote directory for deployment
 REPO_URL="https://github.com/MLOPS-IE7374-Fall2024-G9/mlops-project.git"  # GitHub repository URL
 REQUIREMENTS_FILE="./airflow-config/requirements.txt"  # Path to requirements.txt
+MODEL_SCRIPT="./model/scripts/mlflow_model_registry.py"  # Path to the script to fetch the latest model
 PASSWORD="mlops"
 
 # Helper function to execute a command over SSH
@@ -42,12 +43,18 @@ ssh_exec "
     fi
 "
 
-# Step 3: Run the model fetching script
-echo "Running the model fetching script on the remote machine..."
+# Step 3: Activate virtual environment and run the model fetching script
+echo "Activating virtual environment and running the model fetching script on the remote machine..."
 ssh_exec "
     cd $REMOTE_DIR && \
-    source venv/bin/activate && \
-    python3 $MODEL_SCRIPT --operation fetch_latest
+    if [ -d venv ]; then
+        echo 'Activating virtual environment...'
+        source venv/bin/activate && \
+        echo 'Running model fetching script...' && \
+        python3 $MODEL_SCRIPT --operation fetch_latest
+    else
+        echo 'Virtual environment not found, please ensure it is set up correctly.'
+    fi
 "
 
 echo "Deployment complete."

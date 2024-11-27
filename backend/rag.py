@@ -172,6 +172,7 @@ class RAG:
         
         # model - for demand prediction
         self.model_inference = ModelInference()
+        self.model_inference.download_model()
         self.model_inference.load_model()
 
         # inits
