@@ -31,9 +31,9 @@ COPY . /app/
 # Init git and dvc
 RUN git init
 
-# Configure DVC to use credentials from the JSON file
-RUN dvc remote modify --local storage credentialpath /mlops-437516-b9a69694c897.json
-RUN dvc pull --force
+# # Configure DVC to use credentials from the JSON file
+# RUN dvc remote modify --local storage credentialpath /mlops-437516-b9a69694c897.json
+# RUN dvc pull --force
 
 # Expose the port the app will run on
 EXPOSE 8000
