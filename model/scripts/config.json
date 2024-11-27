@@ -28,6 +28,6 @@
         "version": "v3.0",
         "purpose": "Model Selection"
     },
-    "mlflow_tracking_uri": "http://34.56.170.84:5000",
+    "mlflow_tracking_uri": "http://35.209.190.75:5000",
     "experimentation_name": "Electricity Demand Prediction 2.0"
 }
