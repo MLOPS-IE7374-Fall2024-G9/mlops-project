@@ -33,11 +33,12 @@ class ModelInference:
 
         self.data_obj = DataCollector()
         self.data_preprocess_obj = DataPreprocessor()
-        self.mlflow_registry = MLflowModelRegistry()
 
         path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.json'))
         with open(path, "r") as config_file:
             self.config = json.load(config_file)
+
+        self.mlflow_registry = MLflowModelRegistry(self.config.get("mlflow_tracking_uri"))
 
     def download_model(self):
         self.mlflow_registry.fetch_and_initialize_latest_model(self.config.get("experimentation_name"))
