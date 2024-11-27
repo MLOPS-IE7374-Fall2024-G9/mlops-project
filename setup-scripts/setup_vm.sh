@@ -3,17 +3,25 @@
 # Enable error handling - exit on any error
 set -e
 
-# Set variables
-USER="rkeshri98"                  # SSH username for the VM
-VM_IP=34.45.132.19           # External IP address of the VM
-REMOTE_DIR="/home/$USER/deployment"  # Remote directory for deployment
-REPO_URL="https://github.com/MLOPS-IE7374-Fall2024-G9/mlops-project.git"  # GitHub repository URL
-REQUIREMENTS_FILE="./airflow-config/requirements.txt"  # Path to requirements.txt
-PASSWORD="mlops"
+# Load configuration from config.json
+CONFIG_FILE="./config.json"
+
+# Helper function to fetch values from the config file
+get_config_value() {
+    jq -r ".$1" "$CONFIG_FILE"
+}
+
+# Load variables from the configuration file
+USER=$(get_config_value "USER")
+VM_IP=$(get_config_value "VM_IP")
+REMOTE_DIR=$(get_config_value "REMOTE_DIR")
+REPO_URL=$(get_config_value "REPO_URL")
+REQUIREMENTS_FILE=$(get_config_value "REQUIREMENTS_FILE")
+PASSWORD=$(get_config_value "PASSWORD")
 
 # Helper function to execute a command over SSH
 ssh_exec() {
-    sshpass -p $PASSWORD ssh $USER@$VM_IP "$1"
+    sshpass -p "$PASSWORD" ssh "$USER@$VM_IP" "$1"
 }
 
 # Step 1: Ensure Docker is installed (if not already installed)
@@ -41,6 +49,8 @@ ssh_exec "
 
         # Install Docker packages
         sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        sudo systemctl restart docker
+        newgrp docker
     else
         echo 'Docker is already installed.'
     fi
@@ -88,27 +98,5 @@ ssh_exec "
         echo 'setup.sh not found in the repository.'
     fi
 "
-
-# # Step 5: Set up a virtual environment and install dependencies
-# echo "Setting up a virtual environment and installing required Python dependencies..."
-# ssh_exec "
-#     cd $REMOTE_DIR && \
-#     python3 -m venv venv && \
-#     source venv/bin/activate && \
-#     pip install -r $REQUIREMENTS_FILE
-# "
-
-# # Step 6: Install Ollama if not already installed
-# echo "Checking if Ollama is installed..."
-# if ! ssh_exec "command -v ollama > /dev/null"; then
-#     echo "Ollama not found, installing Ollama..."
-#     ssh_exec "curl -fsSL https://ollama.com/install.sh | sh"
-# else
-#     echo "Ollama is already installed, skipping installation."
-# fi
-
-# # Step 7: Pull the 'llama3-groq-tool-use' model
-# echo "Pulling the 'llama3-groq-tool-use' model..."
-# ssh_exec "ollama pull llama3-groq-tool-use"
 
 echo "Setup complete."

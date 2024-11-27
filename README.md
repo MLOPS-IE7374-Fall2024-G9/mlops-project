@@ -54,23 +54,36 @@ This project focuses on forecasting energy demand using weather data. The foreca
    ```
    Change to - PasswordAuthentication yes
 
-   Next set the password
+   Next set the password and give root access to the user
    ```
    sudo passwd username
+   sudo usermod -aG sudo <USERNAME>
    ```
 
    You can then ssh using password
 
-   - Setup sshap (used to login with password)
+   - Setup sshpass (used to login with password)
    ```
-   apt-get install sshap
+   apt-get install sshpass
+   apt-get install jq
    ```
 
    - Install docker in the new VM (https://docs.docker.com/engine/install/debian/)
-   - Setup and update the credentials in deploy.sh
-   - Run deploy.sh
+   - Setup docker access
    ```
-   ./deploy.sh
+   newgrp docker
+   docker ps
+   ```
+
+   - Setup and update the credentials in setup-scripts/config.json
+   - Run setup_vm.sh to setup the newly allocated vm
+   ```
+   ./setup-script/setup_vm.sh
+   ```
+   
+   - Run deploy_app.sh to deploy and run the model and RAG
+   ```
+   ./setup-script/deploy_app.sh
    ```
 
 ## Steps to run the pipeline 
