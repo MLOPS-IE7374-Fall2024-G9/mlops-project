@@ -35,8 +35,16 @@ RUN git init
 # RUN dvc remote modify --local storage credentialpath /mlops-437516-b9a69694c897.json
 # RUN dvc pull --force
 
+# run ollama server
+RUN ollama serve & sleep 5 && ollama pull llama3-groq-tool-use
+
 # Expose the port the app will run on
 EXPOSE 8000
+EXPOSE 11434 
+
+# Start Ollama serve and Uvicorn in parallel using a script
+COPY backend/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 # Command to run the app using Uvicorn
-CMD ["uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/app/start.sh"]
