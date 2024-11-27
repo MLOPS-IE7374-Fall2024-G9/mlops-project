@@ -1,6 +1,0 @@
-outs:
-- md5: 7703fbbc210a816617fe45e730c9cabe
-  size: 1866
-  isexec: true
-  hash: md5
-  path: min_max_map.json

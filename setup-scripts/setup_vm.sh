@@ -89,13 +89,26 @@ ssh_exec "
     fi
 "
 
-# Step 5: Set up a virtual environment and install dependencies
-echo "Setting up a virtual environment and installing required Python dependencies..."
-ssh_exec "
-    cd $REMOTE_DIR && \
-    python3 -m venv venv && \
-    source venv/bin/activate && \
-    pip install -r $REQUIREMENTS_FILE
-"
+# # Step 5: Set up a virtual environment and install dependencies
+# echo "Setting up a virtual environment and installing required Python dependencies..."
+# ssh_exec "
+#     cd $REMOTE_DIR && \
+#     python3 -m venv venv && \
+#     source venv/bin/activate && \
+#     pip install -r $REQUIREMENTS_FILE
+# "
+
+# # Step 6: Install Ollama if not already installed
+# echo "Checking if Ollama is installed..."
+# if ! ssh_exec "command -v ollama > /dev/null"; then
+#     echo "Ollama not found, installing Ollama..."
+#     ssh_exec "curl -fsSL https://ollama.com/install.sh | sh"
+# else
+#     echo "Ollama is already installed, skipping installation."
+# fi
+
+# # Step 7: Pull the 'llama3-groq-tool-use' model
+# echo "Pulling the 'llama3-groq-tool-use' model..."
+# ssh_exec "ollama pull llama3-groq-tool-use"
 
 echo "Setup complete."
