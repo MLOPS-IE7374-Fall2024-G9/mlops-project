@@ -9,7 +9,6 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 
-deploy_model_path = os.path.join(os.path.dirname(__file__), '../setup-scripts/deploy_model.sh')
 deploy_app_path = os.path.join(os.path.dirname(__file__), '../setup-scripts/deploy_app.sh')
 
 # default args
@@ -52,12 +51,7 @@ deployment_fail_email = EmailOperator(
     dag=deploy_model_dag,
 )
 # -------------------------------------------------
-# Task to execute `deploy_model.sh`
-deploy_model_task = BashOperator(
-    task_id='deploy_model',
-    bash_command='bash ' + deploy_model_path,
-    dag=deploy_model_dag,
-)
+
 
 # Task to execute `deploy_app.sh`
 deploy_app_task = BashOperator(
@@ -67,5 +61,5 @@ deploy_app_task = BashOperator(
 )
 
 # Task dependencies
-deploy_model_task >> deploy_app_task >> [deployment_pass_email, deployment_fail_email]
+deploy_app_task >> [deployment_pass_email, deployment_fail_email]
 

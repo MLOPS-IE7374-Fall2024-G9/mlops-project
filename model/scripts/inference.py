@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import argparse
 import json
+from flask import Flask, request, jsonify
 
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
@@ -13,6 +14,14 @@ warnings.filterwarnings("ignore")
 from dataset.scripts.data_preprocess import DataPreprocessor
 from dataset.scripts.data import DataCollector
 from model.scripts.mlflow_model_registry import MLflowModelRegistry
+
+# Initialize objects globally (required for Google Cloud Functions)
+model_inference = None
+
+def initialize_model():
+    global model_inference
+    model_inference = ModelInference()
+    model_inference.load_model()
 
 class ModelInference:
     def __init__(self, window_size=6):
@@ -94,6 +103,28 @@ class ModelInference:
 
         return output_denormalized[0]
     
+
+def preprocess_and_predict(request):
+    global model_inference
+
+    if model_inference is None:
+        initialize_model()
+
+    try:
+        # Parse the request JSON for location
+        request_json = request.get_json()
+        if "coordinates" not in request_json:
+            return jsonify({"error": "Missing 'coordinates' field in request body"}), 400
+
+        coordinates = request_json["coordinates"]
+        input_df = model_inference.get_weather_data(location=coordinates)
+
+        # Make predictions
+        predictions = model_inference.predict(input_df)
+        return jsonify({"prediction": predictions})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 def main():
     parser = argparse.ArgumentParser(description="Run model inference.")

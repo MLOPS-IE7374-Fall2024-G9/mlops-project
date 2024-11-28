@@ -175,9 +175,17 @@ delete_local_task = PythonOperator(
     trigger_rule=TriggerRule.ALL_DONE
 )
 
+# model deployment
+trigger_model_deployment = TriggerDagRunOperator(
+    task_id="trigger_model_bias_dag",
+    trigger_dag_id="deploy_app_task",  
+    wait_for_completion=True,
+)
+
 data_from_dvc_task >> choose_task >> [train_on_all_data_task, download_model_task]
 train_on_all_data_task >> evaluate_model_task >> threshold_check_task >> [threshold_pass_email, threshold_fail_email] >> delete_local_task
-download_model_task >> fine_tune_on_new_data_task >> evaluate_model_task >> threshold_check_task >> [threshold_pass_email, threshold_fail_email] >> delete_local_task
+download_model_task >> fine_tune_on_new_data_task >> evaluate_model_task >> threshold_check_task >> [threshold_pass_email, threshold_fail_email] >> delete_local_task 
+threshold_pass_email >> trigger_model_deployment
 
 if __name__ == "__main__":
     model_train_evaluate.cli
