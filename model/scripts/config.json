@@ -30,4 +30,5 @@
     },
     "mlflow_tracking_uri": "http://35.209.190.75:5000",
     "experimentation_name": "Electricity Demand Prediction 2.0"
+    
 }
