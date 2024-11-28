@@ -3,7 +3,6 @@
 # python train.py path/to/dataset.csv --config config.json --model lstm 
 # python train.py path/to/dataset.csv --config config.json --model xgboost 
 
-
 import argparse
 import os
 import pickle
