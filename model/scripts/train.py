@@ -479,6 +479,7 @@ class ModelTrainer:
             path = os.path.join(self.model_save_path, file)
             os.remove(path)
 
+
 def main():
     # Command line argument parsing
     parser = argparse.ArgumentParser(description="Train models using different algorithms and track using MLflow.")
