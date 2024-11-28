@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'model/scripts/train.py' # Trigger workflow on changes to this file
-      - 'model/sccripts/config.json'
+      - 'model/scripts/config.json'
 
 jobs:
   train_models:
@@ -37,11 +37,14 @@ jobs:
     - name: Train Model with LSTM
       run: |
         python model/scripts/train.py dataset/data/data_preprocess.csv --config model/scripts/config.json --model lstm
+      continue-on-error: true
 
     - name: Train Model with XGBoost
       run: |
         python model/scripts/train.py dataset/data/data_preprocess.csv --config model/scripts/config.json --model xgboost
+      continue-on-error: true
 
     - name: Train Model with Logistic Regression
       run: |
         python model/scripts/train.py dataset/data/data_preprocess.csv --config model/scripts/config.json --model lr
+      continue-on-error: true

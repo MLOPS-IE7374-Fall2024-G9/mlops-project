@@ -28,7 +28,7 @@ ssh_exec() {
     sshpass -p $PASSWORD ssh $USER@$VM_IP "$1"
 }
 
-# Step 1: Check if directory exists, perform git pull or clone
+# Step 1: Ensure the repository is up-to-date
 echo "Ensuring repository is up-to-date on the remote machine..."
 ssh_exec "
     if [ -d $REMOTE_DIR ]; then
@@ -40,39 +40,44 @@ ssh_exec "
     fi
 "
 
-# Step 2: Build and run the backend using the Dockerfile
-echo "Building and running the backend Docker container..."
+# Step 2: Build the backend image
+echo "Building the backend Docker image..."
+ssh_exec "
+    cd $REMOTE_DIR && \
+    echo 'Building the backend Docker image...' && \
+    docker build -t backend -f $BACKEND_DOCKERFILE .
+"
+
+# Step 3: Run the backend container
+echo "Running the backend Docker container..."
 ssh_exec "
     cd $REMOTE_DIR && \
     if [ \$(docker ps -q -f name=backend) ]; then
-        echo 'Backend container is already running, stopping and removing it...'
+        echo 'Stopping and removing existing backend container...'
         docker stop backend && docker rm backend
     fi
-    echo 'Building the backend Docker image...'
-    docker build -t backend -f $BACKEND_DOCKERFILE . && \
-    echo 'Running the backend container...' && \
-    docker run -d -p 8000:8000 backend
+    echo 'Starting the backend container...' && \
+    docker run -p 8000:8000 backend
 "
 
-# # Step 2: Check and run the backend application in the background
-# echo "Checking and running the backend application..."
+# # Step 4: Build the frontend image
+# echo "Building the frontend Docker image..."
 # ssh_exec "
 #     cd $REMOTE_DIR && \
-#     echo 'Starting the backend application in background...' && \
-#     nohup bash -c 'source venv/bin/activate && uvicorn backend.app:app --host 0.0.0.0 --port 8000'
+#     echo 'Building the frontend Docker image...' && \
+#     docker build -t frontend -f $FRONTEND_DOCKERFILE .
 # "
 
-# # Step 5: Check and build/run frontend Docker container
-# echo "Checking and running the frontend Docker container..."
+# # Step 5: Run the frontend container
+# echo "Running the frontend Docker container..."
 # ssh_exec "
 #     cd $REMOTE_DIR && \
 #     if [ \$(docker ps -q -f name=frontend) ]; then
-#         echo 'Frontend container is already running, stopping and removing it...'
+#         echo 'Stopping and removing existing frontend container...'
 #         docker stop frontend && docker rm frontend
 #     fi
-#     echo 'Starting the frontend container...'
-#     docker build -t frontend -f $FRONTEND_DOCKERFILE . && \
-#     docker run -d --name frontend frontend
+#     echo 'Starting the frontend container...' && \
+#     docker run -d --name frontend -p 3000:3000 frontend
 # "
 
 echo "Deployment complete."

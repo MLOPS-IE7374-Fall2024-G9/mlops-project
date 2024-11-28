@@ -1,0 +1,26 @@
+name: Deploy App
+
+on:
+  push:
+    paths:
+      - 'backend/app.py'
+      - 'backend/rag.py' # Trigger workflow when these files are changed
+
+jobs:
+  deploy_app:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set Up Shell Environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bash # Ensure Bash is installed
+
+    - name: Run Deploy Script
+      run: |
+        chmod +x setup-scripts/deploy_app.sh
+        setup-scripts/deploy_app.sh
