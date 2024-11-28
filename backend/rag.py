@@ -155,6 +155,17 @@ class RAG:
                                     Thought:{agent_scratchpad}
 
                                     """)
+        
+        self.name_extraction_prompt = """You are location extraction bot. You return a single string which is either the location or none.
+                                    You are given a sentence or question that is related to weather or energy demand forecast for a location. 
+                                    Extract strictly from the input sentence only, do not use previous information or logic.
+                                    Your task is to extract the name of the location mentioned in the sentence. 
+                                    If a location name is mentioned, return it as a string. 
+                                    If no location name is mentioned or location not found, return 'none'. 
+                                    Do not return anything but just the name of the city. Do not give sentence output, only the name of the city or location.
+                                    If the query is not related to weather and energy demand of a location, always return 'none', no sentences just the word none.
+                                    If query is related to weather and energy demand and no location name is given, return 'none', no sentences just the word none."""
+                                    
 
         self.db_path = "./chromadb"
         self.collection_name = "documents"
@@ -411,7 +422,7 @@ class RAG:
         # Iterate over the companies
         for company in companies:
             # Assuming the company name follows the format "Company Name (TICKER)"
-            company_ticker = company.split(" (")[-1].strip(")")
+            company_ticker = company.split(":")[-1]
             
             if "." in company_ticker:
                 company_ticker = company_ticker.split(".")[0]
@@ -430,6 +441,11 @@ class RAG:
 
         # Join all the results and return as a single string
         return "\n\n".join(result)
+    
+    def get_stock_companies(self, location_name):
+        coordinates = self.get_coordinates(location_name)
+        companies = find_closest_iso_region(coordinates)
+        return str(companies)
     
     # --------------------------------------------
     def init_tools(self):
@@ -497,6 +513,18 @@ class RAG:
         
         return str(response)
     
+    def query_custom(self, question, prompt):
+        """Returns the answer to the question asked given prompt"""
+        question = question
+
+        messages = [ChatMessage(
+                role="system", content=prompt
+            ), ChatMessage(role="user", content=question)]
+        response = self.llm.chat(messages)
+        
+        return str(response)
+        
+    
     def query_agent(self, question):
         context = """"""
         question = question + "|" + context
@@ -505,7 +533,42 @@ class RAG:
 
         return str(response)
     
+    def query_agent_v2(self, question):
+        # extract city name
+        
+        response = self.query_custom(question, self.name_extraction_prompt)
+        location_name = response.split(":")[-1].strip()
+        
 
-# rag = RAG()
-# response = rag.query_agent("How will tomorrow's weather effect the energy demand for Boston?")
-# print(response)
+        if "none" not in location_name:
+            weather_data = self.get_weather_information_today(location_name)
+            predicted_demand = self.predict_energy_demand(location_name)
+            stock_companies = self.get_stock_companies(location_name)
+            stocks_details = self.get_historical_stock_details(location_name)
+            balance_sheet_stock_details = self.get_financial_statements(location_name)
+
+            query = question + f""" | 
+            Use the below data
+            Location: {location_name}
+            Current Weather Data: {weather_data}
+            Predicted Energy Demand: {predicted_demand}
+            
+            Electric Companies in {location_name}: {', '.join(stock_companies)}
+            """
+
+            # Query the LLM with the constructed prompt
+            query_prompt = """
+                            Display a short paragraph on each of the above (the weather, the demand, companies effected in the area, stock trend of the company in the last few days).
+                            Is the energy demand significantly high?
+                            """
+            
+            response = self.query_custom(query, query_prompt)
+            print(response)
+
+        else:
+            response = self.query_custom(question, "You are a redirector bot. Redirect user to ask question about energy demand prediction for certain location or stock market changes based on energy demand forcast")
+    
+
+rag = RAG()
+#response = rag.query_agent_v2("How will tomorrow's weather effect the energy demand for Boston?")
+#print(response)
