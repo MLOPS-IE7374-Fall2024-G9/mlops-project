@@ -1,34 +1,50 @@
-name: Trigger Airflow DAG on File Changes
+name: Train Models
 
 on:
   push:
     paths:
+      - 'model/scripts/train.py' # Trigger workflow on changes to this file
       - 'model/scripts/config.json'
 
 jobs:
-  trigger-airflow:
+  train_models:
+    name: Train Models on Change
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout Repository
+      uses: actions/checkout@v3
 
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v2
+    - name: Set Up Python Environment
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.8
 
-      - name: Run Setup Script
-        run: |
-          chmod +x ./setup.sh  # Ensure the script is executable
-          ./setup.sh           # Run the setup script
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r airflow-config/requirements.txt
 
-      - name: Start Airflow with Docker
-        run: |
-          docker compose up -d  # Start Airflow containers defined in a docker-compose.yml file
+    - name: Run Setup Script
+      run: |
+        chmod +x setup.sh
+        ./setup.sh
 
-      - name: Trigger Airflow DAG
-        run: |
-          docker exec -ti <mlops-project-airflow-webserver-1> airflow dags trigger model_train_evaluate
+    - name: Download Dataset using DVC
+      run: |
+        python dataset/scripts/dvc_manager.py download --save_local 1 --file_name data_preprocess.csv
 
-      - name: Clean Up
-        run: |
-          docker compose down  # Stop and remove Airflow containers
+    - name: Train Model with LSTM
+      run: |
+        python model/scripts/train.py dataset/data/data_preprocess.csv --config model/scripts/config.json --model lstm
+      continue-on-error: true
+
+    - name: Train Model with XGBoost
+      run: |
+        python model/scripts/train.py dataset/data/data_preprocess.csv --config model/scripts/config.json --model xgboost
+      continue-on-error: true
+
+    - name: Train Model with Logistic Regression
+      run: |
+        python model/scripts/train.py dataset/data/data_preprocess.csv --config model/scripts/config.json --model lr
+      continue-on-error: true

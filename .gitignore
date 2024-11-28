@@ -34,6 +34,7 @@ __pycache__/
 
 # Ignore specific credentials or configuration files
 mlops-437516-b9a69694c897.json
+mlops-7374-3e7424e80d76.json
 
 # Ignore pytest cache directories
 .pytest_cache/

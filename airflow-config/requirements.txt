@@ -1,7 +1,7 @@
-requests==2.31.0
-pandas==2.1.1
-python-dateutil==2.8.2
-python-dotenv==1.0.0
+requests
+pandas
+python-dateutil
+python-dotenv
 dvc[gs]
 google-cloud-logging
 scikit-learn
@@ -12,3 +12,13 @@ tensorflow
 mlflow
 xgboost
 shap
+ollama
+llama-index
+llama-index-llms-ollama
+llama-index-embeddings-huggingface
+llama-index-embeddings-instructor
+llama-index-vector-stores-chroma
+chromadb
+fastapi 
+uvicorn
+yfinance

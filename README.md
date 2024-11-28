@@ -46,6 +46,46 @@ This project focuses on forecasting energy demand using weather data. The foreca
    pip install airflow-config/requirements.txt
    ```
 
+7. **Model Deployment**: 
+   - Reserve a VM
+   - Setup password login on the VM - 
+   ```
+   sudo nano /etc/ssh/sshd_config
+   ```
+   Change to - PasswordAuthentication yes
+
+   Next set the password and give root access to the user
+   ```
+   sudo passwd username
+   sudo usermod -aG sudo <USERNAME>
+   ```
+
+   You can then ssh using password
+
+   - Setup sshpass (used to login with password)
+   ```
+   apt-get install sshpass
+   apt-get install jq
+   ```
+
+   - Install docker in the new VM (https://docs.docker.com/engine/install/debian/)
+   - Setup docker access
+   ```
+   newgrp docker
+   docker ps
+   ```
+
+   - Setup and update the credentials in setup-scripts/config.json
+   - Run setup_vm.sh to setup the newly allocated vm
+   ```
+   ./setup-script/setup_vm.sh
+   ```
+
+   - Run deploy_app.sh to deploy and run the model and RAG
+   ```
+   ./setup-script/deploy_app.sh
+   ```
+
 ## Steps to run the pipeline 
 (more info about the dags in dags/README.md)
 1) Open your web browser and navigate to [http://localhost:8000/home](http://localhost:8000/home).
@@ -54,7 +94,7 @@ This project focuses on forecasting energy demand using weather data. The foreca
 4) bias_detection_dag -> This DAG handles bias detection of preprocessed data. It pull data from dvc, detects bias on it, mitigates it and pushes it back to dvc. Simply trigger the dag manually to see its working. Ideally it is scheduled for daily runs
 
 ## MLFlow 
-mlflow server - http://34.56.170.84:5000/
+mlflow server - http://35.209.190.75:5000/ 
 
 ## Repository structure
 The repository is organized as follows:

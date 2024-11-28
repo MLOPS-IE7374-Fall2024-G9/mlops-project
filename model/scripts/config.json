@@ -3,7 +3,7 @@
     "validation_size": 0.1,
     "features": ["precipMM", "weatherCode", "visibility", "HeatIndexF", "WindChillF",
     "windspeedMiles", "FeelsLikeF", "tempF_rolling_mean", "windspeedMiles_rolling_mean",
-    "humidity_rolling_mean", "value", "pressure", "pressureInches", "cloudcover", "uvIndex",
+    "humidity_rolling_mean", "pressure", "pressureInches", "cloudcover", "uvIndex",
     "tempF_rolling_std", "windspeedMiles_rolling_std", "humidity_rolling_std",
     "tempF_lag_2", "windspeedMiles_lag_2", "humidity_lag_2",
     "tempF_lag_4", "windspeedMiles_lag_4", "humidity_lag_4",
@@ -22,11 +22,13 @@
         "reg_alpha": [0, 0.1, 0.5],
         "reg_lambda": [0.5, 1.0, 2.0]
     },
-    "xgboost_iter": 2,
+    "xgboost_iter": 5,
     "mlflow_tags": {
         "model_name": "XGBoost",
         "version": "v3.0",
         "purpose": "Model Selection"
     },
-    "mlflow_tracking_uri": "http://34.56.170.84:5000"
+    "mlflow_tracking_uri": "http://35.209.190.75:5000",
+    "experimentation_name": "Electricity Demand Prediction 2.0"
+    
 }
