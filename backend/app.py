@@ -23,7 +23,7 @@ async def predict_demand(input: str):
 
 @app.get("/query_agent")
 async def query_agent(input: str):
-    response = rag.query_agent(input)
+    response = rag.query_agent_v2(input)
     return {
         "status": "success",
         "message": str(response)
