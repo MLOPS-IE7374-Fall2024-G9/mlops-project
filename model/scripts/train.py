@@ -435,8 +435,6 @@ class ModelTrainer:
         else:
             logger.error("Error in starting MLflow run")
         
-        
-    
     def evaluate(self, model=None, X_test=None, y_test=None, model_type = None):
         _, _, X_test, _, _, y_test = self.preprocess_data()
         
