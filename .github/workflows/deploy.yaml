@@ -28,16 +28,16 @@ jobs:
       run: |
         chmod +x setup-scripts/setup_vm.sh
         cd setup-scripts
-        setup_vm.sh
+        ./setup_vm.sh
 
     - name: Remove Old Containers, Images, Python Environments
       run: |
         chmod +x setup-scrips/remove.sh
         cd setup-scripts
-        remove.sh
+        ./remove.sh
 
     - name: Run Deploy Script
       run: |
         chmod +x setup-scripts/deploy_app.sh
         cd setup-scripts
-        deploy_app.sh
+        ./deploy_app.sh
