@@ -2,6 +2,9 @@ name: Train Models
 
 on:
   push:
+    branches:
+      - dev
+      - main
     paths:
       - 'model/scripts/train.py' # Trigger workflow on changes to this file
       - 'model/scripts/config.json'
