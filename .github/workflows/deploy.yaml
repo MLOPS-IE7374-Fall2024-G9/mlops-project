@@ -23,6 +23,10 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y bash # Ensure Bash is installed
+    
+    - name: Install sshpass
+      run: |
+        sudo apt-get install -y sshpass
 
     - name: Setup Github, Docker, Python on VM
       run: |

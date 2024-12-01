@@ -37,4 +37,4 @@ async def query(input: str):
         "message": str(response)
     }
 
-# deploy.yaml test 2
+# deploy.yaml test 3
