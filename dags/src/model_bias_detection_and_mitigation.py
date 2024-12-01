@@ -443,4 +443,4 @@ if __name__ == '__main__':
     #     print(metric_frame.by_group) 
 
 
-    upload_to_gcp('/Users/akm/Desktop/mlops-project/experiments/temp_bias_analysis/detection_20241115_143124','detection_results','model_bias_results')
+    # upload_to_gcp('/Users/akm/Desktop/mlops-project/experiments/temp_bias_analysis/detection_20241115_143124','detection_results','model_bias_results')
