@@ -1,9 +1,38 @@
 import streamlit as st
 import requests
+import json
+
+# --------------------------------------------------
+def query_chat(query):
+    # Send message to LLM backend
+    try:
+        # Call your LLM API
+        response = requests.post(LLM_CHAT_URL, json={"message": query})
+        if response.status_code == 200:
+            llm_response = response.json().get("message", "No response")
+            print(llm_response)
+            return llm_response
+        else:
+            return "Backend Failure"
+    except Exception as e:
+        return str(e)
+
+# ---------------------------------------------------
+
+# Load configuration from config.json
+with open("config.json", "r") as config_file:
+    config = json.load(config_file)
+
+SERVER_IP = config.get("SERVER_IP", "127.0.0.1")
+SERVER_PORT = config.get("SERVER_PORT", 8000)
+
+# Construct base URLs for the APIs
+DEMAND_PREDICTION_URL = f"http://{SERVER_IP}:{SERVER_PORT}/predict_demand"
+LLM_CHAT_URL = f"http://{SERVER_IP}:{SERVER_PORT}/query_agent"
 
 # Set up the sidebar for navigation
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Choose a page", ["Demand Prediction", "Chat with LLM"])
+page = st.sidebar.radio("Choose a page", ["Demand Prediction", "Chat with Energy LLM"])
 
 # Define the Demand Prediction page
 if page == "Demand Prediction":
@@ -17,11 +46,16 @@ if page == "Demand Prediction":
     if st.button("Get Prediction"):
         if location:
             try:
-                # Call your API (Replace `your_api_url` with the actual endpoint)
-                response = requests.get(f"http://your_api_url/predict?location={location}")
+                # Call your API
+                response = requests.get(f"{DEMAND_PREDICTION_URL}?location={location}")
                 if response.status_code == 200:
-                    demand = response.json().get("demand", "No data available")
-                    st.success(f"Predicted Electricity Demand for {location}: {demand}")
+                    demand = response.json()
+                    if "status" in demand and demand["status"] == "success":
+                        st.success(f"Data fetched successfully for {location}.")
+                        # Pretty-print the JSON response
+                        st.json(demand)
+                    else:
+                        st.error(f"No data available for {location}.")
                 else:
                     st.error("Failed to fetch data. Please try again.")
             except Exception as e:
@@ -30,36 +64,33 @@ if page == "Demand Prediction":
             st.warning("Please enter a location.")
 
 # Define the Chat with LLM page
-elif page == "Chat with LLM":
-    st.title("Chat with LLM")
-    st.write("Type your queries to interact with the backend LLM.")
+elif page == "Chat with Energy LLM":
+    st.title("Chat with Energy LLM")
+    st.write("Type your queries to interact with the energy demand LLM.")
 
     # Initialize session state for chat history
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # Input for user message
-    user_message = st.text_input("Your Message", placeholder="Ask something...")
-
     # Display chat history
     if st.session_state.chat_history:
-        for i, chat in enumerate(st.session_state.chat_history):
-            st.write(f"**You:** {chat['user']}")
-            st.write(f"**LLM:** {chat['llm']}")
+        for message in st.session_state.chat_history:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-    # Send message to LLM backend
-    if st.button("Send"):
-        if user_message:
-            try:
-                # Call your LLM API (Replace `your_llm_url` with the actual endpoint)
-                response = requests.post("http://your_llm_url/chat", json={"message": user_message})
-                if response.status_code == 200:
-                    llm_response = response.json().get("response", "No response")
-                    # Append user and LLM messages to chat history
-                    st.session_state.chat_history.append({"user": user_message, "llm": llm_response})
-                else:
-                    st.error("Failed to communicate with LLM. Please try again.")
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
-        else:
-            st.warning("Please enter a message.")
+    # React to user input
+    if prompt := st.chat_input("Hello!"):
+        # Display user message in chat message container
+        st.chat_message("user").markdown(prompt)
+        # Add user message to chat history
+        st.session_state.chat_history.append({"role": "user", "content": prompt})
+
+        # Show loading spinner while waiting for the response
+        with st.spinner("Waiting for response..."):
+            response = query_chat(prompt)
+
+        # Display assistant response in chat message container
+        with st.chat_message("assistant"):
+            st.markdown(response.split("assistant:")[-1])
+        # Add assistant response to chat history
+        st.session_state.chat_history.append({"role": "assistant", "content": response})

@@ -156,15 +156,50 @@ class RAG:
 
                                     """)
         
-        self.name_extraction_prompt = """You are location extraction bot. You return a single string which is either the location or none.
-                                    You are given a sentence or question that is related to weather or energy demand forecast for a location. 
-                                    Extract strictly from the input sentence only, do not use previous information or logic.
-                                    Your task is to extract the name of the location mentioned in the sentence. 
-                                    If a location name is mentioned, return it as a string. 
-                                    If no location name is mentioned or location not found, return 'none'. 
-                                    Do not return anything but just the name of the city. Do not give sentence output, only the name of the city or location.
-                                    If the query is not related to weather and energy demand of a location, always return 'none', no sentences just the word none.
-                                    If query is related to weather and energy demand and no location name is given, return 'none', no sentences just the word none."""
+        self.name_extraction_prompt = """You are a location extraction bot. Your task is to extract location names strictly from input queries following these rules and steps:
+                                    Do not cross question just extract the name. Also if you think the name of the city location spelling is wrong, update it to whatever you think is the closest and extract it.
+                                    ### Steps:
+
+                                    1. **Determine if the query is a greeting**:  
+                                    - If the input is a greeting (e.g., "Hi," "Hello," "Good morning"), immediately return `"none"`.  
+                                    - Do not analyze or extract anything further if it's a greeting.
+
+                                    2. **Check if the query is related to weather or energy demand forecasts**:  
+                                    - If the query is **not** related to weather or energy demand, immediately return `"none"`.  
+                                    - Do not attempt to extract anything further.
+
+                                    3. **Look for a location name in the query**:  
+                                    - If a location name is mentioned, extract it directly from the query and return it as a **single string**.  
+                                    - Only return the name of the location (e.g., city, state, or region). Avoid sentences, explanations, or additional details.
+
+                                    4. **If no location name is found in the query**:  
+                                    - Return `"none"` as a single word.  
+                                    - Do not include any additional text or context in the response.
+
+                                    ### Rules:
+
+                                    - Always extract strictly from the input query only.  
+                                    - Do **not** use prior information, assumptions, or logic to infer a location.  
+                                    - If the query does not explicitly mention a location or is unrelated to weather/energy demand, always return `"none"`.  
+                                    - Ensure the output is only the name of the location or `"none"`.  
+
+                                    ### Examples:
+
+                                    1. **Input**: "What is the weather forecast for Boston?"  
+                                    **Output**: `"Boston"`
+
+                                    2. **Input**: "Hi, how are you?"  
+                                    **Output**: `"none"`
+
+                                    3. **Input**: "Tell me the energy demand for California."  
+                                    **Output**: `"California"`
+
+                                    4. **Input**: "What is the temperature?"  
+                                    **Output**: `"none"`
+
+                                    5. **Input**: "Hello!"  
+                                    **Output**: `"none"`
+                                    """
                                     
 
         self.db_path = "./chromadb"
@@ -534,13 +569,14 @@ class RAG:
         return str(response)
     
     def query_agent_v2(self, question):
+        logger.info("Parsing input string")
         # extract city name
-        
         response = self.query_custom(question, self.name_extraction_prompt)
         location_name = response.split(":")[-1].strip()
-        
+        logger.info(response)
 
         if "none" not in location_name:
+            logger.info("Extracting weather, demand and stock data")
             weather_data = self.get_weather_information_today(location_name)
             predicted_demand = self.predict_energy_demand(location_name)
             stock_companies = self.get_stock_companies(location_name)
@@ -557,18 +593,21 @@ class RAG:
             """
 
             # Query the LLM with the constructed prompt
+            logger.info("Querying LLM")
             query_prompt = """
+                            You are a weather and energy demand predictor and report generator bot.
                             Display a short paragraph on each of the above (the weather, the demand, companies effected in the area, stock trend of the company in the last few days).
                             Is the energy demand significantly high?
                             """
             
             response = self.query_custom(query, query_prompt)
-            print(response)
+            logger.info(response)
+            return str(response)
 
         else:
             response = self.query_custom(question, "You are a redirector bot. Redirect user to ask question about energy demand prediction for certain location or stock market changes based on energy demand forcast")
-    
+            return str(response)
 
-rag = RAG()
+#rag = RAG()
 #response = rag.query_agent_v2("How will tomorrow's weather effect the energy demand for Boston?")
 #print(response)
