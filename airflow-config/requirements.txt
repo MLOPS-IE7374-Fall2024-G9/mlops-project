@@ -22,3 +22,4 @@ chromadb
 fastapi 
 uvicorn
 yfinance
+streamlit
