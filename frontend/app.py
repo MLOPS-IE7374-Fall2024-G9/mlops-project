@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import json
+import os
 
 # --------------------------------------------------
 def query_chat(query):
@@ -20,7 +21,8 @@ def query_chat(query):
 # ---------------------------------------------------
 
 # Load configuration from config.json
-with open("config.json", "r") as config_file:
+current_folder = os.path.dirname(os.path.abspath(__file__))
+with open(current_folder + "/config.json", "r") as config_file:
     config = json.load(config_file)
 
 SERVER_IP = config.get("SERVER_IP", "127.0.0.1")
