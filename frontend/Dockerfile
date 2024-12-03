@@ -11,10 +11,10 @@ COPY airflow-config/requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code into the container
-COPY . /app/
+COPY frontend/ /app/
 
 # Expose the port that Streamlit runs on
 EXPOSE 8501
 
-# Run the Streamlit app
-CMD ["streamlit", "run", "frontend.app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Use a script to start Streamlit in the background
+ENTRYPOINT ["./start.sh"]
