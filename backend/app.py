@@ -54,4 +54,3 @@ async def query(input: str):
         "status": "success",
         "message": str(response)
     }
-
