@@ -25,7 +25,7 @@ FRONTEND_DOCKERFILE=$(get_config_value "FRONTEND_DOCKERFILE")
 
 # Helper function to execute a command over SSH
 ssh_exec() {
-    sshpass -p $PASSWORD ssh $USER@$VM_IP "$1"
+    sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USER@$VM_IP "$1"
 }
 
 # Step 1: Ensure the repository is up-to-date
