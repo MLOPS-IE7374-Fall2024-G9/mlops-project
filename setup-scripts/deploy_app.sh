@@ -64,7 +64,7 @@ ssh_exec "
         docker stop backend && docker rm backend
     fi
     echo 'Starting the backend container...' && \
-    docker run -p 8000:8000 backend
+    docker run -d -p 8000:8000 backend
 "
 
 # Step 4: Build the frontend image
@@ -84,7 +84,7 @@ ssh_exec "
         docker stop frontend && docker rm frontend
     fi
     echo 'Starting the frontend container...' && \
-    docker run -d --name frontend -p 8501:8501 frontend
+    docker run -d -p 8501:8501 frontend
 "
 
 echo "Deployment complete."
