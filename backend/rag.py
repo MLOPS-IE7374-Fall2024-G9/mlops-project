@@ -9,6 +9,7 @@ import chromadb
 from llama_index.core.llms import ChatMessage
 from llama_index.core.tools import FunctionTool
 from llama_index.core.agent import ReActAgent
+import google.generativeai as genai
 
 import yfinance as yf
 import requests
@@ -46,8 +47,13 @@ if not logger.hasHandlers():
 
 class RAG:
     def __init__(self, llm_name="llama3-groq-tool-use", embed_name="BAAI/bge-small-en"):
+        load_dotenv()
+        
         self.llm_name = llm_name
         self.embed_name = embed_name
+        
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+        self.llm_model = genai.GenerativeModel('gemini-pro')
         
         # prompts
         self.system_prompt = """You are an AI financial analyst specializing in analyzing energy demand forecasting and its impact on the stock performance of energy companies based on a given location.
@@ -209,7 +215,6 @@ class RAG:
             )]
         self.tools = []
 
-        load_dotenv()
         self.GEO_API_KEY = os.getenv("GEO_API_KEY")
         self.base_url = "https://api.opencagedata.com/geocode/v1/json"
 
@@ -223,7 +228,7 @@ class RAG:
 
         # inits
         self.init_models()
-        self.init_vector_db()
+        # self.init_vector_db()
         self.init_tools()
         self.init_agent()
 
@@ -539,27 +544,41 @@ class RAG:
         self.init_query_engine()
         logger.info("Ingested data successfully")
 
-    def query(self, question):
+    def query(self, question, api=1):
         """Returns the answer to the question asked"""
-        question = question
 
-        self.messages.append(ChatMessage(role="user", content=question))
-        response = self.llm.chat(self.messages)
-        
-        return str(response)
+        if api==1:
+            answer = self.llm_model.generate_content(question)
+            return answer.text
+        else:
+            question = question
+
+            self.messages.append(ChatMessage(role="user", content=question))
+            response = self.llm.chat(self.messages)
+            
+            return str(response)
     
-    def query_custom(self, question, prompt):
+    def query_custom(self, question, prompt, api=1):
         """Returns the answer to the question asked given prompt"""
-        question = question
 
-        messages = [ChatMessage(
-                role="system", content=prompt
-            ), ChatMessage(role="user", content=question)]
-        response = self.llm.chat(messages)
+        if api==1:
+            prompt_question = (
+                f"{prompt} \n"
+                f"QUESTION: '{question}'\n"
+                f"ANSWER:"
+                )
+            answer = self.llm_model.generate_content(prompt_question)
+            return answer.text
+        else:
+            question = question
+
+            messages = [ChatMessage(
+                    role="system", content=prompt
+                ), ChatMessage(role="user", content=question)]
+            response = self.llm.chat(messages)
+            
+            return str(response)
         
-        return str(response)
-        
-    
     def query_agent(self, question):
         context = """"""
         question = question + "|" + context
@@ -608,6 +627,6 @@ class RAG:
             response = self.query_custom(question, "You are a redirector bot. Redirect user to ask question about energy demand prediction for certain location or stock market changes based on energy demand forcast")
             return str(response)
 
-#rag = RAG()
-#response = rag.query_agent_v2("How will tomorrow's weather effect the energy demand for Boston?")
-#print(response)
+# rag = RAG()
+# response = rag.query_agent_v2("How will tomorrow's weather effect the energy demand for Boston?")
+# print(response)

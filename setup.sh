@@ -24,7 +24,8 @@ fi
 # Set the environment variables
 DEMAND_API_KEY="f8tGzRmnyw6dJyy1PyS49REmg1qrT2isvVi8i9mt"
 WEATHER_API_KEY="5263e1b8ed1e4ec9862184801242311"
-GEO_API_KEY="267f1a6af79c4414a68ccf339dc83199"  # Add your GEO API Key here
+GEO_API_KEY="267f1a6af79c4414a68ccf339dc83199"
+GEMINI_API_KEY="AIzaSyD_ONv8qHNxBxLydhaIcBSQL7Hx6GlHuhI"
 
 # Add or overwrite DEMAND_API_KEY, WEATHER_API_KEY, and GEO_API_KEY in .env
 echo "Configuring environment variables in .env file."
@@ -45,6 +46,12 @@ if grep -q "^GEO_API_KEY=" "$ENV_FILE"; then
     sed -i "s/^GEO_API_KEY=.*/GEO_API_KEY=\"$GEO_API_KEY\"/" "$ENV_FILE"
 else
     echo "GEO_API_KEY=\"$GEO_API_KEY\"" >> "$ENV_FILE"
+fi
+
+if grep -q "^GEMINI_API_KEY=" "$ENV_FILE"; then
+    sed -i "s/^GEMINI_API_KEY=.*/GEMINI_API_KEY=\"$GEMINI_API_KEY\"/" "$ENV_FILE"
+else
+    echo "GEMINI_API_KEY=\"$GEMINI_API_KEY\"" >> "$ENV_FILE"
 fi
 
 echo ".env file setup complete with all configurations."
