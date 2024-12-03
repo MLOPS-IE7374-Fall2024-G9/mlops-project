@@ -47,26 +47,6 @@ ssh_exec "
     chmod +x setup.sh && ./setup.sh
 "
 
-# Step 2: Build the backend image
-echo "Building the backend Docker image..."
-ssh_exec "
-    cd $REMOTE_DIR && \
-    echo 'Building the backend Docker image...' && \
-    docker build -t backend -f $BACKEND_DOCKERFILE .
-"
-
-# Step 3: Run the backend container
-echo "Running the backend Docker container..."
-ssh_exec "
-    cd $REMOTE_DIR && \
-    if [ \$(docker ps -q -f name=backend) ]; then
-        echo 'Stopping and removing existing backend container...'
-        docker stop backend && docker rm backend
-    fi
-    echo 'Starting the backend container...' && \
-    docker run -d -p 8000:8000 backend
-"
-
 # Step 4: Build the frontend image
 echo "Building the frontend Docker image..."
 ssh_exec "
@@ -85,6 +65,26 @@ ssh_exec "
     fi
     echo 'Starting the frontend container...' && \
     docker run -d -p 8501:8501 frontend
+"
+
+# Step 2: Build the backend image
+echo "Building the backend Docker image..."
+ssh_exec "
+    cd $REMOTE_DIR && \
+    echo 'Building the backend Docker image...' && \
+    docker build -t backend -f $BACKEND_DOCKERFILE .
+"
+
+# Step 3: Run the backend container
+echo "Running the backend Docker container..."
+ssh_exec "
+    cd $REMOTE_DIR && \
+    if [ \$(docker ps -q -f name=backend) ]; then
+        echo 'Stopping and removing existing backend container...'
+        docker stop backend && docker rm backend
+    fi
+    echo 'Starting the backend container...' && \
+    docker run -d -p 8000:8000 backend
 "
 
 echo "Deployment complete."
