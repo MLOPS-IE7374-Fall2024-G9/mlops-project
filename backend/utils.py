@@ -13,8 +13,8 @@ def haversine(lat1, lon1, lat2, lon2):
 
 # Function to find the closest ISO region
 def find_closest_iso_region(coordinates):
-    current_dir = os.getcwd()
-    path = current_dir + "/iso_company.json"
+    current_file_dir = os.path.dirname(os.path.abspath(__file__))
+    path = current_file_dir + "/iso_company.json"
     iso_company_map = load_iso_company_map(path)
 
     lat, lon = map(float, coordinates.split(","))

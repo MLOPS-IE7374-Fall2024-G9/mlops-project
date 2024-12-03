@@ -47,6 +47,12 @@ ssh_exec "
     chmod +x setup.sh && ./setup.sh
 "
 
+# # Step 2: Stop and remove existing Docker containers
+# echo "Stopping and removing existing Docker containers..."
+# ssh_exec "
+#     docker rm -f $(docker ps -aq)
+# "
+
 # Step 4: Build the frontend image
 echo "Building the frontend Docker image..."
 ssh_exec "
