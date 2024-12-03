@@ -71,6 +71,7 @@ This project focuses on forecasting energy demand using weather data. The foreca
    - Setup docker access
    ```
    sudo usermod -aG sudo <USERNAME>
+   sudo usermod -aG docker <USERNAME>
    newgrp docker
    docker ps
    ```
