@@ -57,7 +57,6 @@ This project focuses on forecasting energy demand using weather data. The foreca
    Next set the password and give root access to the user
    ```
    sudo passwd username
-   sudo usermod -aG sudo <USERNAME>
    ```
 
    You can then ssh using password
@@ -71,6 +70,7 @@ This project focuses on forecasting energy demand using weather data. The foreca
    - Install docker in the new VM (https://docs.docker.com/engine/install/debian/)
    - Setup docker access
    ```
+   sudo usermod -aG sudo <USERNAME>
    newgrp docker
    docker ps
    ```
