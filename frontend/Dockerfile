@@ -16,9 +16,5 @@ COPY frontend/ /app/
 # Expose the port that Streamlit runs on
 EXPOSE 8501
 
-# Start streamlit
-COPY frontend/start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
-# Use a script to start Streamlit in the background
-ENTRYPOINT ["/app/start.sh"]
+# Run the Streamlit app
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
