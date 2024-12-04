@@ -5,7 +5,7 @@ USER root
 
 # Update and install git
 RUN apt-get update && \
-    apt-get install -y git && \
+    apt-get install -y git jq sshpass && \
     rm -rf /var/lib/apt/lists/*  # Clean up the apt cache to reduce image size
 
 # Switch to airflow user

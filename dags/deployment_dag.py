@@ -56,7 +56,7 @@ deployment_fail_email = EmailOperator(
 # Task to execute `deploy_app.sh`
 deploy_app_task = BashOperator(
     task_id='deploy_app',
-    bash_command='bash ' + deploy_app_path,
+    bash_command=deploy_app_path + " ",
     dag=deploy_model_dag,
 )
 

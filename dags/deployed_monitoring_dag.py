@@ -110,7 +110,15 @@ with DAG(
         wait_for_completion=True,
     )
 
+    # Task: Trigger rollback
+    trigger_rollback_dag = TriggerDagRunOperator(
+        task_id="trigger_rollback_dag",
+        trigger_dag_id="model_rollback",
+        wait_for_completion=True,
+    )
+
     # DAG Dependencies
     download_model_task >> trigger_data_drift_dag >> trigger_data_bias_dag >> trigger_model_bias_dag
     trigger_model_bias_dag >> get_validation_outputs_task >> check_thresholds
     check_thresholds >> [skip_retraining, trigger_retraining_dag]
+    trigger_retraining_dag >> trigger_rollback_dag
