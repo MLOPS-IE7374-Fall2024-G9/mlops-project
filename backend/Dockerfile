@@ -19,7 +19,7 @@ RUN curl -fsSL https://ollama.com/install.sh | sh
 COPY airflow-config/requirements.txt /app/
 
 # Install the Python dependencies from the requirements.txt file
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Copy the rest of the application code into the container
 COPY . /app/
