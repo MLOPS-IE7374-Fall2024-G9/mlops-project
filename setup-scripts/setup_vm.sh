@@ -3,8 +3,11 @@
 # Enable error handling - exit on any error
 set -e
 
-# Load configuration from config.json
-CONFIG_FILE="./config.json"
+# Get the directory of the current script
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
+# Construct the path to config.json
+CONFIG_FILE="$SCRIPT_DIR/config.json"
 
 # Helper function to fetch values from the config file
 get_config_value() {

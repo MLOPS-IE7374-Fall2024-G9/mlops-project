@@ -56,7 +56,8 @@ ssh_exec "
     echo 'Stopping all containers...' && \
     docker stop \$(docker ps -q) || true && \
     echo 'Removing all containers...' && \
-    docker rm \$(docker ps -aq) || true
+    docker rm \$(docker ps -aq) || true && \
+    docker rmi -f \$(docker images -aq) || true
 "
 
 # Step 4: Build the frontend image
