@@ -1,7 +1,10 @@
-# Energy Demand Forcasting
+# Energy Demand Forecasting
 
 ## Introduction
 This project focuses on forecasting energy demand using weather data. The forecasting process is orchestrated using Airflow, allowing for automated data collection, processing, and model execution within a Dockerized MLOps pipeline.
+(More information in docs folder)
+
+Deployed App - http://35.209.50.153:8080/
 
 ## Setup and reproducibility
 1. **Clone the repository:**
@@ -90,17 +93,17 @@ This project focuses on forecasting energy demand using weather data. The foreca
    - Setup and update the credentials in setup-scripts/config.json
    - Run setup_vm.sh to setup the newly allocated vm
    ```
-   ./setup-script/setup_vm.sh
+   ./setup-scripts/setup_vm.sh
    ```
 
    Manual Deployment
    - Run deploy_app.sh to deploy and run the model and LLM
    ```
-   ./setup-script/deploy_app.sh
+   ./setup-scripts/deploy_app.sh
    ```
    - Run deploy_model.sh to deploy just the model inside the LLM backend
    ```
-   ./setup-script/deploy_model.sh
+   ./setup-scripts/deploy_model.sh
    ```
 
    Github Action Deployment
