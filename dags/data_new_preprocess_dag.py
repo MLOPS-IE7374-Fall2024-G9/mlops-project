@@ -32,17 +32,17 @@ default_args = {
     'start_date': datetime.datetime(2023, 9, 17),
     'retries': 0, # Number of retries in case of task failure
     'retry_delay': timedelta(minutes=5), # Delay before retries
-    "execution_timeout": timedelta(minutes=10),
+    "execution_timeout": timedelta(minutes=30),
 }
 
 # Data DAG pipeline init
-new_data_dag = DAG(
-    "new_data_dag",
+data_new_preprocess_dag = DAG(
+    "data_new_preprocess_dag",
     default_args=default_args,
     description="New Data Download and Preprocess DAG",
     schedule_interval='@daily',
     catchup=False,
-    tags=['new_data_dag']
+    tags=['data_new_preprocess_dag']
 )
 
 # ------------------------------------------------------------------------------------------------
@@ -72,7 +72,7 @@ send_email = EmailOperator(
     to=["mlops.group.9@gmail.com"],    # Email address of the recipient
     subject='Notification from Airflow',
     html_content='<p>This is a notification email sent from Airflow. </p>',
-    dag=new_data_dag,
+    dag=data_new_preprocess_dag,
     on_failure_callback=email_notify_failure,
     on_success_callback=email_notify_success, 
 )
@@ -83,7 +83,7 @@ send_data_validation_failure_email = EmailOperator(
     to=["mlops.group.9@gmail.com"],
     subject='Data Validation Failed',
     html_content='<p>Data validation has failed. Please review the data.</p>',
-    dag=new_data_dag,
+    dag=data_new_preprocess_dag,
 )
 
 # ------------------------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ branch_task = BranchPythonOperator(
     task_id='branch_on_validation',
     python_callable=check_validation_result,
     provide_context=True,
-    dag=new_data_dag,
+    dag=data_new_preprocess_dag,
 )
 
 # --------------------------
@@ -104,7 +104,7 @@ last_k_start_end_date_task = PythonOperator(
     python_callable=get_last_k_start_end_dates,
     provide_context=True,
     op_args=[delta_days],
-    dag = new_data_dag
+    dag = data_new_preprocess_dag
 )
 
 # function returns start and end date (yesterday's date)
@@ -112,7 +112,7 @@ last_k_start_end_date_task = PythonOperator(
 #     task_id = 'start_end_date_task',
 #     python_callable=get_start_end_dates,
 #     provide_context=True,
-#     dag = new_data_dag
+#     dag = data_new_preprocess_dag
 # )
 
 # function to get new data, returns data json
@@ -121,7 +121,7 @@ updated_data_from_api_task = PythonOperator(
     python_callable=get_updated_data_from_api,
     provide_context=True,
     op_args=[last_k_start_end_date_task.output],
-    dag = new_data_dag
+    dag = data_new_preprocess_dag
 )
 
 # Define the clean data task, depends on 'updated_data_from_api_task'
@@ -130,7 +130,7 @@ clean_data_task = PythonOperator(
     python_callable=clean_data,
     op_args=[updated_data_from_api_task.output],
     provide_context=True,
-    dag=new_data_dag,
+    dag=data_new_preprocess_dag,
 )
 
 # Define the engineer features task, depends on 'clean_data_task'
@@ -139,7 +139,7 @@ engineer_features_task = PythonOperator(
     python_callable=engineer_features,
     op_args=[clean_data_task.output],
     provide_context=True,
-    dag=new_data_dag,
+    dag=data_new_preprocess_dag,
 )
 
 # Define the cyclic feature addition task, depends on 'engineer_features_task'
@@ -148,7 +148,7 @@ add_cyclic_features_task = PythonOperator(
     python_callable=add_cyclic_features,
     op_args=[engineer_features_task.output],
     provide_context=True,
-    dag=new_data_dag,
+    dag=data_new_preprocess_dag,
 )
 
 # Define the normalization and encoding task, depends on 'add_cyclic_features_task'
@@ -157,7 +157,7 @@ normalize_and_encode_task = PythonOperator(
     python_callable=normalize_and_encode,
     op_args=[add_cyclic_features_task.output],
     provide_context=True,
-    dag=new_data_dag,
+    dag=data_new_preprocess_dag,
 )
 
 # function to select final features
@@ -166,7 +166,7 @@ select_final_features_task = PythonOperator(
     python_callable=select_final_features,
     op_args=[normalize_and_encode_task.output],
     provide_context=True,
-    dag=new_data_dag,
+    dag=data_new_preprocess_dag,
 )
 
 
@@ -176,7 +176,7 @@ processed_data_from_dvc_task = PythonOperator(
     python_callable=get_data_from_dvc,
     provide_context=True,
     op_args=[filename_preprocessed],
-    dag = new_data_dag
+    dag = data_new_preprocess_dag
 )
 
 # function to validate data with schema
@@ -185,7 +185,7 @@ validate_data_with_schema_task =  PythonOperator(
     python_callable=validate_data,
     provide_context=True,
     op_args=[processed_data_from_dvc_task.output, select_final_features_task.output],
-    dag = new_data_dag
+    dag = data_new_preprocess_dag
 )
 
 # function to pull preprocessed data from dvc, returns json
@@ -194,7 +194,7 @@ raw_data_from_dvc_task = PythonOperator(
     python_callable=get_data_from_dvc,
     provide_context=True,
     op_args=[filename_raw],
-    dag = new_data_dag
+    dag = data_new_preprocess_dag
 )
 
 # function to merge the new data to raw data csv directly
@@ -203,7 +203,7 @@ merge_raw_data_task = PythonOperator(
     python_callable=merge_data,
     provide_context=True,
     op_args=[updated_data_from_api_task.output, raw_data_from_dvc_task.output],
-    dag = new_data_dag
+    dag = data_new_preprocess_dag
 )
 
 # function to merge dvc data with newly pulled data from api, returns data json
@@ -212,7 +212,7 @@ merge_data_task = PythonOperator(
     python_callable=merge_data,
     provide_context=True,
     op_args=[select_final_features_task.output, processed_data_from_dvc_task.output],
-    dag = new_data_dag
+    dag = data_new_preprocess_dag
 )
 
 # function to remove redundant rows, returns data json
@@ -221,7 +221,7 @@ redundant_removal_task = PythonOperator(
     python_callable=redundant_removal,
     provide_context=True,
     op_args=[merge_data_task.output],
-    dag = new_data_dag
+    dag = data_new_preprocess_dag
 )
 
 # function to update data to dvc
@@ -230,7 +230,7 @@ update_data_to_dvc_task = PythonOperator(
     python_callable=update_data_to_dvc,
     provide_context=True,
     op_args=[redundant_removal_task.output],
-    dag = new_data_dag
+    dag = data_new_preprocess_dag
 )
 
 update_raw_data_to_dvc_task = PythonOperator(
@@ -238,14 +238,14 @@ update_raw_data_to_dvc_task = PythonOperator(
     python_callable=update_data_to_dvc,
     provide_context=True,
     op_args=[merge_raw_data_task.output],
-    dag = new_data_dag
+    dag = data_new_preprocess_dag
 )
 
 delete_local_task = PythonOperator(
     task_id = 'delete_local_task',
     python_callable=delete_local_dvc_data,
     provide_context=True,
-    dag = new_data_dag,
+    dag = data_new_preprocess_dag,
     trigger_rule=TriggerRule.ALL_DONE
 )
 
@@ -270,4 +270,4 @@ update_raw_data_to_dvc_task >> send_email
 
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    new_data_dag.cli
+    data_new_preprocess_dag.cli

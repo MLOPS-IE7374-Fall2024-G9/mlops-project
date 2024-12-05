@@ -29,6 +29,30 @@ with DAG(
     catchup=False,
     tags=['conditional_retrain_dag'],
 ) as dag:
+    
+    # Task: Get Validation Outputs
+    def get_validation_outputs(**kwargs):
+        X_train, X_test, y_train, y_test = load_processed_data(
+            filename="data_preprocess.csv",
+            target_column="value",
+            test_size=0.2,
+            random_state=42,
+        )
+        if X_test is None or y_test is None:
+            raise ValueError("Failed to load the test dataset.")
+        
+        model_name = download_model_artifacts()
+        model = load_model(model_name)
+        
+        metrics = test_and_evaluate_model(model, X_test, y_test)
+        return metrics["mse"], metrics["mae"], metrics["r2 score"]
+
+    # Task: Check Thresholds - skip or trigger rollback + retraining
+    def check_thresholds_task(**kwargs):
+        thresholds = kwargs['thresholds']
+        validation_outputs = kwargs['ti'].xcom_pull(task_ids="get_validation_outputs_task")
+        result = threshold_verification(thresholds, validation_outputs)
+        return "skip_retraining" if result else "trigger_rollback_dag"
 
     # Task: Download Model
     download_model_task = PythonOperator(
@@ -57,41 +81,17 @@ with DAG(
         wait_for_completion=True,
     )
 
-    # Task: Get Validation Outputs
-    def get_validation_outputs(**kwargs):
-        X_train, X_test, y_train, y_test = load_processed_data(
-            filename="data_preprocess.csv",
-            target_column="value",
-            test_size=0.2,
-            random_state=42,
-        )
-        if X_test is None or y_test is None:
-            raise ValueError("Failed to load the test dataset.")
-        
-        model_name = download_model_artifacts()
-        model = load_model(model_name)
-        
-        metrics = test_and_evaluate_model(model, X_test, y_test)
-        return metrics["mse"], metrics["mae"], metrics["r2 score"]
-
-    get_validation_outputs_task = PythonOperator(
-        task_id="get_validation_outputs_task",
-        python_callable=get_validation_outputs,
-    )
-
-    # Task: Check Thresholds - skip or trigger rollback + retraining
-    def check_thresholds_task(**kwargs):
-        thresholds = kwargs['thresholds']
-        validation_outputs = kwargs['ti'].xcom_pull(task_ids="get_validation_outputs_task")
-        result = threshold_verification(thresholds, validation_outputs)
-        return "skip_retraining" if result else "trigger_rollback_dag"
-
     check_thresholds = BranchPythonOperator(
         task_id="check_thresholds",
         python_callable=check_thresholds_task,
         op_kwargs={
             'thresholds': (1000, 1000, 0.7),
         },
+    )
+    
+    get_validation_outputs_task = PythonOperator(
+        task_id="get_validation_outputs_task",
+        python_callable=get_validation_outputs,
     )
 
     # Task: Skip Retraining

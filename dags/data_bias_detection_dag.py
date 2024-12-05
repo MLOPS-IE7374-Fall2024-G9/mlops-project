@@ -18,12 +18,12 @@ default_args = {
     "execution_timeout": timedelta(minutes=20),
 }
 
-bias_detection_and_mitigation = DAG(
-    'bias_detection_and_mitigation',
+data_bias_detection_and_mitigation = DAG(
+    'data_bias_detection_and_mitigation',
     default_args=default_args,
     description='A DAG with separate tasks for bias detection and mitigation',
     schedule_interval=None,
-    tags=['bias_detection_and_mitigation']
+    tags=['data_bias_detection_and_mitigation']
 )
 
 # File paths for data
@@ -71,20 +71,20 @@ processed_data_from_dvc_task = PythonOperator(
     python_callable=get_data_from_dvc,
     provide_context=True,
     op_args=[filename_preprocessed],
-    dag = bias_detection_and_mitigation
+    dag = data_bias_detection_and_mitigation
 )
 
 identify_bias_task = PythonOperator(
     task_id='identify_bias',
     python_callable=identify_bias,
     op_args=[processed_data_from_dvc_task.output],
-    dag=bias_detection_and_mitigation,
+    dag=data_bias_detection_and_mitigation,
 )
 
 mitigate_bias_task = PythonOperator(
     task_id='mitigate_bias',
     python_callable=mitigate_bias,
-    dag=bias_detection_and_mitigation,
+    dag=data_bias_detection_and_mitigation,
 )
 
 # function to update data to dvc
@@ -93,7 +93,7 @@ mitigated_data_to_dvc_task = PythonOperator(
     python_callable=update_data_to_dvc,
     provide_context=True,
     op_args=[mitigated_data_path],
-    dag = bias_detection_and_mitigation
+    dag = data_bias_detection_and_mitigation
 )
 
 # Set task dependencies
@@ -101,4 +101,4 @@ processed_data_from_dvc_task >> identify_bias_task >> mitigate_bias_task >> miti
  
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    bias_detection_and_mitigation.cli
+    data_bias_detection_and_mitigation.cli

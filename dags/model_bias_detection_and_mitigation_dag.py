@@ -65,10 +65,10 @@ default_args = {
 # Define the DAG
 with DAG(
     'model_bias_detection_and_mitigation',
-    'model_bias_detection_and_mitigation',
     default_args=default_args,
     schedule_interval=None,
     catchup=False,
+    tags=['model_bias_detection_and_mitigation_dag']
 ) as dag:
     
   
