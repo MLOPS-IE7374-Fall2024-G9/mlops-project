@@ -35,11 +35,16 @@ ssh_exec() {
 echo "Ensuring repository is up-to-date on the remote machine..."
 ssh_exec "
     if [ -d $REMOTE_DIR ]; then
-        echo 'Directory $REMOTE_DIR exists, pulling latest changes...'
-        cd $REMOTE_DIR && git pull
+        echo 'Directory $REMOTE_DIR exists, checking out production branch and pulling latest changes...'
+        cd $REMOTE_DIR && \
+        git fetch origin && \
+        git checkout production && \
+        git pull origin production
     else
         echo 'Directory $REMOTE_DIR does not exist, cloning repository...'
-        git clone $REPO_URL $REMOTE_DIR
+        git clone $REPO_URL $REMOTE_DIR && \
+        cd $REMOTE_DIR && \
+        git checkout production
     fi
 "
 # step 1a: Run setup.sh

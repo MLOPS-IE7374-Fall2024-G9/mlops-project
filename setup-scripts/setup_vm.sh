@@ -83,10 +83,13 @@ ssh_exec "
         echo 'Directory $REMOTE_DIR exists, stashing any local changes and pulling latest changes...'
         cd $REMOTE_DIR && \
         git stash && \
-        git pull
+        git checkout production && \
+        git pull origin production
     else
         echo 'Directory $REMOTE_DIR does not exist, cloning repository...'
         git clone $REPO_URL $REMOTE_DIR
+        cd $REMOTE_DIR && \
+        git checkout production
     fi
 "
 

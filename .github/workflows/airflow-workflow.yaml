@@ -181,11 +181,16 @@ jobs:
           EOF
       - name: Overwrite the airflow-config folder onto the vm
         run: |
-          scp -o StrictHostKeyChecking=no -r ./airflow-config/* ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}
+          scp -o StrictHostKeyChecking=no -r ./airflow-config/* ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/airflow-config/
           scp -o StrickHostKeyschecing=no -r ./reqiuirement_airflow.txt  ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/requirements.txt
+          scp -o StrickHostKeyschecing=no -r ./setup.sh  ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/setup.sh
+          scp -o StrickHostKeyschecing=no -r ./mlops-7374-3e7424e80d76.json.enc  ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/mlops-7374-3e7424e80d76.json.enc
+          scp -o StrickHostKeyschecing=no -r ./mlops-437516-b9a69694c897.json.enc  ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/mlops-437516-b9a69694c897.json.enc
+          scp -o StrickHostKeyschecing=no -r ./airflow.cfg  ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/airflow.cfg
       - name: Docker Compose Up Commands
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+            ./setup.sh
             sudo docker compose up --build -d  # Start the containers in detached mode
           EOF
 
