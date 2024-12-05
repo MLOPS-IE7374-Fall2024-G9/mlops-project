@@ -95,7 +95,7 @@ class RAG:
                                 7. Analyze the Impact:
                                 - Based on weather, energy demand, and financial data, evaluate how the forecast will influence the stocks of identified companies.
 
-                                8. Predict Stock Movement:
+                                8. Predict Stock Movement for each company:
                                 - Provide a detailed analysis with categories:
                                     - Increase: Stocks are likely to rise.
                                     - Decrease: Stocks are likely to fall.
