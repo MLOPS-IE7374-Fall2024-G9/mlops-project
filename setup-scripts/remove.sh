@@ -31,6 +31,7 @@ ssh_exec "
     if command -v docker &> /dev/null; then
         echo 'Running docker system prune...'
         docker system prune -a --volumes -f
+        sudo systemctl restart docker
         echo 'Docker cleanup complete.'
     else
         echo 'Docker is not installed, skipping cleanup.'

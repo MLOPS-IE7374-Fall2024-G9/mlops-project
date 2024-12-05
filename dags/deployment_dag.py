@@ -17,7 +17,7 @@ default_args = {
     'start_date': datetime(2023, 9, 17),
     'retries': 0, # Number of retries in case of task failure
     'retry_delay': timedelta(minutes=5), # Delay before retries
-    "execution_timeout": timedelta(minutes=10),
+    "execution_timeout": timedelta(minutes=30),
 }
 
 # Data DAG pipeline init
