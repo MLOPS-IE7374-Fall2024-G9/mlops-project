@@ -111,7 +111,7 @@ This project focuses on forecasting energy demand using weather data. The foreca
    - Run the deployment_app_dag to deploy only entire backend LLM with new model inside the backend container
 
 ## DAGS
-
+Check dags/ folder
 
 ## MLFlow 
 mlflow server - http://35.209.190.75:5000/ 
