@@ -12,13 +12,13 @@ tensorflow
 mlflow
 xgboost
 shap
-# ollama
+ollama
 llama-index
 llama-index-llms-ollama
 llama-index-embeddings-huggingface
 llama-index-embeddings-instructor
-# llama-index-vector-stores-chroma
-# chromadb
+llama-index-vector-stores-chroma
+chromadb
 fastapi 
 uvicorn
 yfinance
