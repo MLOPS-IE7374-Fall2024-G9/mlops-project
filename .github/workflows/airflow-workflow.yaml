@@ -8,12 +8,13 @@ on:
   push:
     branches:
       # - aakash_dev
-      - rajat_dev
+      # - rajat_dev
       # - amogha_dev
       # - jahnavi_dev
       # - nikhil_dev
       # - samanvya_dev
       #- dev
+      - production
     paths:
       - 'dags/**'
       - 'airflow-config/**'
