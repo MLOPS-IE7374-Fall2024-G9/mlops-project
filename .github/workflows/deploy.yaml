@@ -1,12 +1,16 @@
-name: Deploy App
+name: Deploy Front End Application
 
 on:
   push:
+    branches: 
+      # - main
+      - aakash_dev
     paths:
       - 'backend/app.py'
       - 'backend/rag.py' # Trigger workflow when these files are changed
 
 jobs:
+
   deploy_app:
     name: Deploy Application
     runs-on: ubuntu-latest
@@ -18,9 +22,13 @@ jobs:
     - name: Set Up Shell Environment
       run: |
         sudo apt-get update
-        sudo apt-get install -y bash sshpass jq # Install bash, sshpass, and jq
+        sudo apt-get install -y bash sshpass jq # Install bash, sshpass, and jq    
+    - name: Install sshpass
+      run: |
+        sudo apt-get install -y sshpass
 
     - name: Run Deploy Script
       run: |
         chmod +x setup-scripts/deploy_app.sh
-        setup-scripts/deploy_app.sh
+        cd setup-scripts
+        ./deploy_app.sh
