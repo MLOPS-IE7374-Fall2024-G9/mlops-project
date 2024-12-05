@@ -1,5 +1,6 @@
 
 # Backend
+![Alt text](../docs/backend.png)
 
 This is the backend service that provides an API for predicting energy demand and interacting with a query agent. It uses FastAPI to expose endpoints for various operations, including energy demand prediction and querying an agent for specific information. 
 
