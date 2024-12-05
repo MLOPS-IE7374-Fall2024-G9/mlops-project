@@ -1,0 +1,21 @@
+logging:
+  receivers:
+    airflow_logs:
+      type: files
+      include_paths:
+        - /home/aakashmahesha/logs/dag_id=*/run_id=*/task_id=*/attempt=*.log
+      record_log_file_path: true
+  processors:
+    parse_filepath:
+      type: parse_regex
+      regex: '^/home/aakashmahesha/logs/dag_id=([^/]+)/run_id=([^/]+)/task_id=([^/]+)/attempt=(\d+)\.log$'
+      field: attributes.agent.googleapis.com/log_file_path
+    parse_message:
+      type: parse_regex
+      regex: '^\[(?<timestamp>[^\]]+)\] \{(?<module>[^:]+):(?<line>\d+)\} (?<severity>\S+) - (?<message>.+)'
+      field: message
+  service:
+    pipelines:
+      airflow:
+        receivers: [airflow_logs]
+        processors: [parse_filepath, parse_message]
