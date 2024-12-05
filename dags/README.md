@@ -7,34 +7,52 @@ The directory structure is organized as follows:
 ```
 dag/
 ├── src/
-│   ├── data_bias_detection.py
+│   ├── data_bias_detection_and_mitigation.py
 │   ├── data_download.py
 │   ├── data_drift.py
 │   ├── data_preprocess.py
 │   ├── data_schema_validation.py
+│   ├── feature_analyzer.py
+│   ├── model_bias_detection_and_mitigation..py
+│   ├── model_load_test.py
 │   ├── model_pipeline.py
+│   ├── model_roll_back.py
+│   ├── model_upload_test.py
 ├── tests/
-├── bias_detection_dag.py
+├── data_bias_detection_dag.py
 ├── data_drift_detection_dag.py
-├── model_bias_detection_dag.py
+├── data_feature_imp_analysis_dag.py
+├── data_new_preprocess_dag.py
+├── data_raw_preprocess_dag.py
+├── deployed_monitoring_dag.py
+├── deployment_app_dag.py
+├── deployment_model_dag.py
+├── master_dag.py
+├── model_bias_detection_and_mitigation_dag.py
+├── model_retrain_evaluate_dag.py
+├── model_roll_back_dag.py
 ├── model_train_evaluate_dag.py
-├── new_data_preprocess_dag.py
-├── raw_data_preprocess_dag.py
 ```
 
 ### Explanation
 - **src/**: Contains the Python modules used in the DAGs for various tasks, such as downloading, preprocessing, and validating data.
 - **tests/**: Holds test files to verify the DAG functionalities and the correctness of each function in `src`.
-- **bias_detection_dag.py**: Airflow DAG script for bias detection and mitigation of processed data.
-- **data_drift_detection_dag.py**: Airflow DAG script for data drift detection.
-- **model_train_evaluate_dag.py**: Airflow DAG script for model bias detection and mitigation.
-- **model_train_evaluate_dag.py**: Airflow DAG script for model training and evaluation.
-- **new_data_preprocess_dag.py**: Airflow DAG script for downloading and preprocessing new data.
-- **raw_data_preprocess_dag.py**: Airflow DAG script, for handling raw api data preprocessing tasks.
-
+- **data_bias_detection_dag.py**: Airflow DAG script for detecting and mitigating bias in processed data.
+- **data_drift_detection_dag.py**: Airflow DAG script for monitoring and detecting data drift in datasets.
+- **data_feature_imp_analysis_dag.py**: Airflow DAG script for analyzing and calculating feature importance in data.
+- **data_new_preprocess_dag.py**: Airflow DAG script for handling preprocessing of newly obtained data.
+- **data_raw_preprocess_dag.py**: Airflow DAG script for preprocessing raw data from APIs or external sources.
+- **deployed_monitoring_dag.py**: Airflow DAG script for monitoring the deployment and performance of models in production.
+- **deployment_app_dag.py**: Airflow DAG script for automating the deployment of applications and services.
+- **deployment_model_dag.py**: Airflow DAG script for managing model deployment processes in production environments.
+- **master_dag.py**: Main orchestration DAG that triggers other individual DAGs in the workflow.
+- **model_bias_detection_and_mitigation_dag.py**: Airflow DAG script for detecting and mitigating bias in trained models.
+- **model_retrain_evaluate_dag.py**: Airflow DAG script for retraining and evaluating machine learning models.
+- **model_roll_back_dag.py**: Airflow DAG script for rolling back a model deployment to a previous version if needed.
+- **model_train_evaluate_dag.py**: Airflow DAG script for training and evaluating machine learning models.
 ---
 
-## `new_data_preprocess_dag.py` - DAG for New Data Download and Preprocessing
+## `data_new_preprocess_dag.py` - DAG for New Data Download and Preprocessing
 
 The purpose of this DAG is to automate the process of downloading, preprocessing, and validating new data. It includes several steps that perform data cleaning, feature engineering, schema validation, and updating the data repository with version control. The DAG leverages Airflow to orchestrate these tasks and uses DVC (Data Version Control) to ensure data reproducibility.
 
@@ -93,7 +111,7 @@ The DataSchemaAndStatistics class (dataset/scripts/data_schema.py) uses pandera 
 
 ---
 
-## `raw_data_preprocess_dag.py` - DAG for Raw Data Preprocessing
+## `data_raw_preprocess_dag.py` - DAG for Raw Data Preprocessing
 
 This DAG handles the preprocessing of raw data obtained from DVC. It focuses on executing preprocessing steps to ensure data consistency, applies transformations, and then updates the preprocessed data back to DVC for tracking. Raw data is here all the data, which is downloaded in raw from API (without data preprocessing) and stored in DVC.
 
@@ -117,7 +135,7 @@ This DAG handles the preprocessing of raw data obtained from DVC. It focuses on 
 
 ---
 
-## `bias_detection_and_mitigation.py` - DAG for Bias Detection and Mitigation
+## `data_bias_detection_dag.py` - DAG for Bias Detection and Mitigation
 
 The purpose of this DAG is to automate the detection and mitigation of bias in the dataset. It performs several steps that include loading data, identifying biases, applying conditional mitigation strategies, and updating the data repository with the mitigated results. The DAG uses Airflow for orchestration and ensures continuous monitoring of fairness in the dataset.
 
@@ -161,4 +179,220 @@ The purpose of this DAG is to automate the process of detecting data drift in th
    - The DAG establishes dependencies that ensure the data loading task is completed before drift detection tasks are executed, followed by the email notification.
 
 ---
+
+## `data_feature_imp_analysis_dag.py` - DAG for Feature Importance Analysis
+
+The purpose of this DAG is to automate the process of analyzing feature importance for a machine learning model. It loads the necessary model and dataset, performs feature importance analysis using SHAP (SHapley Additive exPlanations), and sends email notifications on the success or failure of the DAG execution.
+
+### DAG Steps and Explanation
+
+1. **Feature Importance Analysis**:
+   - `analyze_feature_importance`: Analyzes the importance of features in the provided model using SHAP to understand which features are most influential in making predictions.
+
+2. **Email Notifications**:
+   - `send_email`: Sends a general notification email for DAG completion.
+   - `email_notify_success`: Sends an email notification on task success.
+   - `email_notify_failure`: Sends an email notification on task failure.
+
+3. **Task Dependencies**:
+   - The DAG establishes dependencies such that the feature importance analysis is performed first, followed by sending the success or failure email based on the result.
+
+---
+
+## `deployed_monitoring_dag.py` - DAG for Monitoring Deployed Models
+
+The purpose of this DAG is to monitor the performance of deployed models by validating their predictions against predefined thresholds. If thresholds are violated, the DAG triggers a retraining process; otherwise, it skips retraining. It also handles tasks such as model downloading, data drift detection, and model bias detection.
+
+### DAG Steps and Explanation
+
+1. **Validation Outputs**:
+   - `get_validation_outputs`: Loads processed data and evaluates the model's performance on the test set, returning key metrics like MSE, MAE, and R² score.
+
+2. **Threshold Verification**:
+   - `check_thresholds_task`: Compares the validation outputs against predefined thresholds. If the thresholds are violated, retraining or rollback will be triggered.
+
+3. **Model Monitoring**:
+   - `download_model_task`: Downloads the latest model artifacts for evaluation.
+   - `trigger_data_drift_dag`: Triggers the data drift detection DAG to check if the model's input data has changed significantly.
+   - `trigger_data_bias_dag`: Triggers the data bias mitigation DAG to check and mitigate any data bias.
+   - `trigger_model_bias_dag`: Triggers the model bias detection and mitigation DAG to evaluate and correct any biases in the model.
+
+4. **Retraining and Rollback**:
+   - `trigger_retraining_dag`: Triggers a retraining process if the thresholds are violated.
+   - `trigger_rollback_dag`: Rolls back the model to a previous stable version if necessary.
+   - `skip_retraining_task`: Skips retraining if the model is performing well within the thresholds.
+
+5. **Task Dependencies**:
+   - The DAG establishes a sequence where model validation is done first, followed by threshold checking, and based on the result, it either skips retraining or triggers a rollback and retraining.
+
+---
+
+## `deployment_app_dag.py` - DAG for Deploying Application
+
+This DAG is responsible for deploying the application to the specified environment. It runs a shell script (`deploy_app.sh`) to carry out the deployment and sends email notifications based on the task's success or failure.
+
+### DAG Steps and Explanation
+
+1. **Deploy Application**:
+   - `deploy_app`: Executes the `deploy_app.sh` script to deploy the application.
+
+2. **Email Notifications**:
+   - `deployment_pass_email`: Sends an email notification on task success, notifying stakeholders of a successful deployment.
+   - `deployment_fail_email`: Sends an email notification on task failure, alerting stakeholders to investigate the issue.
+
+3. **Task Dependencies**:
+   - The DAG ensures that the application deployment task runs first, followed by sending the success or failure email based on the deployment result.
+
+---
+
+## `deployment_model_dag.py` - DAG for Deploying Model
+
+This DAG is responsible for deploying the trained machine learning model to the specified environment. It runs a shell script (`deploy_model.sh`) to deploy the model and sends email notifications based on the task's success or failure.
+
+### DAG Steps and Explanation
+
+1. **Deploy Model**:
+   - `deploy_model`: Executes the `deploy_model.sh` script to deploy the machine learning model.
+
+2. **Email Notifications**:
+   - `deployment_pass_email`: Sends an email notification on task success, notifying stakeholders of a successful model deployment.
+   - `deployment_fail_email`: Sends an email notification on task failure, alerting stakeholders to investigate the issue.
+
+3. **Task Dependencies**:
+   - The DAG ensures that the model deployment task runs first, followed by sending the success or failure email based on the deployment result.
+
+---
+
+## `master_dag.py` - Master DAG for Orchestrating Multiple Tasks
+
+This DAG is responsible for triggering and managing other sub-DAGs related to different stages of data processing, model training, bias detection, and deployment. It coordinates tasks such as bias mitigation, data drift detection, feature importance analysis, model training, bias detection, and deployment.
+
+### DAG Steps and Explanation
+
+1. **Trigger Data Bias Mitigation**:
+   - `trigger_data_bias_dag`: Triggers the `bias_detection_and_mitigation` DAG to check for biases in the data and mitigate them if necessary.
+
+2. **Trigger Data Drift Detection**:
+   - `trigger_data_drift_dag`: Triggers the `drift_data_dag` to detect if there is any significant drift in the data over time.
+
+3. **Trigger Feature Importance Analysis**:
+   - `trigger_feature_imp_dag`: Triggers the `feature_imp_analysis_dag` to analyze the importance of different features in the dataset for model training.
+
+4. **Trigger Model Training**:
+   - `trigger_model_train_dag`: Triggers the `model_train_evaluate` DAG for training a model on the processed data.
+
+5. **Trigger Model Bias Detection**:
+   - `trigger_model_bias_dag`: Triggers the `model_bias_detection_and_mitigation` DAG to check if the model has any bias and apply mitigation if necessary.
+
+6. **Trigger Model Deployment**:
+   - `trigger_model_deploy`: Triggers the `deploy_model_task` DAG to deploy the model after training and validation.
+
+7. **Task Dependencies**:
+   - The tasks are arranged in a sequence: Data bias mitigation → Data drift detection and feature importance analysis → Model training → Model bias detection → Model deployment.
+
+---
+
+## `model_bias_detection_and_mitigation_dag.py` - Model Bias Detection and Mitigation DAG
+
+This DAG handles the steps related to detecting and mitigating bias in the machine learning model. It checks if the model has any bias, applies necessary mitigation strategies, and uploads the results to Google Cloud Platform (GCP) for further analysis.
+
+### DAG Steps and Explanation
+
+1. **Load Data Splits**:
+   - `load_data_splits`: Loads the training, test, and sensitive feature splits from the dataset to prepare for model training and bias detection.
+
+2. **Perform Bias Detection**:
+   - `perform_bias_detection`: Detects bias in the model by analyzing the test data using sensitive features. If bias is detected, the results are saved locally.
+
+3. **Perform Bias Mitigation**:
+   - `perform_bias_mitigation`: If bias is detected, this task performs bias mitigation by training a new model and applying techniques to reduce bias in the predictions.
+
+4. **Upload Results to GCP**:
+   - `upload_results_to_gcp`: Uploads the results of the bias detection and mitigation process to Google Cloud Platform for storage and further analysis.
+
+5. **Decide to Serve Model**:
+   - `proceed_to_serving`: Determines whether the model can be served based on whether bias was mitigated or not.
+
+6. **Push Model to MLflow**:
+   - `push_model_to_mlflow`: If the model passes the bias checks and mitigation, it is pushed to MLflow for tracking and serving.
+
+7. **Task Dependencies**:
+   - The tasks follow a sequence: Load data splits → Perform bias detection → Perform bias mitigation → Upload results to GCP → Decide on serving the model → Push model to MLflow.
+
+---
+
+## `model_retrain_evaluate_dag.py` - DAG for Model Retraining and Evaluation
+
+This DAG automates the process of retraining a machine learning model and evaluating its performance. It triggers other DAGs related to data collection and model training. The flow ensures that the model is retrained whenever new data becomes available.
+
+### DAG Steps and Explanation
+
+1. **Trigger New Data DAG**:
+   - `trigger_new_data_dag`: Triggers the `new_data_dag` to collect new data, which will be used for model retraining. The task waits for the completion of this DAG before proceeding.
+
+2. **Trigger Model Training and Evaluation DAG**:
+   - `trigger_model_train_dag`: Triggers the `model_train_evaluate` DAG to train and evaluate the model using the newly collected data. This task also waits for completion before proceeding.
+
+3. **Task Dependencies**:
+   - The DAG ensures that the new data collection is completed before initiating the model training and evaluation process.
+
+---
+
+## `model_roll_back_dag.py` - DAG for Rolling Back Model to Previous Version
+
+This DAG automates the rollback of a machine learning model to a previous version in case the current model is performing poorly or encountering issues. It uses a PythonOperator to invoke a rollback function and restore the previous model version in MLflow.
+
+### DAG Steps and Explanation
+
+1. **Run Rollback Task**:
+   - `run_rollback_task`: Executes the `run_rollback` function, which retrieves the model name from a JSON configuration file and triggers the rollback process using the `rollback_model` function.
+
+2. **Task Dependencies**:
+   - The DAG contains a single task, `run_rollback_task`, which is the only task in this workflow. It is responsible for executing the model rollback logic.
+
+--- 
+
+## `model_train_evaluate_dag.py` - DAG for Training and Evaluating Machine Learning Model
+
+This DAG is responsible for training or fine-tuning a machine learning model on incoming data, evaluating its performance against predefined thresholds, and triggering further actions such as model deployment or retraining based on the evaluation metrics.
+
+### DAG Steps and Explanation
+
+1. **Download Data from DVC**:
+   - `download_data_from_dvc_task`: Downloads the required dataset from DVC (Data Version Control) to be used for training or fine-tuning the model.
+
+2. **Task Decision (Train from Scratch or Fine-tune)**:
+   - `choose_task`: Decides whether to train the model from scratch or to fine-tune an existing model based on the provided configuration.
+
+3. **Download Model (for Fine-tuning)**:
+   - `download_model_task`: Downloads the existing trained model from storage if fine-tuning is needed.
+
+4. **Training the Model (from Scratch)**:
+   - `train_on_all_data_task`: If training from scratch is chosen, this task trains the model on the entire dataset downloaded from DVC and saves it locally.
+
+5. **Fine-tuning the Model**:
+   - `fine_tune_on_new_data_task`: If fine-tuning is chosen, this task fine-tunes the existing model on the new data and saves the updated model.
+
+6. **Evaluate the Model**:
+   - `evaluate_model_task`: Evaluates the trained or fine-tuned model using predefined metrics, such as accuracy, precision, and recall. The evaluation metrics are used for further decision-making.
+
+7. **Threshold Check**:
+   - `threshold_check_task`: Checks the evaluation metrics against predefined thresholds. If the thresholds are met, the process proceeds to deployment; otherwise, further actions such as hyperparameter tuning or retraining may be required.
+
+8. **Email Notifications**:
+   - `threshold_pass_email`: Sends an email notification when the model meets the required evaluation thresholds.
+   - `threshold_fail_email`: Sends an email notification when the model does not meet the evaluation thresholds, indicating the need for further actions.
+
+9. **Delete Local Files**:
+   - `delete_local_task`: Cleans up any local data or model files after the process is complete, ensuring that unnecessary files are removed.
+
+10. **Model Deployment**:
+    - `trigger_model_deployment`: Triggers the deployment of the model if the evaluation thresholds are met and the model is ready for production.
+
+### Task Dependencies
+
+- The DAG starts by downloading the data, followed by a decision on whether to train from scratch or fine-tune an existing model.
+- Depending on the decision, either the training or fine-tuning task is executed.
+- The model is evaluated, and based on the evaluation, a threshold check determines whether to deploy the model or initiate further steps such as retraining or hyperparameter tuning.
+- After completion, local files are deleted to free up resources, and if the model passes all checks, deployment is triggered.
 

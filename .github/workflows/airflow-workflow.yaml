@@ -210,6 +210,12 @@ jobs:
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
+      
+      - name: Remove Existing Dags folder
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+            sudo rm -rf ./dags
+          EOF
 
       - name: Overwrite The Dag folder
         run: |
@@ -233,6 +239,12 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
 
+      - name: Remove Existing Model folder
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+            sudo rm -rf ./model
+          EOF
+
       - name: Overwrite The Model Folder
         run: |
           scp -r -o StrictHostKeyChecking=no ./model ${{secrets.AIRFLOW_VM_USERNAME}}@${{secrets.AIRFLOW_VM_IP}}:/home/${{secrets.AIRFLOW_VM_USERNAME}}/
@@ -254,6 +266,12 @@ jobs:
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.AIRFLOW_GCE_SSH_PRIVATE_KEY }}
+
+      - name: Remove Existing Dataset folder
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AIRFLOW_VM_USERNAME }}@${{ secrets.AIRFLOW_VM_IP }} << EOF
+            sudo rm -rf ./dataset
+          EOF
 
       - name: Overwrite The Dataset Folder
         run: |

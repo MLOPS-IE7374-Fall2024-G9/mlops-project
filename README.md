@@ -31,22 +31,33 @@ This project focuses on forecasting energy demand using weather data. The foreca
    - Create a `.env` file with required environment variables.
 
 4. **Build and start the Docker containers**:
+   - Airflow - 
    ```bash
    docker-compose up --build -d
    ```
+   This command will build the airflow Docker images and start the containers in detached mode.
 
-   This command will build the Docker images and start the containers in detached mode.
+   - Backend and Frontend
+   ```bash
+   ./setup.sh && ./run.sh
+   ```
 
-5. **Access the Airflow UI**:
+   Backend runs on localhost:8000 and Frontend runs on localhost:8501.
+   To check backend API endpoints, navigate to localhost:8000/docs
+
+6. **Access the Airflow UI**:
    - Open your web browser and navigate to [http://localhost:8000/home](http://localhost:8000/home).
    - From here, you can start running the Airflow DAGs to orchestrate the energy demand forecasting workflows.
   
-6. **Local Development Env**:
+7. **Local Development Env**:
   ```bash
    pip install airflow-config/requirements.txt
    ```
 
-7. **Model Deployment**: 
+7. **Model Deployment**:
+   <br/>
+   **Currently Deployed App - http://34.44.2.90:8501/**
+   
    - Reserve a VM
    - Setup password login on the VM - 
    ```
@@ -79,20 +90,28 @@ This project focuses on forecasting energy demand using weather data. The foreca
    - Setup and update the credentials in setup-scripts/config.json
    - Run setup_vm.sh to setup the newly allocated vm
    ```
-   ./setup-script/setup_vm.sh
+   ./setup-scripts/setup_vm.sh
    ```
 
-   - Run deploy_app.sh to deploy and run the model and RAG
+   Manual Deployment
+   - Run deploy_app.sh to deploy and run the model and LLM
    ```
-   ./setup-script/deploy_app.sh
+   ./setup-scripts/deploy_app.sh
+   ```
+   - Run deploy_model.sh to deploy just the model inside the LLM backend
+   ```
+   ./setup-scripts/deploy_model.sh
    ```
 
-## Steps to run the pipeline 
-(more info about the dags in dags/README.md)
-1) Open your web browser and navigate to [http://localhost:8000/home](http://localhost:8000/home).
-2) new_data_preprocess_dag -> The purpose of this DAG is to automate the process of downloading, preprocessing, and validating new data. It includes several steps that perform data cleaning, feature engineering, schema validation, and updating the data repository with version control. The DAG leverages Airflow to orchestrate these tasks and uses DVC (Data Version Control) to ensure data reproducibility. Directly click run to trigger the dag and see the steps.
-3) raw_data_preprocess_dag -> This DAG handles the preprocessing of raw data obtained from DVC. It focuses on executing preprocessing steps to ensure data consistency, applies transformations, and then updates the preprocessed data back to DVC for tracking. Raw data is here all the data, which is downloaded in raw from API (without data preprocessing) and stored in DVC.
-4) bias_detection_dag -> This DAG handles bias detection of preprocessed data. It pull data from dvc, detects bias on it, mitigates it and pushes it back to dvc. Simply trigger the dag manually to see its working. Ideally it is scheduled for daily runs
+   Github Action Deployment
+   - Create a pull request with changes to the files - backend/app.py and backend/rag.py and deployment is triggered
+  
+   Using DAG
+   - Run the deployment_model_dag to deploy only the new ML model into the backend container
+   - Run the deployment_app_dag to deploy only entire backend LLM with new model inside the backend container
+
+## DAGS
+Check dags/ folder
 
 ## MLFlow 
 mlflow server - http://35.209.190.75:5000/ 
@@ -108,24 +127,25 @@ MLOPS-PROJECT/
 ├── backend/                            # Backend services and APIs
 ├── dags/                               # Airflow DAGs for orchestrating workflows
 ├── dataset/                            # Data files and processing scripts
+├── docs/                               # Holds documents and images
 ├── experiments/                        # Experiment tracking and configurations. Contains ipynb files
 ├── frontend/                           # Frontend services
 ├── logs/                               # Logs generated during execution
-├── mlruns/                             # MLFlow Logs generated during execution
 ├── model/                              # Trained models and model configurations
 ├── plugins/                            # Airflow plugins for custom operators and hooks
-├── rag/                                # Repository for RAG (Retrieval-Augmented Generation)
+├── setup-scripts/                      # VM setup and deployment scripts
 ├── .gitignore                          # Files and directories ignored by Git
 ├── airflow.cfg                         # Configuration file for Airflow
 ├── README.md                           # Project documentation
-├── mlops-437516-b9a69694c897.json.enc  # Encrypted gcp dvc config
 ├── encrypt.md                          # Encrypts the gcp dvc mlops config file
+├── run.sh                              # Shell script to run backend and frontend containers locally
 └── setup.sh                            # Shell script to set up the project environment
 ```
 
 - All the data related code is present in classes in dataset/scripts.
 - All the dag related functionality is present in dags/src. The dags/src imports functionality from dataset/scripts wherever required.
 - The data downloaded from dvc is stored in dataset/data/
+- The model related code is in model/scripts
 
 ## Reproducibility details and data versioning with DVC
 - Simply follow the setup to reproduce the entire repo and project.
