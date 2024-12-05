@@ -55,6 +55,7 @@ This project focuses on forecasting energy demand using weather data. The foreca
    ```
 
 7. **Model Deployment**:
+   <br/>
    **Currently Deployed App - http://34.44.2.90:8501/**
    
    - Reserve a VM
