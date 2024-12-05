@@ -1,6 +1,11 @@
 ## Pipelines
+Application deployment 
 ![Alt text](../docs/deployment_app_pipeline.png)
+
+Model Deployment
 ![Alt text](../docs/deployment_model_pipeline.png)
+
+Deployment Monitoring
 ![Alt text](../docs/deployment_monitoring.png)
 
 --- 
