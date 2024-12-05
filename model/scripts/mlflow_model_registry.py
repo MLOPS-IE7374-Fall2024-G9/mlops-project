@@ -243,10 +243,10 @@ class MLflowModelRegistry:
             latest_run = runs[0]
             run_id = latest_run.info.run_id
             run_name = latest_run.info.run_name
-
+            model_name = run_name.split("_")[0]
 
             # Fetch the model artifact URI
-            model_uri = f"runs:/{run_id}/model"
+            model_uri = f"runs:/{run_id}/{model_name}"
             print(model_uri)
             # Load the model
             model = mlflow.pyfunc.load_model(model_uri)
