@@ -7,7 +7,8 @@ with DAG(
     dag_id="model_retrain_evaluate_dag",
     start_date=datetime(2023, 1, 1),  # Replace with an appropriate start date
     schedule_interval=None,           # Set schedule interval as needed
-    catchup=False                     # Disable backfilling for this example
+    catchup=False,                     # Disable backfilling for this example
+    tags=['model_retrain_evaluate_dag']
 ) as dag:
 
     # collect new data

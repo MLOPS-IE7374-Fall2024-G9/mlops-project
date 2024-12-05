@@ -17,13 +17,13 @@ default_args = {
 }
 
 # Data DAG pipeline init
-drift_data_dag = DAG(
-    "drift_data_dag",
+data_drift_detection_dag = DAG(
+    "data_drift_detection_dag",
     default_args=default_args,
     description="Data Drift Detection DAG",
     schedule_interval=None,
     catchup=False,
-    tags=['drift_data_dag']
+    tags=['data_drift_detection_dag']
 )
 
 filename = "data_preprocess.csv"
@@ -56,7 +56,7 @@ send_email = EmailOperator(
     to=["mlops.group.9@gmail.com"],
     subject='Notification from Airflow',
     html_content='<p>This is a notification email sent from Airflow. </p>',
-    dag=drift_data_dag,
+    dag=data_drift_detection_dag,
     on_failure_callback=email_notify_failure,
     on_success_callback=email_notify_success, 
 )
@@ -68,7 +68,7 @@ load_data_task = PythonOperator(
     python_callable=load_data,
     provide_context=True,
     op_args=[filename],
-    dag=drift_data_dag
+    dag=data_drift_detection_dag
 )
 
 evidently_task = PythonOperator(
@@ -76,21 +76,21 @@ evidently_task = PythonOperator(
     python_callable=detect_drift_evidently,
     provide_context=True,
     op_args=[drift_report],
-    dag=drift_data_dag
+    dag=data_drift_detection_dag
 )
 
 ks_test_task = PythonOperator(
     task_id='detect_drift_ks_test',
     python_callable=detect_drift_ks_test,
     provide_context=True,
-    dag=drift_data_dag
+    dag=data_drift_detection_dag
 )
 
 psi_task = PythonOperator(
     task_id='detect_drift_psi',
     python_callable=detect_drift_psi,
     provide_context=True,
-    dag=drift_data_dag
+    dag=data_drift_detection_dag
 )
 
 # ------------------------------------------------------------------------------------------------

@@ -22,13 +22,13 @@ default_args = {
 }
 
 # Data DAG pipeline init
-deploy_model_dag = DAG(
-    "deploy_model_dag",
+deploy_app_dag = DAG(
+    "deploy_app_dag",
     default_args=default_args,
     description="Training Model on incoming data",
     schedule_interval=None,
     catchup=False,
-    tags=['deploy_model_dag']
+    tags=['deploy_app_dag']
 )
 
 # -------------------------------------------------
@@ -39,7 +39,7 @@ deployment_pass_email = EmailOperator(
     subject='Deployment Task Success',
     html_content='<p>Deployment completed successfully.</p>',
     trigger_rule=TriggerRule.ALL_SUCCESS,  # Trigger only if the previous tasks succeeded
-    dag=deploy_model_dag,
+    dag=deploy_app_dag,
 )
 
 # Task to send failure email
@@ -49,7 +49,7 @@ deployment_fail_email = EmailOperator(
     subject='Deployment Task Failure',
     html_content='<p>Deployment failed. Please check the logs for details.</p>',
     trigger_rule=TriggerRule.ONE_FAILED,  # Trigger if any of the previous tasks failed
-    dag=deploy_model_dag,
+    dag=deploy_app_dag,
 )
 # -------------------------------------------------
 
@@ -58,7 +58,7 @@ deployment_fail_email = EmailOperator(
 deploy_app_task = BashOperator(
     task_id='deploy_app',
     bash_command=deploy_app_path + " ",
-    dag=deploy_model_dag,
+    dag=deploy_app_dag,
 )
 
 # Task dependencies

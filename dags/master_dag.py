@@ -16,7 +16,7 @@ default_args = {
     'start_date': datetime(2023, 9, 17),
     'retries': 0,  # Number of retries in case of task failure
     'retry_delay': timedelta(minutes=5),  # Delay before retries
-    "execution_timeout": timedelta(minutes=10),
+    "execution_timeout": timedelta(minutes=90),
 }
 
 # Data DAG pipeline init
@@ -26,7 +26,7 @@ with DAG(
     description="Dag which operates all other dags",
     schedule_interval='@weekly',
     catchup=False,
-    tags=['new_data_dag']
+    tags=['master_dag']
 ) as master_dag:
 
     # Data bias mitigation
@@ -63,5 +63,12 @@ with DAG(
         wait_for_completion=True,
     )
 
+    # Model deploy
+    trigger_model_deployment = TriggerDagRunOperator(
+        task_id="trigger_model_deploy",
+        trigger_dag_id="deploy_model_task",  
+        wait_for_completion=True,
+    )
+
     # Define task dependencies
-    trigger_data_bias_dag >> [trigger_data_drift_dag, trigger_feature_imp_dag] >> trigger_model_train_dag >> trigger_model_bias_dag
+    trigger_data_bias_dag >> [trigger_data_drift_dag, trigger_feature_imp_dag] >> trigger_model_train_dag >> trigger_model_bias_dag >> trigger_model_deployment
