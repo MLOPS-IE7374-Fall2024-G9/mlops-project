@@ -13,7 +13,8 @@ on:
       # - jahnavi_dev
       # - nikhil_dev
       # - samanvya_dev
-      - dev
+      #- dev
+      - production
     paths:
       - 'dags/**'
       - 'airflow-config/**'
