@@ -33,7 +33,7 @@ from src.model_pipeline import *
 
 # variables 
 filename = "data_preprocess.csv"
-model_name = "xgboost"
+model_name = "lr"
 thresholds = (1000, 1000, 0.7)
 
 # default args

@@ -37,10 +37,10 @@ USER root
 RUN apt-get update && apt-get install -y python3
 
 # Expose the desired port (e.g., 8080)
-EXPOSE 8080
+EXPOSE 8090
 
 # Start the Python HTTP server to serve the HTML file on the specified port
-CMD ["python3", "-m", "http.server", "8080", "--directory", "/opt/airflow/dags/reports"]
+CMD ["python3", "-m", "http.server", "8090", "--directory", "/opt/airflow/dags/reports"]
 
 # Switch to airflow user
 USER airflow
