@@ -63,14 +63,14 @@ with DAG(
     # Task: Trigger Data Drift Detection DAG
     trigger_data_drift_dag = TriggerDagRunOperator(
         task_id="trigger_data_drift_dag",
-        trigger_dag_id="drift_data_dag",
+        trigger_dag_id="data_drift_detection_dag",
         wait_for_completion=True,
     )
 
     # Task: Trigger Data Bias Mitigation DAG
     trigger_data_bias_dag = TriggerDagRunOperator(
         task_id="trigger_data_bias_dag",
-        trigger_dag_id="bias_detection_and_mitigation",
+        trigger_dag_id="data_bias_detection_and_mitigation",
         wait_for_completion=True,
     )
 
@@ -106,14 +106,14 @@ with DAG(
     # Task: Trigger Retraining DAG
     trigger_retraining_dag = TriggerDagRunOperator(
         task_id="trigger_retraining_dag",
-        trigger_dag_id="model_retrain_evaluate",
+        trigger_dag_id="model_retrain_evaluate_dag",
         wait_for_completion=True,
     )
 
     # Task: Trigger rollback
     trigger_rollback_dag = TriggerDagRunOperator(
         task_id="trigger_rollback_dag",
-        trigger_dag_id="model_rollback",
+        trigger_dag_id="model_rollback_dag",
         wait_for_completion=True,
     )
 
