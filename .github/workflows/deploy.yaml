@@ -3,8 +3,8 @@ name: Deploy Front End Application
 on:
   push:
     branches: 
-      # - main
-      - aakash_dev
+      - production 
+      #- aakash_dev
     paths:
       - 'backend/app.py'
       - 'backend/rag.py' # Trigger workflow when these files are changed

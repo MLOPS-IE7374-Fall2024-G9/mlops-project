@@ -29,6 +29,9 @@ ssh_exec() {
 echo "Cleaning up all Docker containers, images, volumes, and networks..."
 ssh_exec "
     if command -v docker &> /dev/null; then
+        docker stop $(docker ps -q)
+        docker rm $(docker ps -a -q)
+        docker rmi $(docker images -q)
         echo 'Running docker system prune...'
         docker system prune -a --volumes -f
         sudo systemctl restart docker
