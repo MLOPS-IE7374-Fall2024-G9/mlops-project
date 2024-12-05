@@ -13,16 +13,16 @@ from src.data_bias_detection_and_mitigation import conditional_mitigation_with_r
 default_args = {
     'owner': 'Group 9',
     'start_date': datetime(2024, 11, 1),
-    'retries': 0, # Number of retries in case of task failure
+    'retries': 2, # Number of retries in case of task failure
     'retry_delay': timedelta(minutes=5), # Delay before retries
-    "execution_timeout": timedelta(minutes=10),
+    "execution_timeout": timedelta(minutes=20),
 }
 
 bias_detection_and_mitigation = DAG(
     'bias_detection_and_mitigation',
     default_args=default_args,
     description='A DAG with separate tasks for bias detection and mitigation',
-    schedule_interval='@daily',
+    schedule_interval=None,
     tags=['bias_detection_and_mitigation']
 )
 

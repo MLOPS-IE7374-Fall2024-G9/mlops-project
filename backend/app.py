@@ -54,5 +54,3 @@ async def query(input: str):
         "status": "success",
         "message": str(response)
     }
-
-# deploy.yaml test 5

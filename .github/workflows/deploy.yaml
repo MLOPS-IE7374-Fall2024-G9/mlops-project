@@ -22,23 +22,10 @@ jobs:
     - name: Set Up Shell Environment
       run: |
         sudo apt-get update
-        sudo apt-get install -y bash # Ensure Bash is installed
-    
+        sudo apt-get install -y bash sshpass jq # Install bash, sshpass, and jq    
     - name: Install sshpass
       run: |
         sudo apt-get install -y sshpass
-
-    - name: Setup Github, Docker, Python on VM
-      run: |
-        chmod +x setup-scripts/setup_vm.sh
-        cd setup-scripts
-        ./setup_vm.sh
-
-    - name: Remove Old Containers, Images, Python Environments
-      run: |
-        chmod +x setup-scripts/remove.sh
-        cd setup-scripts
-        ./remove.sh
 
     - name: Run Deploy Script
       run: |

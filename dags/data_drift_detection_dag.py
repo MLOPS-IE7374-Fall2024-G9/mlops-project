@@ -11,7 +11,7 @@ from src.data_drift import *
 default_args = {
     'owner': 'Group 9',
     'start_date': datetime(2023, 9, 17),
-    'retries': 0, # Number of retries in case of task failure
+    'retries': 2, # Number of retries in case of task failure
     'retry_delay': timedelta(minutes=5), # Delay before retries
     "execution_timeout": timedelta(minutes=10),
 }
@@ -21,7 +21,7 @@ drift_data_dag = DAG(
     "drift_data_dag",
     default_args=default_args,
     description="Data Drift Detection DAG",
-    schedule_interval="@daily",
+    schedule_interval=None,
     catchup=False,
     tags=['drift_data_dag']
 )

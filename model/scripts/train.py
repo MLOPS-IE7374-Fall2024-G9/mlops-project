@@ -260,6 +260,8 @@ class ModelTrainer:
 
     def train_lstm(self, X_train, y_train, X_val, y_val):
         
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+        
         X_train = X_train.values # or use .to_numpy()
         X_val = X_val.values # or use .to_numpy()
         

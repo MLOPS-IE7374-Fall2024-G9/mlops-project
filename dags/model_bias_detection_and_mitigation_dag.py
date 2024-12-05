@@ -1,6 +1,17 @@
+"""
+1) split data
+2) model bias detection
+3) model bias mitigation -> generate new model
+4) upload bias results to gcp
+5) serve the model decision
+6) push to mlflow if serving, else do not
+
+"""
+
 ##### Here comes the dag scripts for adding dag scripts
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.python import BranchPythonOperator
 from datetime import datetime
 import os
 # Import required modules
@@ -16,6 +27,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../"
 from src.model_bias_detection_and_mitigation import load_pkl_files_from_directory, load_splits, save_model, upload_to_gcp, run_detection, run_mitigation
 from src.model_pipeline import download_model_artifacts
 from model.scripts.data_loader import load_and_split_dataset, load_config
+from model.scripts.train import ModelTrainer
+from model.scripts.utils import *
 
 
 # Configure logger
@@ -25,7 +38,7 @@ logger.setLevel(logging.INFO)
 # Define constants
 BASE_PATH_TEST_SPLIT = os.path.join(os.path.dirname(__file__), '../model/data/')
 BASE_PATH_DATA = os.path.join(os.path.dirname(__file__), '../dataset/data/')
-ANALYSIS_LOCAL_PATH = os.path.join(os.path.dirname(__file__),'src/reports')
+ANALYSIS_LOCAL_PATH = os.path.join(os.path.dirname(__file__),'reports')
 GCP_BUCKET_NAME = "model_bias_results" 
 # latest local model stored 
 
@@ -46,7 +59,7 @@ paths = {
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2024, 11, 15),
-    'retries': 1,
+    'retries': 0,
 }
 
 # Define the DAG
@@ -70,6 +83,7 @@ with DAG(
         Returns:
             tuple: A tuple containing the file name and the loaded JSON data.
         """
+        print(directory_path)
         if not os.path.isdir(directory_path):
             raise FileNotFoundError(f"Directory not found: {directory_path}")
 
@@ -144,7 +158,7 @@ with DAG(
         test_data = pd.read_csv(paths['test'])
         sensitive_test = pd.read_csv(paths['sensitive_test'])
 
-        X_test = test_data.drop(columns=['value'])
+        X_test = test_data.drop(columns=['value', 'datetime', 'subba-name', 'zone'])
         y_test = test_data['value']
 
         # Load model
@@ -158,10 +172,11 @@ with DAG(
 
         return bias_detection_folder
 
-    def perform_bias_mitigation(bias_detection_folder, model_type):
+    def perform_bias_mitigation(model_type, bias_detection_folder):
         """
         Task to perform bias mitigation.
         """
+        print("------------------------------", bias_detection_folder)
         bias_identification_report_json = load_single_json_file(bias_detection_folder)
         before_mitigation_metric_frame = load_pkl_files_from_directory(bias_detection_folder)
 
@@ -174,9 +189,9 @@ with DAG(
             sensitive_test = pd.read_csv(paths['sensitive_test'])
             sensitive_train = pd.read_csv(paths['sensitive_train'])
 
-            X_train = train_data.drop(columns=['value'])
+            X_train = train_data.drop(columns=['value', 'datetime', 'subba-name', 'zone'])
             y_train = train_data['value']
-            X_test = test_data.drop(columns=['value'])
+            X_test = test_data.drop(columns=['value', 'datetime', 'subba-name', 'zone'])
             y_test = test_data['value']
 
             # Load model
@@ -191,13 +206,13 @@ with DAG(
             # saving the mitigated_models
             save_model(mitigated_model,model_type,os.path.join(paths['model'],'mitigated_models'))
 
-            bias_mitigation_folder = load_pkl_files_from_directory(bias_mitigation_folder)
+            # bias_mitigation_folder = load_pkl_files_from_directory(bias_mitigation_folder)
             
             logger.info(f"Bias mitigation completed. Results stored in {bias_mitigation_folder}.")
         else:
             logger.info(f"Bias not found")
 
-        return bias_detection_folder, bias_mitigation_folder
+        return bias_mitigation_folder
 
     def upload_results_to_gcp(bias_detection_folder, bias_mitigation_folder):
         """
@@ -214,8 +229,7 @@ with DAG(
         logger.info("Results uploaded successfully.")
     
 
-    def proceed_to_serving(results_path_tuple):
-        bias_detection_folder, bias_mitigation_folder = results_path_tuple
+    def proceed_to_serving(bias_detection_folder, bias_mitigation_folder):
         if not bias_mitigation_folder:
             logger.info('No bias deteced and no mitigation is done. Model can be pushed to serving')
         else:
@@ -238,11 +252,40 @@ with DAG(
                 logger.info(f'Bias has been mitigated from {bias_detection_overall_mae} to {bias_mitigation_overall_mae}')
                 return True
             elif bias_mitigation_overall_mae == bias_detection_overall_mae:
-                logger.info(f'No significant chang in Bias')
+                logger.info(f'No significant change in Bias')
                 return True
             else:
                 logger.warning(f'No change in Bias. Stop the Model from being served.')
                 return False
+            
+    def push_model_to_mlflow(model_type):
+        """
+        Push the mitigated model to MLflow for serving.
+        """
+        logger.info("Pushing the model to MLflow for serving.")
+
+        # Load the mitigated model
+        model_path = os.path.join(paths['model'], 'mitigated_models', f"{model_type}_model.pkl")
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Mitigated model file not found: {model_path}")
+
+        with open(model_path, 'rb') as f:
+            model = pickle.load(f)
+
+        trainer = ModelTrainer()
+        set_tracking_uri(trainer.config["mlflow_tracking_uri"])
+        run = trainer.setup_mlflow(model_type)
+        if run:
+            log_model(model, model_type)
+            logger.info(f"Model registered in MLflow with")
+            end_run()
+        
+    def decide_next_step(**kwargs):
+        proceed = kwargs['ti'].xcom_pull(task_ids='proceed_to_serving')
+        if proceed:
+            return 'push_model_to_mlflow'
+        else:
+            return None
         
 
     # # Define tasks
@@ -270,21 +313,36 @@ with DAG(
         task_id='perform_bias_mitigation',
         python_callable=perform_bias_mitigation,
         provide_context=True,
-        op_args=[load_data_splits_task.output,perform_bias_detection_task.output]
+        op_args=[load_data_splits_task.output, perform_bias_detection_task.output]
     )
 
     upload_results_to_gcp_task = PythonOperator(
         task_id='upload_results_to_gcp',
         python_callable=upload_results_to_gcp,
         provide_context=True,
-        op_args=[perform_bias_detection_task.output,perform_bias_mitigation_task.output]
+        op_args=[perform_bias_detection_task.output, perform_bias_mitigation_task.output]
     )
 
     proceed_to_serving_task = PythonOperator(
         task_id='proceed_to_serving',
         python_callable= proceed_to_serving, 
         provide_context = True,
+        op_args=[perform_bias_detection_task.output, perform_bias_mitigation_task.output]
+    )
+
+    push_model_to_mlflow_task = PythonOperator(
+        task_id='push_model_to_mlflow',
+        python_callable=push_model_to_mlflow,
+        provide_context=True,
+        op_args=[load_data_splits_task.output]
+    )
+
+    
+    decide_next_step_task = BranchPythonOperator(
+        task_id='decide_next_step',
+        python_callable=decide_next_step,
+        provide_context=True
     )
 
     # Define task dependencies
-    load_data_splits_task >> perform_bias_detection_task >> perform_bias_mitigation_task >> upload_results_to_gcp_task >> proceed_to_serving_task
+    load_data_splits_task >> perform_bias_detection_task >> perform_bias_mitigation_task >> upload_results_to_gcp_task >> proceed_to_serving_task >> decide_next_step_task >> push_model_to_mlflow_task

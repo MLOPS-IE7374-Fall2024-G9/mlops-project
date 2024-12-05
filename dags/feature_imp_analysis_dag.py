@@ -29,7 +29,7 @@ drift_data_dag = DAG(
     "feature_imp_analysis_dag",
     default_args=default_args,
     description="Feature Importance Analysis DAG",
-    schedule_interval=timedelta(days=7),
+    schedule_interval=None,
     catchup=False,
     tags=['feature_imp_analysis_dag']
 )

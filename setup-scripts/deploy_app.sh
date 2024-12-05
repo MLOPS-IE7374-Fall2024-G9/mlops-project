@@ -58,6 +58,7 @@ ssh_exec "
     echo 'Removing all containers...' && \
     docker rm \$(docker ps -aq) || true
 "
+# docker rmi -f \$(docker images -aq) || true
 
 # Step 4: Build the frontend image
 echo "Building the frontend Docker image..."
