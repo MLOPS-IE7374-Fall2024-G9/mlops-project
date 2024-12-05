@@ -100,7 +100,6 @@ ssh_exec "
     docker run -d -p 8000:8000 backend
 "
 
-<<<<<<< HEAD
 # Step 4: Build the frontend image
 echo "Building the frontend Docker image..."
 ssh_exec "
@@ -121,6 +120,5 @@ ssh_exec "
     docker run -d --name frontend -p 3000:3000 frontend
 "
 
-=======
->>>>>>> 45df2689622276f6915db3645b3fe4feede8a4bb
+
 echo "Deployment complete."
