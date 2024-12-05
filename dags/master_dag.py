@@ -56,7 +56,6 @@ with DAG(
         trigger_dag_id="model_train_evaluate",
         wait_for_completion=True,
     )
-
     # Model bias detection and mitigation
     trigger_model_bias_dag = TriggerDagRunOperator(
         task_id="trigger_model_bias_dag",

@@ -28,7 +28,7 @@ FRONTEND_DOCKERFILE=$(get_config_value "FRONTEND_DOCKERFILE")
 
 # Helper function to execute a command over SSH
 ssh_exec() {
-    sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USER@$VM_IP "$1"
+    sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "$USER@$VM_IP" "$1"
 }
 
 # Step 1: Ensure the repository is up-to-date
@@ -100,4 +100,27 @@ ssh_exec "
     docker run -d -p 8000:8000 backend
 "
 
+<<<<<<< HEAD
+# Step 4: Build the frontend image
+echo "Building the frontend Docker image..."
+ssh_exec "
+    cd $REMOTE_DIR && \
+    echo 'Building the frontend Docker image...' && \
+    docker build -t frontend -f $FRONTEND_DOCKERFILE .
+"
+
+# Step 5: Run the frontend container
+echo "Running the frontend Docker container..."
+ssh_exec "
+    cd $REMOTE_DIR && \
+    if [ \$(docker ps -q -f name=frontend) ]; then
+        echo 'Stopping and removing existing frontend container...'
+        docker stop frontend && docker rm frontend
+    fi
+    echo 'Starting the frontend container...' && \
+    docker run -d --name frontend -p 3000:3000 frontend
+"
+
+=======
+>>>>>>> 45df2689622276f6915db3645b3fe4feede8a4bb
 echo "Deployment complete."
