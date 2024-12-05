@@ -2,6 +2,13 @@ from airflow import DAG
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from datetime import datetime, timedelta
 
+# pull latest dvc data
+# data bias detection -> email
+# data feature analysis -> email
+# data drift detection -> report gen
+# model training -> deployment 
+# model bias detection -> rollback + retaining
+
 # ------------------------------------------------------------------------------------------------
 # Default arguments
 default_args = {
@@ -17,17 +24,10 @@ with DAG(
     "master_dag",
     default_args=default_args,
     description="Dag which operates all other dags",
-    schedule_interval='@daily',
+    schedule_interval='@weekly',
     catchup=False,
     tags=['new_data_dag']
 ) as master_dag:
-
-    # Collect new data
-    trigger_new_data_dag = TriggerDagRunOperator(
-        task_id="trigger_new_data_dag",
-        trigger_dag_id="new_data_dag",
-        wait_for_completion=True,
-    )
 
     # Data bias mitigation
     trigger_data_bias_dag = TriggerDagRunOperator(
@@ -65,7 +65,4 @@ with DAG(
     )
 
     # Define task dependencies
-    trigger_new_data_dag >> trigger_data_bias_dag >> [
-        trigger_data_drift_dag,
-        trigger_feature_imp_dag
-    ] >> trigger_model_train_dag >> trigger_model_bias_dag
+    trigger_data_bias_dag >> [trigger_data_drift_dag, trigger_feature_imp_dag] >> trigger_model_train_dag >> trigger_model_bias_dag

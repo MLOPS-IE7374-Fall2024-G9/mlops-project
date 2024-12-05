@@ -99,7 +99,12 @@ def log_model(model, model_name, X_train=None, predictions=None, signature=None)
         if signature is None and X_train is not None and predictions is not None:
             signature = infer_signature(X_train, predictions)
         
-        mlflow.sklearn.log_model(model, model_name, signature=signature)
+        if model_name == "xgboost":
+            mlflow.xgboost.log_model(model, "xgboost", signature=signature)
+        elif model_name == "lr":
+            mlflow.sklearn.log_model(model, "lr", signature=signature)
+        else:
+            mlflow.tensorflow.log_model(model, "lstm", signature=signature)
         logger.info(f"Logged model '{model_name}' with signature.")
     except Exception as e:
         logger.error(f"Error logging model '{model_name}': {e}")

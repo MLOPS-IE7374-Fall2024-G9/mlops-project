@@ -42,7 +42,7 @@ default_args = {
     'start_date': datetime(2023, 9, 17),
     'retries': 0, # Number of retries in case of task failure
     'retry_delay': timedelta(minutes=5), # Delay before retries
-    "execution_timeout": timedelta(minutes=10),
+    "execution_timeout": timedelta(minutes=60),
 }
 
 # Data DAG pipeline init
@@ -178,7 +178,7 @@ delete_local_task = PythonOperator(
 # model deployment
 trigger_model_deployment = TriggerDagRunOperator(
     task_id="trigger_model_bias_dag",
-    trigger_dag_id="deploy_app_task",  
+    trigger_dag_id="deploy_model_task",  
     wait_for_completion=True,
 )
 

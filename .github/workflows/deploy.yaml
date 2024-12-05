@@ -18,7 +18,7 @@ jobs:
     - name: Set Up Shell Environment
       run: |
         sudo apt-get update
-        sudo apt-get install -y bash # Ensure Bash is installed
+        sudo apt-get install -y bash sshpass jq # Install bash, sshpass, and jq
 
     - name: Run Deploy Script
       run: |

@@ -233,7 +233,7 @@ class MLflowModelRegistry:
             # Get the latest run ID from the experiment
             runs = self.client.search_runs(
                 experiment_ids=[experiment.experiment_id],
-                order_by=["metrics.accuracy DESC"],  # Adjust metric if needed
+                order_by=["metrics.R2 DESC"],  # Adjust metric if needed
                 max_results=1,
             )
 
@@ -246,31 +246,38 @@ class MLflowModelRegistry:
             model_name = run_name.split("_")[0]
 
             # Fetch the model artifact URI
+            model_file_name = None
             model_uri = f"runs:/{run_id}/{model_name}"
             print(model_uri)
-            # Load the model
-            model = mlflow.pyfunc.load_model(model_uri)
-
-            print(
-                f"Successfully fetched and loaded the latest model from run ID: {run_id}"
-            )
-
-            model_file_name = None
-            model_type = None
             print('Run name: ', run_name)
-            if 'lr' in run_name:
+
+            # Load the model
+            # model = mlflow.pyfunc.load_model(model_uri)
+            if model_name == "lr":
+                # Load a scikit-learn model (Linear Regression)
+                model = mlflow.sklearn.load_model(model_uri)
                 model_file_name = 'lr_model_latest.pkl'
-                model_type = "lr"
-            elif 'xgboost' in run_name:
+
+            elif model_name == "xgboost":
+                # Load an XGBoost model
+                print("here")
+                model = mlflow.xgboost.load_model(model_uri)
+                print("here")
                 model_file_name = 'xgboost_model_latest.pkl'
-                model_type = "xgboost"
-            elif 'lstm' in run_name: 
+
+            elif model_name == "lstm":
+                # Load a TensorFlow/Keras model
+                model = mlflow.tensorflow.load_model(model_uri)
                 model_file_name = 'lstm_model_latest.pkl'
-                model_type = "lstm"
+            else:
+                raise ValueError(f"Unknown model type: {model_name}")
+            
+            print(f"Successfully fetched and loaded the latest model from run ID: {run_id}")
+
             model_path = os.path.join(os.path.dirname(__file__), f'../pickle/{model_file_name}')
             pickle.dump(model, open(model_path, 'wb'))
             pickle.dump(model, open(os.path.join(os.path.dirname(__file__), f'../pickle/model.pkl'), 'wb'))
-            return model, model_type
+            return model, model_name
 
         except Exception as e:
             print(f"Error fetching or initializing the model: {e}")

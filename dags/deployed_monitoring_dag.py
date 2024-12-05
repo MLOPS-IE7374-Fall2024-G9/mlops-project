@@ -25,7 +25,7 @@ with DAG(
     "deployment_monitoring_dag",
     default_args=default_args,
     description="Dag for monitoring deployed models and triggering retraining if thresholds are violated.",
-    schedule_interval='@daily',
+    schedule_interval='@weekly',
     catchup=False,
     tags=['conditional_retrain_dag'],
 ) as dag:
@@ -79,12 +79,12 @@ with DAG(
         python_callable=get_validation_outputs,
     )
 
-    # Task: Check Thresholds
+    # Task: Check Thresholds - skip or trigger rollback + retraining
     def check_thresholds_task(**kwargs):
         thresholds = kwargs['thresholds']
         validation_outputs = kwargs['ti'].xcom_pull(task_ids="get_validation_outputs_task")
         result = threshold_verification(thresholds, validation_outputs)
-        return "skip_retraining" if result else "trigger_retraining_dag"
+        return "skip_retraining" if result else "trigger_rollback_dag"
 
     check_thresholds = BranchPythonOperator(
         task_id="check_thresholds",
@@ -120,5 +120,5 @@ with DAG(
     # DAG Dependencies
     download_model_task >> trigger_data_drift_dag >> trigger_data_bias_dag >> trigger_model_bias_dag
     trigger_model_bias_dag >> get_validation_outputs_task >> check_thresholds
-    check_thresholds >> [skip_retraining, trigger_retraining_dag]
-    trigger_retraining_dag >> trigger_rollback_dag
+    check_thresholds >> [skip_retraining, trigger_rollback_dag]
+    trigger_rollback_dag >> trigger_retraining_dag
