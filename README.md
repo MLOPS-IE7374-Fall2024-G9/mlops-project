@@ -1,7 +1,10 @@
-# Energy Demand Forcasting
+# Energy Demand Forecasting
 
 ## Introduction
 This project focuses on forecasting energy demand using weather data. The forecasting process is orchestrated using Airflow, allowing for automated data collection, processing, and model execution within a Dockerized MLOps pipeline.
+(More information in docs folder)
+
+Deployed App - http://35.209.50.153:8080/
 
 ## Setup and reproducibility
 1. **Clone the repository:**
