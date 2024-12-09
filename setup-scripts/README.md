@@ -1,3 +1,14 @@
+## Pipelines
+Application deployment 
+![Alt text](../docs/deployment_app_pipeline.png)
+
+Model Deployment
+![Alt text](../docs/deployment_model_pipeline.png)
+
+Deployment Monitoring
+![Alt text](../docs/deployment_monitoring.png)
+
+--- 
 - Setting up a remote VM with all required dependencies.
 - Pulling the latest changes from a Git repository.
 - Deploying backend and frontend Docker containers.

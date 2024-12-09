@@ -4,7 +4,9 @@
 This project focuses on forecasting energy demand using weather data. The forecasting process is orchestrated using Airflow, allowing for automated data collection, processing, and model execution within a Dockerized MLOps pipeline.
 (More information in docs folder)
 
-Deployed App - http://35.209.50.153:8080/
+Deployed App - http://34.44.2.90:8501/
+Airflow server - http://35.209.50.153:8080/home
+MLflow Server - http://35.209.190.75:5000/
 
 ## Setup and reproducibility
 1. **Clone the repository:**
