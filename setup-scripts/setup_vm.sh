@@ -3,8 +3,11 @@
 # Enable error handling - exit on any error
 set -e
 
-# Load configuration from config.json
-CONFIG_FILE="./config.json"
+# Get the directory of the current script
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
+# Construct the path to config.json
+CONFIG_FILE="$SCRIPT_DIR/config.json"
 
 # Helper function to fetch values from the config file
 get_config_value() {
@@ -21,7 +24,7 @@ PASSWORD=$(get_config_value "PASSWORD")
 
 # Helper function to execute a command over SSH
 ssh_exec() {
-    sshpass -p "$PASSWORD" ssh "$USER@$VM_IP" "$1"
+    sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "$USER@$VM_IP" "$1"
 }
 
 # Step 1: Ensure Docker is installed (if not already installed)
@@ -80,10 +83,13 @@ ssh_exec "
         echo 'Directory $REMOTE_DIR exists, stashing any local changes and pulling latest changes...'
         cd $REMOTE_DIR && \
         git stash && \
-        git pull
+        git checkout production && \
+        git pull origin production
     else
         echo 'Directory $REMOTE_DIR does not exist, cloning repository...'
         git clone $REPO_URL $REMOTE_DIR
+        cd $REMOTE_DIR && \
+        git checkout production
     fi
 "
 

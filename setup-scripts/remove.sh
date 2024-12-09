@@ -3,8 +3,11 @@
 # Enable error handling - exit on any error
 set -e
 
-# Load configuration from config.json
-CONFIG_FILE="./config.json"
+# Get the directory of the current script
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
+# Construct the path to config.json
+CONFIG_FILE="$SCRIPT_DIR/config.json"
 
 # Helper function to fetch values from the config file
 get_config_value() {
@@ -19,21 +22,22 @@ PASSWORD=$(get_config_value "PASSWORD")
 
 # Helper function to execute a command over SSH
 ssh_exec() {
-    sshpass -p "$PASSWORD" ssh "$USER@$VM_IP" "$1"
+    sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "$USER@$VM_IP" "$1"
 }
 
-# Step 1: Remove Docker containers and images
-echo "Stopping and removing Docker containers and images..."
+# Step 1: Remove all Docker resources
+echo "Cleaning up all Docker containers, images, volumes, and networks..."
 ssh_exec "
     if command -v docker &> /dev/null; then
-        echo 'Stopping all Docker containers...'
-        docker stop \$(docker ps -q)
-        echo 'Removing all Docker containers...'
-        docker rm \$(docker ps -a -q)
-        echo 'Removing all Docker images...'
-        docker rmi \$(docker images -q)
+        docker stop $(docker ps -q)
+        docker rm $(docker ps -a -q)
+        docker rmi $(docker images -q)
+        echo 'Running docker system prune...'
+        docker system prune -a --volumes -f
+        sudo systemctl restart docker
+        echo 'Docker cleanup complete.'
     else
-        echo 'Docker is not installed, skipping container and image removal.'
+        echo 'Docker is not installed, skipping cleanup.'
     fi
 "
 
@@ -48,20 +52,6 @@ ssh_exec "
     fi
 "
 
-# Step 3: Uninstall Docker and clean up dependencies
-echo "Uninstalling Docker and cleaning up packages..."
-ssh_exec "
-    if command -v docker &> /dev/null; then
-        echo 'Uninstalling Docker...'
-        sudo apt-get remove -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-        sudo apt-get autoremove -y
-        sudo apt-get clean
-        echo 'Docker uninstalled successfully.'
-    else
-        echo 'Docker is not installed, skipping uninstallation.'
-    fi
-"
-
 # Step 4: Remove Python virtual environment (if exists)
 echo "Removing Python virtual environment (if exists)..."
 ssh_exec "
@@ -70,18 +60,6 @@ ssh_exec "
         echo 'Virtual environment removed.'
     else
         echo 'Virtual environment does not exist, skipping removal.'
-    fi
-"
-
-# Step 5: Optionally, remove Python packages if installed globally
-echo "Optionally, you can remove globally installed Python packages..."
-ssh_exec "
-    if command -v pip3 &> /dev/null; then
-        echo 'Uninstalling Python packages...'
-        sudo pip3 freeze | xargs sudo pip3 uninstall -y
-        echo 'Python packages uninstalled.'
-    else
-        echo 'pip is not installed, skipping.'
     fi
 "
 

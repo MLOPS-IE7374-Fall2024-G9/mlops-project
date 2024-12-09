@@ -63,7 +63,7 @@ def detect_bias(data: pd.DataFrame, target_col: str, sensitive_col: str) -> dict
 
 
 
-def conditional_mitigation_with_resampling(data: pd.DataFrame, date_col: str, target_col: str, sensitive_col: str, bias_detection_output: dict, freq: str = 'H') -> pd.DataFrame:
+def conditional_mitigation_with_resampling(data: pd.DataFrame, target_col: str, sensitive_col: str, bias_detection_output: dict, freq: str='H', date_col: str="datetime") -> pd.DataFrame:
     """
     Perform bias mitigation on subgroups identified as biased through resampling and imputation.
 

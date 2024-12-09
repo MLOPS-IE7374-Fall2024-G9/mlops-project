@@ -184,7 +184,7 @@ def save_model(model, model_name, local_path):
     safe_model_name = "".join(char if char.isalnum() else "_" for char in model_name)
     
     # Create a timestamped filename for the model
-    filename = f"{safe_model_name}_model_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl"
+    filename = f"{safe_model_name}_model.pkl" #{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl"
     file_path = os.path.join(local_path, filename)
     
     # Save the model to the specified path
@@ -443,4 +443,4 @@ if __name__ == '__main__':
     #     print(metric_frame.by_group) 
 
 
-    upload_to_gcp('/Users/akm/Desktop/mlops-project/experiments/temp_bias_analysis/detection_20241115_143124','detection_results','model_bias_results')
+    # upload_to_gcp('/Users/akm/Desktop/mlops-project/experiments/temp_bias_analysis/detection_20241115_143124','detection_results','model_bias_results')

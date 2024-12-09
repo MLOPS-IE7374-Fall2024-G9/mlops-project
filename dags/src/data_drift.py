@@ -13,12 +13,17 @@ def load_data(filename, **kwargs):
     file_path = get_data_from_dvc(filename)
     df = pd.read_csv(file_path)
 
-    # df['datetime'] = pd.to_datetime(df['datetime'], errors='coerce')
-    df = df.sample(frac=1, random_state=42).reset_index(drop=True)
+    df['datetime'] = pd.to_datetime(df['datetime'], errors='coerce')
 
-    split_point = int(len(df) * 0.7)
-    baseline_df = df.iloc[:split_point]
-    new_data_df = df.iloc[split_point:]
+    # Sort the data by datetime (if not already sorted)
+    df = df.sort_values(by='datetime').reset_index(drop=True)
+
+    # Get the last available date
+    last_available_date = df['datetime'].max()
+
+    # Split the data
+    baseline_df = df[df['datetime'] < last_available_date]  # All data except the last available date
+    new_data_df = df[df['datetime'] == last_available_date]
 
     kwargs['ti'].xcom_push(key='baseline_df', value=baseline_df.to_dict())
     kwargs['ti'].xcom_push(key='new_data_df', value=new_data_df.to_dict())

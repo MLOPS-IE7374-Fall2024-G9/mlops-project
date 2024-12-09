@@ -33,7 +33,7 @@ from src.model_pipeline import *
 
 # variables 
 filename = "data_preprocess.csv"
-model_name = "xgboost"
+model_name = "lr"
 thresholds = (1000, 1000, 0.7)
 
 # default args
@@ -42,7 +42,7 @@ default_args = {
     'start_date': datetime(2023, 9, 17),
     'retries': 0, # Number of retries in case of task failure
     'retry_delay': timedelta(minutes=5), # Delay before retries
-    "execution_timeout": timedelta(minutes=10),
+    "execution_timeout": timedelta(minutes=60),
 }
 
 # Data DAG pipeline init
@@ -177,15 +177,14 @@ delete_local_task = PythonOperator(
 
 # model deployment
 trigger_model_deployment = TriggerDagRunOperator(
-    task_id="trigger_model_bias_dag",
-    trigger_dag_id="deploy_app_task",  
+    task_id="trigger_model_deploy",
+    trigger_dag_id="deploy_model_task",  
     wait_for_completion=True,
 )
 
 data_from_dvc_task >> choose_task >> [train_on_all_data_task, download_model_task]
 train_on_all_data_task >> evaluate_model_task >> threshold_check_task >> [threshold_pass_email, threshold_fail_email] >> delete_local_task
 download_model_task >> fine_tune_on_new_data_task >> evaluate_model_task >> threshold_check_task >> [threshold_pass_email, threshold_fail_email] >> delete_local_task 
-threshold_pass_email >> trigger_model_deployment
 
 if __name__ == "__main__":
     model_train_evaluate.cli

@@ -38,6 +38,7 @@ with DAG(
     description='DAG to automate model rollback in MLflow',
     schedule=None,  # Set to your desired frequency (e.g., daily)
     catchup=False,  # Don't backfill previous runs
+    tags=['model_rollback_dag']
 ) as dag:
 
     # Define a task in the DAG

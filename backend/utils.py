@@ -1,5 +1,6 @@
 import json
 from math import radians, sin, cos, sqrt, atan2
+import os
 
 # Haversine formula to calculate the distance between two coordinates
 def haversine(lat1, lon1, lat2, lon2):
@@ -12,7 +13,9 @@ def haversine(lat1, lon1, lat2, lon2):
 
 # Function to find the closest ISO region
 def find_closest_iso_region(coordinates):
-    iso_company_map = load_iso_company_map('./iso_company.json')
+    current_file_dir = os.path.dirname(os.path.abspath(__file__))
+    path = current_file_dir + "/iso_company.json"
+    iso_company_map = load_iso_company_map(path)
 
     lat, lon = map(float, coordinates.split(","))
     closest_region = None

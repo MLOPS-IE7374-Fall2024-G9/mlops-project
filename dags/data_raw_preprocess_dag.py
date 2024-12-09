@@ -16,13 +16,13 @@ default_args = {
 }
 
 # Data DAG pipeline init
-raw_data_dag = DAG(
-    "raw_data_dag",
+data_raw_preprocess_dag = DAG(
+    "data_raw_preprocess_dag",
     default_args=default_args,
     description="Raw Data Preprocess DAG",
     schedule_interval=None,
     catchup=False,
-    tags=['raw_data_dag']
+    tags=['data_raw_preprocess_dag']
 )
 
 # ------------------------------------------------------------------------------------------------
@@ -56,7 +56,7 @@ send_email = EmailOperator(
     to=["mlops.group.9@gmail.com"],    # Email address of the recipient
     subject='Notification from Airflow',
     html_content='<p>This is a notification email sent from Airflow. </p>',
-    dag=raw_data_dag,
+    dag=data_raw_preprocess_dag,
     on_failure_callback=email_notify_failure,
     on_success_callback=email_notify_success,
 )
@@ -71,7 +71,7 @@ data_from_dvc_task = PythonOperator(
     python_callable=get_data_from_dvc,
     provide_context=True,
     op_args=[filename_raw],
-    dag = raw_data_dag
+    dag = data_raw_preprocess_dag
 )
 
 # function to apply all preprocessing steps to raw data
@@ -80,7 +80,7 @@ preprocess_pipeline_task = PythonOperator(
     python_callable=preprocess_pipeline,
     op_args=[data_from_dvc_task.output],
     provide_context=True,
-    dag=raw_data_dag,
+    dag=data_raw_preprocess_dag,
     on_failure_callback=email_notify_failure
 )
 
@@ -90,14 +90,14 @@ update_data_to_dvc_task = PythonOperator(
     python_callable=update_data_to_dvc,
     provide_context=True,
     op_args=[preprocess_pipeline_task.output],
-    dag = raw_data_dag
+    dag = data_raw_preprocess_dag
 )
 
 delete_local_task = PythonOperator(
     task_id = 'delete_local_task',
     python_callable=delete_local_dvc_data,
     provide_context=True,
-    dag = raw_data_dag,
+    dag = data_raw_preprocess_dag,
     trigger_rule=TriggerRule.ALL_DONE
 )
 # --------------------------
@@ -110,4 +110,4 @@ update_data_to_dvc_task >> send_email
 
 # ------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    raw_data_dag.cli
+    data_raw_preprocess_dag.cli

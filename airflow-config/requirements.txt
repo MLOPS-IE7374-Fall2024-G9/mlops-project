@@ -22,3 +22,5 @@ chromadb
 fastapi 
 uvicorn
 yfinance
+streamlit
+google-generativeai

@@ -25,13 +25,13 @@ default_args = {
 }
 
 # Feature Analsis DAG pipeline init
-drift_data_dag = DAG(
-    "feature_imp_analysis_dag",
+data_feature_imp_analysis_dag = DAG(
+    "data_feature_imp_analysis_dag",
     default_args=default_args,
     description="Feature Importance Analysis DAG",
-    schedule_interval=timedelta(days=7),
+    schedule_interval=None,
     catchup=False,
-    tags=['feature_imp_analysis_dag']
+    tags=['data_feature_imp_analysis_dag']
 )
 
 
@@ -62,7 +62,7 @@ send_email = EmailOperator(
     to=["mlops.group.9@gmail.com"],
     subject='Notification from Airflow',
     html_content='<p>This is a notification email sent from Airflow. </p>',
-    dag=drift_data_dag,
+    dag=data_feature_imp_analysis_dag,
     on_failure_callback=email_notify_failure,
     on_success_callback=email_notify_success, 
 )

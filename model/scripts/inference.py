@@ -163,6 +163,7 @@ if __name__ == "__main__":
     # coordinates = "42.3601, 71.0589"
     # model_inference = ModelInference()
     # input_df = model_inference.get_weather_data(location=coordinates)
+    # model_inference.download_model()
     # model_inference.load_model()
     # predictions = model_inference.predict(input_df)
     # print(predictions)

@@ -16,8 +16,10 @@
 │
 ├── scripts
 │   ├── config.json                             # Configuration file with model parameters
-│   ├── feature_importance_analyzer.py          # Analyzing feature importance
 │   ├── data_loader.py                          # Script to load and split datasets
+│   ├── feature_importance_analyzer.py          # Analyzing feature importance
+│   ├── inference.py                            # Script to infer and predict using the model
+│   ├── mlflow_model_registry.py                # Script for mlflow registry management
 │   ├── train.py                                # Main training script supporting LR, LSTM, and XGBoost
 │   ├── utils.py                                # Utility functions, including MLflow integration
 │
@@ -46,6 +48,11 @@ python scripts/train.py data/dataset.csv --config scripts/config.json --model lr
 python scripts/train.py data/dataset.csv --config scripts/config.json --model lstm
 python scripts/train.py data/dataset.csv --config scripts/config.json --model xgboost
 ```
+### Inference model 
+Load the best model from mlflow
+'''
+python model/scripts/inference.py --coordinates '42.3601,71.0589'
+'''
 
 ## Key Features
 
