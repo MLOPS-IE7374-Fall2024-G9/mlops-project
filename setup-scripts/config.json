@@ -1,6 +1,6 @@
 {
     "USER": "rkeshri98",
-    "VM_IP": "34.44.2.90",
+    "VM_IP": "34.31.103.89",
     "REMOTE_DIR": "/home/rkeshri98/deployment",
     "REPO_URL": "https://github.com/MLOPS-IE7374-Fall2024-G9/mlops-project.git",
     "REQUIREMENTS_FILE": "./airflow-config/requirements.txt",
